@@ -1,0 +1,31 @@
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+__pycache__/
+
+# Ignore virtual environment directories
+VENV/
+env/
+.env
+# Ignore IDE specific files
+.idea/
+.vscode/
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore log files
+*.log
+
+# Ignore compiled files
+*.o
+*.so
+*.exe
+
+django/
+android/
+node_modules/
+capacitor.config.json
+package-lock.json
+package.json

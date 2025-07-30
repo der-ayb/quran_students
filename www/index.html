@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json" />
+  <title>تطبيق متابعة الحفظ</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdn.rtlcss.com/bootstrap/v4.5.3/css/bootstrap.min.css"
+    integrity="sha384-JvExCACAZcHNJEc7156QaHXTnQL3hQBixvj5RV5buE7vgnNEzzskDtx9NQ4p6BJe" crossorigin="anonymous">
+</head>
+<style>
+  .mobile-nav {
+    background: #F1F1F1;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 50px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .bloc-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .bloc-icon i {
+    width: 30px;
+  }
+  
+  body{
+    font-size: large;
+  }
+</style>
+
+<body class="container-fluid" style="width: 100vw;margin-bottom: 4rem!important;">
+  <div class="tab-content" id="pills-tabContent">
+    <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+      <h1 class="text-center">تطبيق متابعة الحفظ</h1>
+      <input type="file" id="fileInput" />
+      <button id="downloadBtn">💾 Export DB</button>
+    </div>
+
+    <div class="tab-pane fade" id="pills-students" role="tabpanel" aria-labelledby="pills-students-tab">
+      <h2 class="text-center">قائمة التلاميذ</h2>
+      <table id="studentsListTable" class="table table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>الاسم</th>
+            <th>العمر</th>
+            <th>هاتف الولي</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <h3>إظافة طالب</h3>
+      <div>
+        <label for="name">الاسم:</label>
+        <input type="text" id="name" class="form-control" />
+        <label for="age">العمر:</label>
+        <input type="number" id="age" class="form-control" />
+        <label for="parentPhone">هاتف الولي:</label>
+        <input type="text" id="parentPhone" class="form-control"
+          title="رقم هاتف جزائري يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام" />
+        <button id="addStudentBtn" class="btn btn-success mt-2">إظافة</button>
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="pills-new_day" role="tabpanel" aria-labelledby="pills-new_day-tab">
+      <h2 class="text-center">التقييم اليومي</h2>
+      <div class="form-group">
+        <label for="dayDate">تاريخ اليوم:</label>
+        <input type="date" id="dayDate" class="form-control" />
+      </div>
+      <div class="table-responsive" style="zoom:100%">
+      <table id="dayListTable" class="table table-bordered table-striped">
+        <thead>
+          <tr class="text-center">
+            <th class="d-none">#</th>
+            <th class="px-4">الطالب</th>
+            <th style="transform: rotate(-90deg);" class="px-1 py-4">الحفظ</th>
+            <th style="transform: rotate(-90deg);" class="px-1 py-4">الحضور</th>
+            <th style="transform: rotate(-90deg);" class="px-1 py-4">الهندام</th>
+            <th style="transform: rotate(-90deg);" class="px-1 py-4">الحلاقة</th>
+            <th style="transform: rotate(-90deg);" class="px-1 py-4">السلوك</th>
+            <th style="transform: rotate(-90deg);" class="px-1 py-4">الصلاة</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <nav class="mobile-nav">
+    <a href="#" class="bloc-icon" onclick="showTab('pills-home'); return false;">
+      <i class="fa-solid fa-house"></i>
+    </a>
+    <a href="#" class="bloc-icon" onclick="showTab('pills-students'); return false;">
+      <i class="fa-solid fa-address-book"></i>
+    </a>
+    <a href="#" class="bloc-icon" onclick="showTab('pills-new_day'); return false;">
+      <i class="fa-solid fa-list-check"></i>
+    </a>
+  </nav>
+
+  <!-- Modal for adding a new student -->
+  <div class="modal fade" id="newStudentDayModal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+    aria-labelledby="newStudentDayModalLabel" aria-hidden="true">
+    <div class="modal-dialog" >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="newStudentDayModalLabel">يوم التلميذ</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="studentDayForm">
+            <div class="form-group">
+              <label for="studentName">اسم التلميذ:</label>
+              <input type="text" class="form-control" id="studentName" readonly />
+            </div>
+            <div class="form-group">
+              <label for="memorization">الحفظ:</label>
+              <input type="number" class="form-control" id="memorization" min="0" max="10" step="0.5" />
+            </div>
+            <div class="form-group">
+              <label for="attendance">الحضور:</label>
+              <select class="form-control" id="attendance">
+                <option value="10">حضور كلي</option>
+                <option value="7.5">حضور شبه كلي</option>
+                <option value="5">حضور جزئي</option>
+                <option value="2.5">حضور قليل</option>
+                <option value="0">غياب</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="dressCode">الهندام:</label>
+              <select class="form-control" id="dressCode">
+                <option value="10">ممتاز</option>
+                <option value="7.5">جيد</option>
+                <option value="5">مقبول</option>
+                <option value="2.5">غير مقبول</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="haircut">الحلاقة:</label>
+              <select class="form-control" id="haircut">
+                <option value="10">ممتاز</option>
+                <option value="7.5">جيد</option>
+                <option value="5">مقبول</option>
+                <option value="2.5">غير مقبول</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="behavior">السلوك:</label>
+              <select class="form-control" id="behavior">
+                <option value="10">ممتاز</option>
+                <option value="7.5">جيد</option>
+                <option value="5">مقبول</option>
+                <option value="2.5">غير مقبول</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="prayer">الصلاة:</label>
+              <select class="form-control" id="prayer">
+                <option value="1">ممتاز</option>
+                <option value="0">غير مقبول</option>
+              </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+          <button type="submit" class="btn btn-primary">حفظ</button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+  integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+  integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://cdn.rtlcss.com/bootstrap/v4.5.3/js/bootstrap.min.js"
+  integrity="sha384-VmD+lKnI0Y4FPvr6hvZRw6xvdt/QZoNHQ4h5k0RL30aGkR9ylHU56BzrE2UoohWK" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js"></script>
+<script src="script.js"></script>
+<script>
+  if ('serviceWorker' in navigator){
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }, function(err) {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }else {
+    alert('Service Worker is not supported in your browser. Some features may not work offline.');
+  }
+</script>
+
+</html>
