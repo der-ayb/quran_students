@@ -11,7 +11,7 @@ self.addEventListener('install', function(event) {
         '/',
         '/index.html',
         '/manifest.json',
-        '/script.js'
+        '/script.js',
       ]);
     })
   );

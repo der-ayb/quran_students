@@ -26,6 +26,3 @@ Thumbs.db
 django/
 android/
 node_modules/
-capacitor.config.json
-package-lock.json
-package.json
