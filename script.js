@@ -26,14 +26,45 @@ function resetNewStudentsFields() {
   updateStudentBtn.remove();
 }
 
+$("#requirQuantity, #requirEvaluation, #requirType").on("change", function () {
+  const quantity = parseFloat($("#requirQuantity").val());
+  const evaluation = parseFloat($("#requirEvaluation").val());
+  const type = $("#requirType").val();
+
+  if (!quantity || !evaluation || !type) {
+    $("#requirement").val("");
+    return;
+  }
+
+  let value = 0;
+  if (type === "حفظ") {
+    value = evaluation * quantity;
+  } else if (type === "مراجعة") {
+    value = evaluation * (quantity / 3);
+  }
+  $("#requirement").val(value ? value.toFixed(2) : "");
+});
+
 function update_day_module_moyenne(studentId) {
   if (!db) {
     alert("لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
   try {
+    db.run(
+      "INSERT OR REPLACE INTO day_requirements (student_id, day, book, type,quantity, moyenne) VALUES (?, ?, ?, ?,?,?);",
+      [
+        studentId,
+        currentDay,
+        $("#requirBook").val(),
+        $("#requirType").val(),
+        $("#requirQuantity").val(),
+        $("#requirEvaluation").val(),
+      ]
+    );
+
     const modules = [
-      { id: 1, selector: "#memorization" },
+      { id: 1, selector: "#requirement" },
       { id: 2, selector: "#attendance" },
       { id: 3, selector: "#dressCode" },
       { id: 4, selector: "#haircut" },
@@ -64,22 +95,28 @@ function loadDayStudentsList() {
   try {
     const results = db.exec(`
       SELECT 
-        s.id AS student_id,
-        s.name AS student_name,
+        s.id AS student_id, s.name AS student_name,
         MAX(CASE WHEN m.id = 1 THEN dmm.moyenne ELSE NULL END) AS "الحفظ",
         MAX(CASE WHEN m.id = 2 THEN dmm.moyenne ELSE NULL END) AS "الحظور",
         MAX(CASE WHEN m.id = 3 THEN dmm.moyenne ELSE NULL END) AS "الهندام",
         MAX(CASE WHEN m.id = 4 THEN dmm.moyenne ELSE NULL END) AS "الحلاقة",
         MAX(CASE WHEN m.id = 5 THEN dmm.moyenne ELSE NULL END) AS "السلوك",
-        MAX(CASE WHEN m.id = 6 THEN dmm.moyenne ELSE NULL END) AS "الصلاة"
+        MAX(CASE WHEN m.id = 6 THEN dmm.moyenne ELSE NULL END) AS "الصلاة",
+        MAX(dr.evaluation) AS "التقدير",
+        MAX(dr.type) AS "النوع",
+        MAX(dr.quantity) AS "الكمية",
+        MAX(dr.book) AS "الكتاب"
       FROM 
         students s
       CROSS JOIN 
         modules m
       LEFT JOIN 
         day_module_moyenne dmm ON s.id = dmm.student_id 
-                  AND m.id = dmm.module_id 
-                  AND dmm.day = '${currentDay}'
+        AND m.id = dmm.module_id 
+        AND dmm.day = '${currentDay}'
+      LEFT JOIN 
+        day_requirements dr ON s.id = dr.student_id 
+        AND dr.day = '${currentDay}'
       GROUP BY 
         s.id, s.name
       ORDER BY 
@@ -103,7 +140,7 @@ function loadDayStudentsList() {
 
         td = document.createElement("td");
         td.textContent = row[1];
-        td.className = "px-0 text-center"
+        td.className = "px-0 text-center";
         tr.appendChild(td);
 
         td = document.createElement("td");
@@ -137,7 +174,7 @@ function loadDayStudentsList() {
         editBtn.onclick = function () {
           $("#newStudentDayModal").modal("show");
           $("#studentName").val(row[1]);
-          $("#memorization").val(row[2] || "");
+          $("#requirement").val(row[2] || "");
           $("#attendance").val(row[3] || "");
           $("#dressCode").val(row[4] || "");
           $("#haircut").val(row[5] || "");
@@ -206,7 +243,8 @@ function loadStudentsList() {
         const detailBtn = document.createElement("button");
         detailBtn.className = "dropdown-item btn-info";
         detailBtn.type = "button";
-        detailBtn.innerHTML = '<i class="fa-regular fa-address-card"></i> تفاصيل';
+        detailBtn.innerHTML =
+          '<i class="fa-regular fa-address-card"></i> تفاصيل';
         dropdownMenu.appendChild(detailBtn);
 
         // Edit

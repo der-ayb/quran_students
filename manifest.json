@@ -3,6 +3,14 @@
   "short_name": "QuranStudents",
   "start_url": ".",
   "display": "standalone",
+  "display_override": ["window-controls-overlay"],
+  "protocol_handlers": [
+    {
+      "protocol": "web+quran",
+      "url": "/?q=%s"
+    }
+  ],
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50",
   "description": "A web application for Quran students.",
@@ -31,5 +39,24 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "assets/screenshots/screen.png",
+      "sizes": "1617x1012",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [{
+    "name": "Quran Students",
+    "short_name": "QuranStudents",
+    "url": "/",
+    "icons": [
+      {
+        "src": "manifest-icon-192.maskable.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      }
+    ]
+  }]
 }

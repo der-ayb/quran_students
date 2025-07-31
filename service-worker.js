@@ -1,5 +1,6 @@
 // Basic service worker for PWA offline support
 self.addEventListener('install', function(event) {
+  console.log('Service Worker installing...');
   event.waitUntil(
     caches.open('v1').then(async function(cache) {
       // Request persistent storage for site
@@ -18,6 +19,7 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
+  console.log('Service Worker fetching: ' + event.request.url);
   event.respondWith(
     caches.match(event.request).then(function(response) {
       return response || fetch(event.request);

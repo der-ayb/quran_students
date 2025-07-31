@@ -32,14 +32,15 @@
   .bloc-icon i {
     width: 30px;
   }
-  
-  body{
+
+  body {
     font-size: large;
   }
 </style>
 
 <body class="container-fluid" style="width: 100vw;margin-bottom: 4rem!important;">
   <div class="tab-content" id="pills-tabContent">
+
     <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
       <h1 class="text-center">تطبيق متابعة الحفظ</h1>
       <input type="file" id="fileInput" />
@@ -80,23 +81,79 @@
         <input type="date" id="dayDate" class="form-control" />
       </div>
       <div class="table-responsive" style="zoom:100%">
-      <table id="dayListTable" class="table table-bordered table-striped">
-        <thead>
-          <tr class="text-center">
-            <th class="d-none">#</th>
-            <th class="px-4">الطالب</th>
-            <th style="transform: rotate(-90deg);" class="px-1 py-4">الحفظ</th>
-            <th style="transform: rotate(-90deg);" class="px-1 py-4">الحضور</th>
-            <th style="transform: rotate(-90deg);" class="px-1 py-4">الهندام</th>
-            <th style="transform: rotate(-90deg);" class="px-1 py-4">الحلاقة</th>
-            <th style="transform: rotate(-90deg);" class="px-1 py-4">السلوك</th>
-            <th style="transform: rotate(-90deg);" class="px-1 py-4">الصلاة</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+        <table id="dayListTable" class="table table-bordered table-striped">
+          <thead>
+            <tr class="text-center">
+              <th class="d-none">#</th>
+              <th class="px-4">الطالب</th>
+              <th style="transform: rotate(-90deg);" class="px-1 py-4">الحفظ</th>
+              <th style="transform: rotate(-90deg);" class="px-1 py-4">الحضور</th>
+              <th style="transform: rotate(-90deg);" class="px-1 py-4">الهندام</th>
+              <th style="transform: rotate(-90deg);" class="px-1 py-4">الحلاقة</th>
+              <th style="transform: rotate(-90deg);" class="px-1 py-4">السلوك</th>
+              <th style="transform: rotate(-90deg);" class="px-1 py-4">الصلاة</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
+
+    <div class="tab-pane fade" id="pills-preferences" role="tabpanel" aria-labelledby="pills-preferences-tab">
+      <h2 class="text-center">التفضيلات</h2>
+      <div class="accordion" id="accordionExample">
+        <div class="card">
+          <div class="card-header" id="headingOne">
+            <h2 class="mb-0">
+              <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse"
+                data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                عامة
+              </button>
+            </h2>
+          </div>
+          <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
+            <div class="card-body">
+              Some placeholder content for the first accordion panel. This panel is shown by default, thanks to the
+              <code>.show</code> class.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" id="headingTwo">
+            <h2 class="mb-0">
+              <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
+                data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                Collapsible Group Item #2
+              </button>
+            </h2>
+          </div>
+          <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
+            <div class="card-body">
+              Some placeholder content for the second accordion panel. This panel is hidden by default.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" id="headingThree">
+            <h2 class="mb-0">
+              <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
+                data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                Collapsible Group Item #3
+              </button>
+            </h2>
+          </div>
+          <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+            <div class="card-body">
+              And lastly, the placeholder content for the third and final accordion panel. This panel is hidden by
+              default.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <nav class="mobile-nav">
@@ -109,12 +166,15 @@
     <a href="#" class="bloc-icon" onclick="showTab('pills-new_day'); return false;">
       <i class="fa-solid fa-list-check"></i>
     </a>
+    <a href="#" class="bloc-icon" onclick="showTab('pills-preferences'); return false;">
+      <i class="fa-solid fa-gear"></i>
+    </a>
   </nav>
 
   <!-- Modal for adding a new student -->
   <div class="modal fade" id="newStudentDayModal" data-backdrop="static" data-keyboard="false" tabindex="-1"
     aria-labelledby="newStudentDayModalLabel" aria-hidden="true">
-    <div class="modal-dialog" >
+    <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="newStudentDayModalLabel">يوم التلميذ</h5>
@@ -128,9 +188,53 @@
               <label for="studentName">اسم التلميذ:</label>
               <input type="text" class="form-control" id="studentName" readonly />
             </div>
+            <div class="my-1 d-flex align-items-center">
+              <hr class="flex-grow-1">
+              <span class="mx-2 text-muted">المطلوب</span>
+              <hr class="flex-grow-1">
+            </div>
+            <div class="row">
+              <div class="col">
+                <div class="form-group">
+                  <label for="requirBook">الكتاب:</label>
+                  <input list="requirBookOptions" class="form-control" id="requirBook" placeholder="اختر أو أدخل قيمة..." />
+                  <datalist id="requirBookOptions">
+                    <option value="القرآن">
+                    <option value="الأربعين النووية">
+                  </datalist>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-group">
+                  <label for="requirType">النوع:</label>
+                  <select class="form-control" id="requirType">
+                    <option value="حفظ">حفظ</option>
+                    <option value="مراجعة">مراجعة</option>
+                  </select>
+                </div>
+              </div>
+              <div class="w-100"></div>
+              <div class="col">
+                <div class="form-group">
+                  <label for="requirQuantity">المقدار:</label>
+                  <input type="number" id="requirQuantity" class="form-control" min="0" step="0.5"/>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-group">
+                  <label for="requirEvaluation">التقدير:</label>
+                  <input type="number" id="requirEvaluation" class="form-control" min="0" max="10" step="0.5"/>
+                </div>
+              </div>
+            </div>
             <div class="form-group">
-              <label for="memorization">الحفظ:</label>
-              <input type="number" class="form-control" id="memorization" min="0" max="10" step="0.5" />
+              <label for="requirement">معدل المطلوب:</label>
+                <input type="number" class="form-control" id="requirement" readonly />
+            </div>
+            <div class="my-1 d-flex align-items-center">
+              <hr class="flex-grow-1">
+              <span class="mx-2 text-muted">الملاحظات الأخرى</span>
+              <hr class="flex-grow-1">
             </div>
             <div class="form-group">
               <label for="attendance">الحضور:</label>
@@ -142,39 +246,50 @@
                 <option value="0">غياب</option>
               </select>
             </div>
-            <div class="form-group">
-              <label for="dressCode">الهندام:</label>
-              <select class="form-control" id="dressCode">
-                <option value="10">ممتاز</option>
-                <option value="7.5">جيد</option>
-                <option value="5">مقبول</option>
-                <option value="2.5">غير مقبول</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="haircut">الحلاقة:</label>
-              <select class="form-control" id="haircut">
-                <option value="10">ممتاز</option>
-                <option value="7.5">جيد</option>
-                <option value="5">مقبول</option>
-                <option value="2.5">غير مقبول</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="behavior">السلوك:</label>
-              <select class="form-control" id="behavior">
-                <option value="10">ممتاز</option>
-                <option value="7.5">جيد</option>
-                <option value="5">مقبول</option>
-                <option value="2.5">غير مقبول</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="prayer">الصلاة:</label>
-              <select class="form-control" id="prayer">
-                <option value="1">ممتاز</option>
-                <option value="0">غير مقبول</option>
-              </select>
+            <div class="row">
+              <div class="col">
+                <div class="form-group">
+                  <label for="dressCode">الهندام:</label>
+                  <select class="form-control" id="dressCode">
+                    <option value="10">ممتاز</option>
+                    <option value="7.5">جيد</option>
+                    <option value="5">مقبول</option>
+                    <option value="2.5">غير مقبول</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-group">
+                  <label for="haircut">الحلاقة:</label>
+                  <select class="form-control" id="haircut">
+                    <option value="10">ممتاز</option>
+                    <option value="7.5">جيد</option>
+                    <option value="5">مقبول</option>
+                    <option value="2.5">غير مقبول</option>
+                  </select>
+                </div>
+              </div>
+              <div class="w-100"></div>
+              <div class="col">
+                <div class="form-group">
+                  <label for="behavior">السلوك:</label>
+                  <select class="form-control" id="behavior">
+                    <option value="10">ممتاز</option>
+                    <option value="7.5">جيد</option>
+                    <option value="5">مقبول</option>
+                    <option value="2.5">غير مقبول</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-group">
+                  <label for="prayer">الصلاة:</label>
+                  <select class="form-control" id="prayer">
+                    <option value="1">ممتاز</option>
+                    <option value="0">غير مقبول</option>
+                  </select>
+                </div>
+              </div>
             </div>
         </div>
         <div class="modal-footer">
@@ -192,18 +307,20 @@
   integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
 <script src="https://cdn.rtlcss.com/bootstrap/v4.5.3/js/bootstrap.min.js"
   integrity="sha384-VmD+lKnI0Y4FPvr6hvZRw6xvdt/QZoNHQ4h5k0RL30aGkR9ylHU56BzrE2UoohWK" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js"
+  integrity="sha512-Yra4xuTWinXfBpG2ftgDX8MVmMiOev1FtqiYs51+kEna/5peD0kZqAL1syYCH61f9gxmAFidIJz42IKcRhWMkw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="script.js"></script>
 <script>
-  if ('serviceWorker' in navigator){
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('//service-worker.js').then(function (registration) {
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
-      }, function(err) {
+      }, function (err) {
         console.log('ServiceWorker registration failed: ', err);
       });
     });
-  }else {
+  } else {
     alert('Service Worker is not supported in your browser. Some features may not work offline.');
   }
 </script>
