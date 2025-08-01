@@ -26,7 +26,11 @@ function resetNewStudentsFields() {
   updateStudentBtn.remove();
 }
 
-$("#requirQuantity, #requirEvaluation, #requirType").on("change", function () {
+$("#newStudentDayModal").on("show.bs.modal", function () {
+  $("#studentDayForm")[0].reset();
+})
+
+$("#requirQuantity, #requirEvaluation, #requirType").on("change input", function () {
   const quantity = parseFloat($("#requirQuantity").val());
   const evaluation = parseFloat($("#requirEvaluation").val());
   const type = $("#requirType").val();
@@ -45,17 +49,16 @@ $("#requirQuantity, #requirEvaluation, #requirType").on("change", function () {
   $("#requirement").val(value ? value.toFixed(2) : "");
 });
 
-function update_day_module_moyenne(studentId) {
+function update_day_module_evaluation(studentId) {
   if (!db) {
     alert("لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
   try {
     db.run(
-      "INSERT OR REPLACE INTO day_requirements (student_id, day, book, type,quantity, moyenne) VALUES (?, ?, ?, ?,?,?);",
+      "INSERT OR REPLACE INTO day_requirements (student_id, day, book, type,quantity, evaluation) VALUES (?, ?, ?, ?,?,?);",
       [
-        studentId,
-        currentDay,
+        studentId,currentDay,
         $("#requirBook").val(),
         $("#requirType").val(),
         $("#requirQuantity").val(),
@@ -72,13 +75,15 @@ function update_day_module_moyenne(studentId) {
       { id: 6, selector: "#prayer" },
     ];
     modules.forEach((mod) => {
+      console.log($(mod.selector).val())
       db.run(
-        "INSERT OR REPLACE INTO day_module_moyenne (student_id, module_id, day, moyenne) VALUES (?, ?, ?, ?);",
+        "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
         [studentId, mod.id, currentDay, $(mod.selector).val() || ""]
       );
     });
     saveToIndexedDB(db.export());
-    loadDayStudentsList();
+    // showTab("pills-new_day")
+    // loadDayStudentsList();
   } catch (e) {
     alert("Error: " + e.message);
   }
@@ -96,22 +101,22 @@ function loadDayStudentsList() {
     const results = db.exec(`
       SELECT 
         s.id AS student_id, s.name AS student_name,
-        MAX(CASE WHEN m.id = 1 THEN dmm.moyenne ELSE NULL END) AS "الحفظ",
-        MAX(CASE WHEN m.id = 2 THEN dmm.moyenne ELSE NULL END) AS "الحظور",
-        MAX(CASE WHEN m.id = 3 THEN dmm.moyenne ELSE NULL END) AS "الهندام",
-        MAX(CASE WHEN m.id = 4 THEN dmm.moyenne ELSE NULL END) AS "الحلاقة",
-        MAX(CASE WHEN m.id = 5 THEN dmm.moyenne ELSE NULL END) AS "السلوك",
-        MAX(CASE WHEN m.id = 6 THEN dmm.moyenne ELSE NULL END) AS "الصلاة",
-        MAX(dr.evaluation) AS "التقدير",
+        MAX(dr.book) AS "الكتاب",
         MAX(dr.type) AS "النوع",
-        MAX(dr.quantity) AS "الكمية",
-        MAX(dr.book) AS "الكتاب"
+        MAX(dr.quantity) AS "المقدار",
+        MAX(dr.evaluation) AS "التقدير",
+        MAX(CASE WHEN m.id = 1 THEN dmm.evaluation ELSE NULL END) AS "الحفظ",
+        MAX(CASE WHEN m.id = 2 THEN dmm.evaluation ELSE NULL END) AS "الحظور",
+        MAX(CASE WHEN m.id = 3 THEN dmm.evaluation ELSE NULL END) AS "الهندام",
+        MAX(CASE WHEN m.id = 4 THEN dmm.evaluation ELSE NULL END) AS "الحلاقة",
+        MAX(CASE WHEN m.id = 5 THEN dmm.evaluation ELSE NULL END) AS "السلوك",
+        MAX(CASE WHEN m.id = 6 THEN dmm.evaluation ELSE NULL END) AS "الصلاة"
       FROM 
         students s
       CROSS JOIN 
         modules m
       LEFT JOIN 
-        day_module_moyenne dmm ON s.id = dmm.student_id 
+        day_module_evaluation dmm ON s.id = dmm.student_id 
         AND m.id = dmm.module_id 
         AND dmm.day = '${currentDay}'
       LEFT JOIN 
@@ -144,27 +149,27 @@ function loadDayStudentsList() {
         tr.appendChild(td);
 
         td = document.createElement("td");
-        td.textContent = row[2];
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[3];
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[4];
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[5];
-        tr.appendChild(td);
-
-        td = document.createElement("td");
         td.textContent = row[6];
         tr.appendChild(td);
 
         td = document.createElement("td");
         td.textContent = row[7];
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        td.textContent = row[8];
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        td.textContent = row[9];
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        td.textContent = row[10];
+        tr.appendChild(td);
+
+        td = document.createElement("td");
+        td.textContent = row[11];
         tr.appendChild(td);
 
         td = document.createElement("td");
@@ -174,19 +179,23 @@ function loadDayStudentsList() {
         editBtn.onclick = function () {
           $("#newStudentDayModal").modal("show");
           $("#studentName").val(row[1]);
-          $("#requirement").val(row[2] || "");
-          $("#attendance").val(row[3] || "");
-          $("#dressCode").val(row[4] || "");
-          $("#haircut").val(row[5] || "");
-          $("#behavior").val(row[6] || "");
-          $("#prayer").val(row[7] || "");
+          $("#requirBook").val(row[2] || "");
+          $("#requirType").val(row[3] || "");
+          $("#requirQuantity").val(row[4] || "");
+          $("#requirEvaluation").val(row[5] || "");
+          $("#requirement").val(row[6] || "");
+          $("#attendance").val(row[7] || "");
+          $("#dressCode").val(row[8] || "");
+          $("#haircut").val(row[9] || "");
+          $("#behavior").val(row[10] || "");
+          $("#prayer").val(row[11] || "");
           $("#studentDayForm").on("submit", function (e) {
             e.preventDefault();
             if (!db) {
               alert("لا يوجد قاعدة بيانات مفتوحة.");
               return;
             }
-            update_day_module_moyenne((studentId = row[0]));
+            update_day_module_evaluation(row[0]);
             $("#newStudentDayModal").modal("hide");
           });
         };
@@ -200,6 +209,7 @@ function loadDayStudentsList() {
     alert("Error: " + e.message);
   }
 }
+
 
 function loadStudentsList() {
   $("#studentsListTable tbody").empty();
