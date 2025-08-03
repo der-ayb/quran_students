@@ -9,45 +9,242 @@ dayDate.addEventListener("change", () => {
     loadDayStudentsList();
   }
 });
+const newStudentDayModal = $("#newStudentDayModal");
+const studentDayForm = $("#studentDayForm");
+const studentIdInput = $("#studentId");
 const nameInput = $("#name");
-const ageInput = $("#age");
+const birthdayInput = $("#birthday");
 const parentPhoneInput = $("#parentPhone");
-const updateStudentBtn = $("<button>", {
-  id: "updateStudentBtn",
-  class: "btn btn-secondary mt-2",
-  text: "تحديث",
-});
+const newStudentInfosModal = $("#newStudentInfosModal");
+const newStudentInfosForm = $("#newStudentInfosForm");
 
-function resetNewStudentsFields() {
-  nameInput.val("");
-  ageInput.val("");
-  parentPhoneInput.val("");
-  updateStudentBtn.off("click");
-  updateStudentBtn.remove();
+// students tab
+function loadStudentsList() {
+  $("#studentsListTable").bootstrapTable("destroy");
+  try {
+    const results = db.exec("SELECT * FROM students;");
+    if (!results.length) {
+      alert("Query OK (no result)");
+      return;
+    }
+
+    results.forEach((result) => {
+      const data = [];
+      result.values.forEach((row) => {
+        const dropdownDiv = document.createElement("div");
+        dropdownDiv.className = "dropdown";
+
+        const dropdownBtn = document.createElement("button");
+        dropdownBtn.className = "btn btn-sm btn-primary dropdown-toggle";
+        dropdownBtn.type = "button";
+        dropdownBtn.setAttribute("data-toggle", "dropdown");
+        dropdownBtn.setAttribute("aria-expanded", "false");
+
+        const dropdownMenu = document.createElement("div");
+        dropdownMenu.className = "dropdown-menu";
+
+        // Detail
+        const detailBtn = document.createElement("button");
+        detailBtn.className = "dropdown-item btn-info";
+        detailBtn.type = "button";
+        detailBtn.innerHTML =
+          '<i class="fa-regular fa-address-card"></i> تفاصيل';
+        detailBtn.onclick = function () {
+          const row = $(this).closest("tr");
+          const cells = row.find("td");
+          const studentDetails = {
+            id: cells.eq(0).text(),
+            name: cells.eq(1).text(),
+            age: cells.eq(2).text(),
+            parentPhone: cells.eq(3).text(),
+          };
+          alert(
+            `تفاصيل الطالب:\nالمعرف: ${studentDetails.id}\nالاسم: ${studentDetails.name}\nالعمر: ${studentDetails.age}\nهاتف الولي: ${studentDetails.parentPhone}`
+          );
+        };
+        dropdownMenu.appendChild(detailBtn);
+
+        // Edit
+        const editBtn = document.createElement("button");
+        editBtn.className = "dropdown-item btn-secondary";
+        editBtn.type = "button";
+        editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
+        editBtn.onclick = function () {
+          newStudentInfosModal.modal("show");
+          const row = $(this).closest("tr");
+          const cells = row.find("td");
+          const studentId = cells.eq(0).text();
+          const name = cells.eq(1).text();
+          const birthday = cells.eq(2).text();
+          const parentPhone = cells.eq(3).text();
+          studentIdInput.val(studentId);
+          nameInput.val(name);
+          birthdayInput.val(birthday);
+          parentPhoneInput.val(parentPhone);
+        };
+        dropdownMenu.appendChild(editBtn);
+
+        // Delete
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "dropdown-item btn-danger";
+        deleteBtn.type = "button";
+        deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
+        deleteBtn.onclick = function () {
+          const row = $(this).closest("tr");
+          const cells = row.find("td");
+          const studentId = cells.eq(0).text();
+          if (!confirm("هل أنت متأكد أنك تريد حذف هذا الطالب؟")) {
+            return;
+          }
+          if (!db) {
+            alert("لا يوجد قاعدة بيانات مفتوحة.");
+            return;
+          }
+          try {
+            db.run("DELETE FROM students WHERE id = ?;", [studentId]);
+            saveToIndexedDB(db.export());
+            loadStudentsList();
+            alert("تم حذف الطالب بنجاح.");
+          } catch (e) {
+            alert("Error: " + e.message);
+          }
+        };
+        dropdownMenu.appendChild(deleteBtn);
+
+        dropdownDiv.appendChild(dropdownBtn);
+        dropdownDiv.appendChild(dropdownMenu);
+        data.push({
+          id: row[0],
+          name: row[1],
+          age: new Date().getFullYear() - new Date(row[2]).getFullYear(),
+          parentPhone: row[3],
+          actions: dropdownDiv,
+        });
+      });
+      $("#studentsListTable").bootstrapTable({ data });
+    });
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
 }
 
-$("#newStudentDayModal").on("show.bs.modal", function () {
-  $("#studentDayForm")[0].reset();
-})
-
-$("#requirQuantity, #requirEvaluation, #requirType").on("change input", function () {
-  const quantity = parseFloat($("#requirQuantity").val());
-  const evaluation = parseFloat($("#requirEvaluation").val());
-  const type = $("#requirType").val();
-
-  if (!quantity || !evaluation || !type) {
-    $("#requirement").val("");
+// day students list tab
+newStudentInfosForm.on("submit", (e) => {
+  e.preventDefault();
+  if (!db) {
+    alert("لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
+  const name = nameInput.val();
+  const birthday = birthdayInput.val();
+  const parentPhone = parentPhoneInput.val();
 
-  let value = 0;
-  if (type === "حفظ") {
-    value = evaluation * quantity;
-  } else if (type === "مراجعة") {
-    value = evaluation * (quantity / 3);
+  if (!name || !birthday || !parentPhone) {
+    alert("الرجاء ملء جميع الحقول.");
+    return;
   }
-  $("#requirement").val(value ? value.toFixed(2) : "");
+  if (!/^(05|06|07)\d{8}$/.test(parentPhone)) {
+    alert(
+      "رقم الهاتف غير صالح. يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام."
+    );
+    return;
+  }
+  try {
+    if (studentIdInput.val()) {
+      db.run(
+        "UPDATE students SET name = ?, age = ?, parent_phone = ? WHERE id = ?;",
+        [name, birthday, parentPhone, studentIdInput.val()]
+      );
+      alert("تم تعديل الطالب بنجاح.");
+    } else {
+      db.run(
+        "INSERT INTO students (name, birthday, parent_phone) VALUES (?, ?, ?);",
+        [name, birthday, parentPhone]
+      );
+      newStudentInfosForm[0].reset();
+      alert("تم إضافة الطالب بنجاح.");
+    }
+    saveToIndexedDB(db.export());
+    newStudentInfosModal.modal("hide");
+    loadStudentsList();
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
 });
+
+newStudentInfosModal.on("show.bs.modal", function () {
+  newStudentInfosForm[0].reset();
+});
+
+newStudentInfosModal.on("shown.bs.modal", function () {
+  if (studentIdInput.val()) {
+    $("#newStudentInfosModal [type='submit']").text("تحديث");
+  } else {
+    $("#newStudentInfosModal [type='submit']").text("إظافة");
+  }
+});
+
+newStudentDayModal.on("show.bs.modal", function () {
+  $("#studentName").attr("disabled", false);
+  $("#requirBook").attr("disabled", false);
+  $("#requirType").attr("disabled", false);
+  $("#requirQuantity").attr("disabled", false);
+  $("#requirEvaluation").attr("disabled", false);
+  $("#requirement").attr("disabled", false);
+  $("#dressCode").attr("disabled", false);
+  $("#haircut").attr("disabled", false);
+  $("#behavior").attr("disabled", false);
+  $("#prayer").attr("disabled", false);
+  studentDayForm[0].reset();
+});
+
+$("#attendance").on("change", function () {
+  if ($(this).val() === "1") {
+    $("#studentName").attr("disabled", true);
+    $("#requirBook").attr("disabled", true);
+    $("#requirType").attr("disabled", true);
+    $("#requirQuantity").attr("disabled", true);
+    $("#requirEvaluation").attr("disabled", true);
+    $("#requirement").attr("disabled", true);
+    $("#dressCode").attr("disabled", true);
+    $("#haircut").attr("disabled", true);
+    $("#behavior").attr("disabled", true);
+    $("#prayer").attr("disabled", true);
+  } else {
+    $("#studentName").attr("disabled", false);
+    $("#requirBook").attr("disabled", false);
+    $("#requirType").attr("disabled", false);
+    $("#requirQuantity").attr("disabled", false);
+    $("#requirEvaluation").attr("disabled", false);
+    $("#requirement").attr("disabled", false);
+    $("#dressCode").attr("disabled", false);
+    $("#haircut").attr("disabled", false);
+    $("#behavior").attr("disabled", false);
+    $("#prayer").attr("disabled", false);
+  }
+});
+
+$("#requirQuantity, #requirEvaluation, #requirType").on(
+  "change input",
+  function () {
+    const quantity = parseFloat($("#requirQuantity").val());
+    const evaluation = parseFloat($("#requirEvaluation").val());
+    const type = $("#requirType").val();
+
+    if (!quantity || !evaluation || !type) {
+      $("#requirement").val("");
+      return;
+    }
+
+    let value = 0;
+    if (type === "حفظ") {
+      value = evaluation * quantity;
+    } else if (type === "مراجعة") {
+      value = evaluation * (quantity / 3);
+    }
+    $("#requirement").val(value ? value.toFixed(2) : "");
+  }
+);
 
 function update_day_module_evaluation(studentId) {
   if (!db) {
@@ -55,42 +252,48 @@ function update_day_module_evaluation(studentId) {
     return;
   }
   try {
-    db.run(
-      "INSERT OR REPLACE INTO day_requirements (student_id, day, book, type,quantity, evaluation) VALUES (?, ?, ?, ?,?,?);",
-      [
-        studentId,currentDay,
-        $("#requirBook").val(),
-        $("#requirType").val(),
-        $("#requirQuantity").val(),
-        $("#requirEvaluation").val(),
-      ]
-    );
+    if ($("#attendance").val() !== "1") {
+      db.run(
+        "INSERT OR REPLACE INTO day_requirements (student_id, day, book, type,quantity, evaluation) VALUES (?, ?, ?, ?,?,?);",
+        [
+          studentId,
+          currentDay,
+          $("#requirBook").val(),
+          $("#requirType").val(),
+          $("#requirQuantity").val(),
+          $("#requirEvaluation").val(),
+        ]
+      );
 
-    const modules = [
-      { id: 1, selector: "#requirement" },
-      { id: 2, selector: "#attendance" },
-      { id: 3, selector: "#dressCode" },
-      { id: 4, selector: "#haircut" },
-      { id: 5, selector: "#behavior" },
-      { id: 6, selector: "#prayer" },
-    ];
-    modules.forEach((mod) => {
-      console.log($(mod.selector).val())
+      const modules = [
+        { id: 1, selector: "#requirement" },
+        { id: 2, selector: "#attendance" },
+        { id: 3, selector: "#dressCode" },
+        { id: 4, selector: "#haircut" },
+        { id: 5, selector: "#behavior" },
+        { id: 6, selector: "#prayer" },
+      ];
+      modules.forEach((mod) => {
+        db.run(
+          "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
+          [studentId, mod.id, currentDay, $(mod.selector).val()]
+        );
+      });
+    } else {
       db.run(
         "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
-        [studentId, mod.id, currentDay, $(mod.selector).val() || ""]
+        [studentId, 2, currentDay, $("#attendance").val()]
       );
-    });
+    }
     saveToIndexedDB(db.export());
-    // showTab("pills-new_day")
-    // loadDayStudentsList();
+    loadDayStudentsList();
   } catch (e) {
     alert("Error: " + e.message);
   }
 }
 
 function loadDayStudentsList() {
-  $("#dayListTable tbody").empty();
+  $("#dayListTable").bootstrapTable("destroy");
   if (!db) {
     $("#dayListTable tbody").append(
       "<tr><td colspan='3'>لا توجد معلومات.</td></tr>"
@@ -134,155 +337,125 @@ function loadDayStudentsList() {
 
     console.log(results);
     results.forEach((result) => {
+      const data = [];
       result.values.forEach((row) => {
-        const tr = document.createElement("tr");
-        let td = null;
+        // const tr = document.createElement("tr");
+        // let td = null;
 
-        td = document.createElement("td");
-        td.textContent = row[0];
-        td.className = "d-none"; // Hide the ID column
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[1];
-        td.className = "px-0 text-center";
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[6];
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[7];
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[8];
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[9];
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[10];
-        tr.appendChild(td);
-
-        td = document.createElement("td");
-        td.textContent = row[11];
-        tr.appendChild(td);
+        // td = document.createElement("td");
+        // td.textContent = row[0];
+        // td.className = "d-none"; // Hide the ID column
+        // tr.appendChild(td);
+        // // student name
+        // td = document.createElement("td");
+        // td.textContent = row[1];
+        // td.className = "px-0 text-center";
+        // tr.appendChild(td);
+        // // attendance
+        // td = document.createElement("td");
+        // td.textContent = $('#attendance option[value="' + row[7] + '"]').text();
+        // tr.appendChild(td);
+        // // book
+        // td = document.createElement("td");
+        // td.textContent = row[7] === 1 ? "/":row[2];
+        // tr.appendChild(td);
+        // // type
+        // td = document.createElement("td");
+        // td.textContent = row[7] === 1 ? "/":row[3];
+        // tr.appendChild(td);
+        // // quantity
+        // td = document.createElement("td");
+        // td.textContent = row[7] === 1 ? "/":row[4];
+        // tr.appendChild(td);
+        // // evaluation
+        // td = document.createElement("td");
+        // td.textContent = row[7] === 1 ? "/":row[5];
+        // tr.appendChild(td);
+        // requirement
+        // td = document.createElement("td");
+        // td.textContent = row[7] === 1 ? "/":row[6];
+        // tr.appendChild(td);
+        // // dressCode
+        // td = document.createElement("td");
+        // td.textContent = row[7] === 1 ? "/":$('#dressCode option[value="' + row[8] + '"]').text();
+        // tr.appendChild(td);
+        // // haircut
+        // td = document.createElement("td");
+        // td.textContent = row[7] === 1 ? "/":$('#haircut option[value="' + row[9] + '"]').text();
+        // tr.appendChild(td);
+        // // behavior
+        // td = document.createElement("td");
+        // td.textContent = row[7] === 1 ? "/":$('#behavior option[value="' + row[10] + '"]').text();
+        // tr.appendChild(td);
+        // // prayer
+        // td = document.createElement("td");
+        // td.textContent = row[7] === 1 ? "/":$('#prayer option[value="' + row[11] + '"]').text();
+        // tr.appendChild(td);
 
         td = document.createElement("td");
         const editBtn = document.createElement("button");
         editBtn.className = "btn btn-sm btn-primary";
         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
         editBtn.onclick = function () {
-          $("#newStudentDayModal").modal("show");
+          newStudentDayModal.modal("show");
           $("#studentName").val(row[1]);
-          $("#requirBook").val(row[2] || "");
-          $("#requirType").val(row[3] || "");
-          $("#requirQuantity").val(row[4] || "");
-          $("#requirEvaluation").val(row[5] || "");
+          $("#requirBook")
+            .val(row[2] || "")
+            .change();
+          $("#requirType")
+            .val(row[3] || "")
+            .change();
+          $("#requirQuantity")
+            .val(row[4] || "")
+            .change();
+          $("#requirEvaluation")
+            .val(row[5] || "")
+            .change();
           $("#requirement").val(row[6] || "");
-          $("#attendance").val(row[7] || "");
+          $("#attendance")
+            .val(row[7] || "")
+            .change();
           $("#dressCode").val(row[8] || "");
           $("#haircut").val(row[9] || "");
           $("#behavior").val(row[10] || "");
           $("#prayer").val(row[11] || "");
-          $("#studentDayForm").on("submit", function (e) {
+          studentDayForm.off("submit"); // Remove previous submit handler
+          studentDayForm.on("submit", function (e) {
             e.preventDefault();
             if (!db) {
               alert("لا يوجد قاعدة بيانات مفتوحة.");
               return;
             }
             update_day_module_evaluation(row[0]);
-            $("#newStudentDayModal").modal("hide");
+            newStudentDayModal.modal("hide");
           });
         };
-        td.appendChild(editBtn);
-        tr.appendChild(td);
-
-        $("#dayListTable tbody").append(tr);
-      });
-    });
-  } catch (e) {
-    alert("Error: " + e.message);
-  }
-}
-
-
-function loadStudentsList() {
-  $("#studentsListTable tbody").empty();
-  if (!db) {
-    $("#studentsListTable tbody").append(
-      "<tr><td colspan='3'>لا توجد معلومات.</td></tr>"
-    );
-    return;
-  }
-  try {
-    const results = db.exec("SELECT * FROM students;");
-    if (!results.length) {
-      alert("Query OK (no result)");
-      return;
-    }
-
-    results.forEach((result) => {
-      result.values.forEach((row) => {
-        const tr = document.createElement("tr");
-        row.forEach((cell) => {
-          const td = document.createElement("td");
-          td.textContent = cell;
-          tr.appendChild(td);
+        data.push({
+          id: row[0],
+          student: row[1],
+          attendance: $('#attendance option[value="' + row[7] + '"]').text(),
+          book: row[7] === 1 ? "/":row[2],
+          type: row[7] === 1 ? "/":row[3],
+          quantity: row[7] === 1 ? "/":row[4],
+          evaluation: row[7] === 1 ? "/":row[5],
+          requirement: row[7] === 1 ? "/":row[6],
+          dressCode: row[7] === 1 ? "/":$('#dressCode option[value="' + row[8] + '"]').text(),
+          haircut: row[7] === 1 ? "/":$('#haircut option[value="' + row[9] + '"]').text(),
+          behavior: row[7] === 1 ? "/":$('#behavior option[value="' + row[10] + '"]').text(),
+          prayer: row[7] === 1 ? "/":$('#prayer option[value="' + row[11] + '"]').text(),
+          actions: editBtn,
         });
-        const actionsTd = document.createElement("td");
-        actionsTd.className = "text-center";
 
-        const dropdownDiv = document.createElement("div");
-        dropdownDiv.className = "dropdown";
-
-        const dropdownBtn = document.createElement("button");
-        dropdownBtn.className = "btn btn-sm btn-primary dropdown-toggle";
-        dropdownBtn.type = "button";
-        dropdownBtn.setAttribute("data-toggle", "dropdown");
-        dropdownBtn.setAttribute("aria-expanded", "false");
-
-        const dropdownMenu = document.createElement("div");
-        dropdownMenu.className = "dropdown-menu";
-
-        // Detail
-        const detailBtn = document.createElement("button");
-        detailBtn.className = "dropdown-item btn-info";
-        detailBtn.type = "button";
-        detailBtn.innerHTML =
-          '<i class="fa-regular fa-address-card"></i> تفاصيل';
-        dropdownMenu.appendChild(detailBtn);
-
-        // Edit
-        const editBtn = document.createElement("button");
-        editBtn.className = "dropdown-item btn-secondary";
-        editBtn.type = "button";
-        editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
-        dropdownMenu.appendChild(editBtn);
-
-        // Delete
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "dropdown-item btn-danger";
-        deleteBtn.type = "button";
-        deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
-        dropdownMenu.appendChild(deleteBtn);
-
-        dropdownDiv.appendChild(dropdownBtn);
-        dropdownDiv.appendChild(dropdownMenu);
-        actionsTd.appendChild(dropdownDiv);
-        tr.appendChild(actionsTd);
-        $("#studentsListTable tbody").append(tr);
+        // $("#dayListTable tbody").append(tr);
       });
+      $("#dayListTable").bootstrapTable({ data });
     });
   } catch (e) {
     alert("Error: " + e.message);
   }
 }
 
+// global functions
 async function init() {
   SQL = await initSqlJs({
     locateFile: (file) =>
@@ -372,125 +545,15 @@ $("#fileInput").on("change", (e) => {
   }
 });
 
-$("#addStudentBtn").on("click", () => {
-  const name = nameInput.val();
-  const age = ageInput.val();
-  const parentPhone = parentPhoneInput.val();
-  if (!name || !age || !parentPhone) {
-    alert("الرجاء ملء جميع الحقول.");
-    return;
-  }
-  if (!/^(05|06|07)\d{8}$/.test(parentPhoneInput.val())) {
-    alert(
-      "رقم الهاتف غير صالح. يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام."
-    );
-    return;
-  }
-  if (!db) {
-    alert("لا يوجد قاعدة بيانات مفتوحة.");
-    return;
-  }
-  try {
-    db.run("INSERT INTO students (name, age, parent_phone) VALUES (?, ?, ?);", [
-      name,
-      age,
-      parentPhone,
-    ]);
-    saveToIndexedDB(db.export());
-    loadStudentsList();
-    resetNewStudentsFields();
-    alert("تم إضافة الطالب بنجاح.");
-  } catch (e) {
-    alert("Error: " + e.message);
-  }
-});
-// show student details
-$("#studentsListTable").on("click", "button.btn-info", function () {
-  const row = $(this).closest("tr");
-  const cells = row.find("td");
-  const studentDetails = {
-    id: cells.eq(0).text(),
-    name: cells.eq(1).text(),
-    age: cells.eq(2).text(),
-    parentPhone: cells.eq(3).text(),
-  };
-  alert(
-    `تفاصيل الطالب:\nالمعرف: ${studentDetails.id}\nالاسم: ${studentDetails.name}\nالعمر: ${studentDetails.age}\nهاتف الولي: ${studentDetails.parentPhone}`
-  );
-});
-// edit student
-$("#studentsListTable").on("click", "button.btn-secondary", function () {
-  const row = $(this).closest("tr");
-  const cells = row.find("td");
-  const studentId = cells.eq(0).text();
-  const name = cells.eq(1).text();
-  const age = cells.eq(2).text();
-  const parentPhone = cells.eq(3).text();
-  nameInput.val(name);
-  ageInput.val(age);
-  parentPhoneInput.val(parentPhone);
-
-  $("#addStudentBtn").before(updateStudentBtn);
-  updateStudentBtn.on("click", () => {
-    if (!db) {
-      alert("لا يوجد قاعدة بيانات مفتوحة.");
-      return;
-    }
-    if (!nameInput.val() || !ageInput.val() || !parentPhoneInput.val()) {
-      alert("الرجاء ملء جميع الحقول.");
-      return;
-    }
-    if (!/^(05|06|07)\d{8}$/.test(parentPhoneInput.val())) {
-      alert(
-        "رقم الهاتف غير صالح. يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام."
-      );
-      return;
-    }
-    try {
-      db.run(
-        "UPDATE students SET name = ?, age = ?, parent_phone = ? WHERE id = ?;",
-        [nameInput.val(), ageInput.val(), parentPhoneInput.val(), studentId]
-      );
-      saveToIndexedDB(db.export());
-      loadStudentsList();
-      resetNewStudentsFields();
-      alert("تم تعديل الطالب بنجاح.");
-    } catch (e) {
-      alert("Error: " + e.message);
-    }
-  });
-});
-// delete student
-$("#studentsListTable").on("click", "button.btn-danger", function () {
-  const row = $(this).closest("tr");
-  const cells = row.find("td");
-  const studentId = cells.eq(0).text();
-  if (!confirm("هل أنت متأكد أنك تريد حذف هذا الطالب؟")) {
-    return;
-  }
-  if (!db) {
-    alert("لا يوجد قاعدة بيانات مفتوحة.");
-    return;
-  }
-  try {
-    db.run("DELETE FROM students WHERE id = ?;", [studentId]);
-    saveToIndexedDB(db.export());
-    loadStudentsList();
-    alert("تم حذف الطالب بنجاح.");
-  } catch (e) {
-    alert("Error: " + e.message);
-  }
-});
-// reset form fields
 function showTab(tabId) {
   $(".tab-pane").removeClass("show active");
   $("#" + tabId).tab("show");
   if (tabId === "pills-students") {
     loadStudentsList();
-    resetNewStudentsFields();
+    newStudentInfosForm[0].reset();
   } else if (tabId === "pills-new_day") {
     loadDayStudentsList();
-    $("#newStudentDayModal").modal("hide");
+    newStudentDayModal.modal("hide");
   }
 }
 // Initialize the application
