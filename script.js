@@ -16,6 +16,10 @@ const newStudentInfosForm = $("#newStudentInfosForm");
 function loadStudentsList() {
   $("#studentsListTable").bootstrapTable("destroy");
   try {
+    if (!project_db) {
+      showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+      return;
+    }
     const results = project_db.exec("SELECT * FROM students;");
     if (!results.length) {
       showToast("info", "Query OK (no result)");
@@ -192,6 +196,18 @@ newStudentDayModal.on("show.bs.modal", function () {
   $("#behavior").attr("disabled", false);
   $("#prayer").attr("disabled", false);
   studentDayForm[0].reset();
+});
+
+$("#requirBook").on("change", function () {
+  if ($(this).val() === "القرآن") {
+    $("#quranSelectionSection1").show();
+    $("#quranSelectionSection2").show();
+    $("#requirQuantity").attr("readonly", true);
+  } else {
+    $("#quranSelectionSection1").hide();
+    $("#quranSelectionSection2").hide();
+    $("#requirQuantity").attr("readonly", false);
+  }
 });
 
 $("#attendance").on("change", function () {
@@ -559,15 +575,19 @@ function showToast(type, message) {
   );
   toast.on("hidden.bs.toast", function () {
     $(this).remove();
+    if ($(".toast-container").is(":empty")) {
+      $(".polite").css("z-index", "-1");
+    }
   });
+  $(".polite").css("z-index", "1050");
   $(".toast-container").append(toast);
   toast.toast("show");
 }
-showToast("info", "مرحباا بكم في تطبيق طلاب القرآن!");
 // Initialize the application
 init();
 
-const surahs = [
+// surah selects
+const surahsData = [
   {
     number: 1,
     name: "سُورَةُ ٱلْفَاتِحَةِ",
@@ -1139,32 +1159,141 @@ const surahs = [
     numberOfAyahs: 6,
   },
 ];
-const surahSelect = document.getElementById("surah-select");
+const secondAyahSelect = document.getElementById("second-ayah");
+const firstAyahSelect = document.getElementById("first-ayah");
+const secondSurahSelect = document.getElementById("second-surah");
+const firstSurahSelect = document.getElementById("first-surah");
 
-surahs.forEach((surah) => {
+let firstSurahAyahs = 0;
+let secondSurahAyahs = 0;
+
+const createOption = (value, text, dataset = {}) => {
   const option = document.createElement("option");
-  option.value = surah.number;
-  option.textContent = `${surah.number}. ${surah.name.replace("سُورَةُ","")}`;
-  surahSelect.appendChild(option);
-});
+  option.value = value;
+  option.textContent = text;
+  for (const key in dataset) {
+    option.dataset[key] = dataset[key];
+  }
+  return option;
+};
 
-surahSelect.addEventListener("change", function () {
-  const ayahSelect = document.getElementById("ayah-select");
-  ayahSelect.innerHTML = "";
-  ayahSelect.disabled = !this.value;
+// Populate surah dropdowns
+const populateSurahDropdown = (selectElement) => {
+  selectElement.innerHTML = "";
+  selectElement.appendChild(createOption("", "--  --"));
+  surahsData.forEach((surah) => {
+    selectElement.appendChild(
+      createOption(surah.number, `${surah.name.replace("سُورَةُ ", "")}`, {
+        ayahs: surah.numberOfAyahs,
+      })
+    );
+  });
+};
 
-  if (this.value) {
-    const selectedSurah = surahs.find((s) => s.number == this.value);
-    for (let i = 1; i <= selectedSurah.numberOfAyahs; i++) {
-      const option = document.createElement("option");
-      option.value = i;
-      option.textContent = i;
-      ayahSelect.appendChild(option);
+populateSurahDropdown(firstSurahSelect);
+populateSurahDropdown(secondSurahSelect);
+secondSurahSelect.disabled = true;
+
+// First Surah change
+firstSurahSelect.addEventListener("change", function () {
+  const firstSurahNumber = parseInt(this.value);
+
+  if (firstSurahNumber) {
+    const selectedOption = this.options[this.selectedIndex];
+    firstSurahAyahs = parseInt(selectedOption.dataset.ayahs);
+    firstAyahSelect.disabled = false;
+    firstAyahSelect.innerHTML = "";
+
+    for (let i = 1; i <= firstSurahAyahs; i++) {
+      firstAyahSelect.appendChild(createOption(i, i));
     }
+    firstAyahSelect.insertBefore(
+      createOption("", "--  --"),
+      firstAyahSelect.firstChild
+    );
   } else {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "-- Select surah first --";
-    ayahSelect.appendChild(option);
+    firstAyahSelect.disabled = true;
+    firstAyahSelect.innerHTML = "";
+    firstAyahSelect.appendChild(createOption("", "--  --"));
+  }
+
+  // Second Surah
+  if (firstSurahNumber) {
+    secondSurahSelect.disabled = false;
+    secondSurahSelect.innerHTML = "";
+
+    surahsData.forEach((surah) => {
+      if (surah.number >= firstSurahNumber) {
+        secondSurahSelect.appendChild(
+          createOption(surah.number, `${surah.name.replace("سُورَةُ ", "")}`, {
+            ayahs: surah.numberOfAyahs,
+          })
+        );
+      }
+    });
+
+    secondSurahSelect.insertBefore(
+      createOption("", "--  --"),
+      secondSurahSelect.firstChild
+    );
+    secondSurahSelect.dispatchEvent(new Event("change"));
+  } else {
+    secondSurahSelect.disabled = true;
+    secondSurahSelect.innerHTML = "";
+    secondSurahSelect.appendChild(createOption("", "--  --"));
+
+    secondAyahSelect.disabled = true;
+    secondAyahSelect.innerHTML = "";
+    secondAyahSelect.appendChild(createOption("", "--  --"));
   }
 });
+
+// Second Surah change
+secondSurahSelect.addEventListener("change", function () {
+  const secondSurahNumber = parseInt(this.value);
+  checkSecondSurahAyahs(secondSurahNumber);
+});
+firstAyahSelect.addEventListener("change", function () {
+  const secondSurahNumber = parseInt(this.value);
+  checkSecondSurahAyahs(secondSurahNumber);
+});
+
+function checkSecondSurahAyahs(secondSurahNumber) {
+  if (secondSurahNumber) {
+    let ll = 1;
+
+    if (
+      parseInt(firstSurahSelect.value) === parseInt(secondSurahSelect.value)
+    ) {
+      ll = parseInt(firstAyahSelect.value) || 1;
+    }
+
+    const selectedOption =
+      secondSurahSelect.options[secondSurahSelect.selectedIndex];
+    secondSurahAyahs = parseInt(selectedOption.dataset.ayahs);
+    secondAyahSelect.disabled = false;
+    secondAyahSelect.innerHTML = "";
+
+    for (let i = ll; i <= secondSurahAyahs; i++) {
+      secondAyahSelect.appendChild(createOption(i, i));
+    }
+    secondAyahSelect.insertBefore(
+      createOption("", "--  --"),
+      secondAyahSelect.firstChild
+    );
+  } else {
+    secondAyahSelect.disabled = true;
+    secondAyahSelect.innerHTML = "";
+    secondAyahSelect.appendChild(createOption("", "--  --"));
+  }
+}
+
+function countLines(text) {
+  const ctx = document.createElement("canvas").getContext("2d");
+  ctx.font = "22.4px Arial";
+  ctx.direction = "rtl"
+  return ctx.measureText(text).width / 378;
+}
+
+
+

@@ -218,20 +218,7 @@
               <span class="mx-2 text-muted">المطلوب</span>
               <hr class="flex-grow-1">
             </div>
-            <label for="surah-select">البداية:</label>
-            <div class="input-group mb-3">
-              <div class="input-group-prepend">
-                <select class="form-control" id="surah-select">
-                  <option value="">-- السورة --</option>
-                </select>
-              </div>
-              <div class="input-group-prepend">
-                <select class="form-control" id="ayah-select" disabled>
-                  <option value="">-- الآية --</option>
-                </select>
-              </div>
 
-            </div>
             <div class="row">
               <div class="col">
                 <div class="form-group">
@@ -254,6 +241,32 @@
                 </div>
               </div>
               <div class="w-100"></div>
+              <div class="col" id="quranSelectionSection1" style="display: none;">
+                <div class="form-group">
+                  <label>من:</label>
+                  <div class="row mx-0">
+                    <select id="first-surah" class="col form-control surah-select">
+                    </select>
+                    <select id="first-ayah" class="col-5 form-control ayah-select" disabled>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col"  id="quranSelectionSection2" style="display: none;">
+                <div class="form-group">
+                  <label>إلى:</label>
+                  <div class="row mx-0">
+                    <select id="second-surah" class="col form-control surah-select" disabled>
+                    </select>
+                    <select id="second-ayah" class="col-5 form-control ayah-select" disabled>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="w-100"></div>
+              <div class="card-body" id="quranSelectionSection" style="display: none;">
+
+              </div>
               <div class="col">
                 <div class="form-group">
                   <label for="requirQuantity">المقدار:</label>
@@ -333,7 +346,8 @@
   </div>
 
 
-  <div aria-live="polite" aria-atomic="true" class="polite d-flex justify-content-center align-items-start"">
+  <div aria-live="polite" aria-atomic="true" style="z-index: -1;"
+    class="polite d-flex justify-content-center align-items-start"">
     <div class=" toast-container"></div>
   </div>
 </body>
