@@ -1177,7 +1177,6 @@ const createOption = (value, text, dataset = {}) => {
   return option;
 };
 
-// Populate surah dropdowns
 const populateSurahDropdown = (selectElement) => {
   selectElement.innerHTML = "";
   selectElement.appendChild(createOption("", "--  --"));
@@ -1185,6 +1184,7 @@ const populateSurahDropdown = (selectElement) => {
     selectElement.appendChild(
       createOption(surah.number, `${surah.name.replace("سُورَةُ ", "")}`, {
         ayahs: surah.numberOfAyahs,
+        surahNum: surah.number,
       })
     );
   });
@@ -1194,7 +1194,36 @@ populateSurahDropdown(firstSurahSelect);
 populateSurahDropdown(secondSurahSelect);
 secondSurahSelect.disabled = true;
 
-// First Surah change
+function checkSecondSurahAyahs(secondSurahNumber) {
+  if (secondSurahNumber) {
+    let ll = 1;
+
+    if (
+      parseInt(firstSurahSelect.value) === parseInt(secondSurahSelect.value)
+    ) {
+      ll = parseInt(firstAyahSelect.value) || 1;
+    }
+
+    const selectedOption =
+      secondSurahSelect.options[secondSurahSelect.selectedIndex];
+    secondSurahAyahs = parseInt(selectedOption.dataset.ayahs);
+    secondAyahSelect.disabled = false;
+    secondAyahSelect.innerHTML = "";
+
+    for (let i = ll; i <= secondSurahAyahs; i++) {
+      secondAyahSelect.appendChild(createOption(i, i));
+    }
+    secondAyahSelect.insertBefore(
+      createOption("", "--  --"),
+      secondAyahSelect.firstChild
+    );
+  } else {
+    secondAyahSelect.disabled = true;
+    secondAyahSelect.innerHTML = "";
+    secondAyahSelect.appendChild(createOption("", "--  --"));
+  }
+}
+
 firstSurahSelect.addEventListener("change", function () {
   const firstSurahNumber = parseInt(this.value);
 
@@ -1227,6 +1256,7 @@ firstSurahSelect.addEventListener("change", function () {
         secondSurahSelect.appendChild(
           createOption(surah.number, `${surah.name.replace("سُورَةُ ", "")}`, {
             ayahs: surah.numberOfAyahs,
+            surahNum: surah.number,
           })
         );
       }
@@ -1246,54 +1276,125 @@ firstSurahSelect.addEventListener("change", function () {
     secondAyahSelect.innerHTML = "";
     secondAyahSelect.appendChild(createOption("", "--  --"));
   }
+  changeRequirQantity()
 });
 
-// Second Surah change
 secondSurahSelect.addEventListener("change", function () {
   const secondSurahNumber = parseInt(this.value);
   checkSecondSurahAyahs(secondSurahNumber);
+  changeRequirQantity()
 });
+
 firstAyahSelect.addEventListener("change", function () {
   const secondSurahNumber = parseInt(this.value);
   checkSecondSurahAyahs(secondSurahNumber);
+  changeRequirQantity()
 });
 
-function checkSecondSurahAyahs(secondSurahNumber) {
-  if (secondSurahNumber) {
-    let ll = 1;
+secondAyahSelect.addEventListener("change", function () {
+  changeRequirQantity()
+});
 
-    if (
-      parseInt(firstSurahSelect.value) === parseInt(secondSurahSelect.value)
-    ) {
-      ll = parseInt(firstAyahSelect.value) || 1;
-    }
-
-    const selectedOption =
-      secondSurahSelect.options[secondSurahSelect.selectedIndex];
-    secondSurahAyahs = parseInt(selectedOption.dataset.ayahs);
-    secondAyahSelect.disabled = false;
-    secondAyahSelect.innerHTML = "";
-
-    for (let i = ll; i <= secondSurahAyahs; i++) {
-      secondAyahSelect.appendChild(createOption(i, i));
-    }
-    secondAyahSelect.insertBefore(
-      createOption("", "--  --"),
-      secondAyahSelect.firstChild
-    );
-  } else {
-    secondAyahSelect.disabled = true;
-    secondAyahSelect.innerHTML = "";
-    secondAyahSelect.appendChild(createOption("", "--  --"));
-  }
-}
-
+// Function to count lines in a given text
 function countLines(text) {
   const ctx = document.createElement("canvas").getContext("2d");
   ctx.font = "22.4px Arial";
-  ctx.direction = "rtl"
+  ctx.direction = "rtl";
   return ctx.measureText(text).width / 378;
 }
 
+function changeRequirQantity() {
+  if (
+    !firstSurahSelect.value ||
+    !firstAyahSelect.value ||
+    !secondSurahSelect.value ||
+    !secondAyahSelect.value
+  ) {
+    $("#requirQuantity").val("");
+    return;
+  }
+  const query = generatelignCount(
+    getAyahDifference(
+      firstSurahSelect.options[firstSurahSelect.selectedIndex].dataset.surahNum,
+      firstAyahSelect.options[firstAyahSelect.selectedIndex].value,
+      secondSurahSelect.options[secondSurahSelect.selectedIndex].dataset.surahNum,
+      secondAyahSelect.options[secondAyahSelect.selectedIndex].value
+    )
+  );
+  const results = project_db.exec(query);
+  if (!results || !results.length || !results[0].values.length) {
+    $("#requirQuantity").val("");
+    return;
+  }
+  const totalLines = results[0].values[0][0];
+  $("#requirQuantity").val(totalLines);
+}
+// // Function to get the difference in ayahs between two surahs
+function getAyahDifference(surahNum1, ayahNum1, surahNum2, ayahNum2) {
+  // Find the surahs in the data
+  const surah1 = surahsData.find((s) => s.number === Number(surahNum1));
+  const surah2 = surahsData.find((s) => s.number === Number(surahNum2));
+
+  if (!surah1 || !surah2) {
+    throw new Error("One or both surahs not found");
+  }
+
+  // Generate the full ayah ranges for both surahs
+  let result = ""
+  if(surah1 === surah2){
+    result = [
+    {
+      number: surah1.number,
+      ayah: generateAyahRange(ayahNum1, ayahNum2),
+    },
+  ];
+  }else{
+    result = [
+    {
+      number: surah1.number,
+      ayah: generateAyahRange(ayahNum1, surah1.numberOfAyahs),
+    },
+    {
+      number: surah2.number,
+      ayah: generateAyahRange(1, ayahNum2),
+    },
+  ];
+  }
+
+  // Include all surahs between them if they're not consecutive
+  const start = Math.min(surah1.number, surah2.number);
+  const end = Math.max(surah1.number, surah2.number);
+
+  for (let i = start + 1; i < end; i++) {
+    const betweenSurah = surahsData.find((s) => s.number === i);
+    if (betweenSurah) {
+      result.splice(result.length - 1, 0, {
+        number: betweenSurah.number,
+        ayah: generateAyahRange(1, betweenSurah.numberOfAyahs),
+      });
+    }
+  }
+
+  return result;
+}
+
+function generateAyahRange(start, end) {
+  return `${start}-${end}`;
+}
 
 
+function generatelignCount(ranges) {
+  const conditions = ranges
+    .map((range) => {
+      const [start, end] = range.ayah.split("-").map(Number);
+      return `(sura = ${range.number} AND ayah BETWEEN ${start} AND ${end})`;
+    })
+    .join(" OR\n  ");
+
+  return `
+    SELECT 
+      ROUND(SUM(lign_count), 1) AS rounded_total
+    FROM quran_ayat
+    WHERE ${conditions};
+  `;
+}
