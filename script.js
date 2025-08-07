@@ -207,6 +207,7 @@ $("#requirBook").on("change", function () {
     $("#quranSelectionSection1").hide();
     $("#quranSelectionSection2").hide();
     $("#requirQuantity").attr("readonly", false);
+    $("#requirQuantity").val("")
   }
 });
 
@@ -509,6 +510,25 @@ function downloadDB() {
   a.href = URL.createObjectURL(blob);
   a.download = "mydb.sqlite";
   a.click();
+}
+
+async function fetchAndReadFile(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch file");
+
+    const blob = await response.blob();
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const result = event.target.result;
+      console.log("File content:", result);
+    };
+
+    reader.readAsText(blob); // or reader.readAsArrayBuffer(blob) / readAsDataURL(blob)
+  } catch (error) {
+    console.error("Error reading file:", error);
+  }
 }
 
 $("#downloadBtn").on("click", downloadDB);
@@ -1177,7 +1197,7 @@ const createOption = (value, text, dataset = {}) => {
   return option;
 };
 
-const populateSurahDropdown = (selectElement) => {
+const populateSurahDropdown = async (selectElement) => {
   selectElement.innerHTML = "";
   selectElement.appendChild(createOption("", "--  --"));
   surahsData.forEach((surah) => {
@@ -1204,8 +1224,7 @@ function checkSecondSurahAyahs(secondSurahNumber) {
       ll = parseInt(firstAyahSelect.value) || 1;
     }
 
-    const selectedOption =
-      secondSurahSelect.options[secondSurahSelect.selectedIndex];
+    const selectedOption = secondSurahSelect.options[secondSurahSelect.selectedIndex];
     secondSurahAyahs = parseInt(selectedOption.dataset.ayahs);
     secondAyahSelect.disabled = false;
     secondAyahSelect.innerHTML = "";
@@ -1217,6 +1236,7 @@ function checkSecondSurahAyahs(secondSurahNumber) {
       createOption("", "--  --"),
       secondAyahSelect.firstChild
     );
+    secondAyahSelect.dispatchEvent(new Event("change"));
   } else {
     secondAyahSelect.disabled = true;
     secondAyahSelect.innerHTML = "";
@@ -1224,7 +1244,7 @@ function checkSecondSurahAyahs(secondSurahNumber) {
   }
 }
 
-firstSurahSelect.addEventListener("change", function () {
+firstSurahSelect.addEventListener("change", async function () {
   const firstSurahNumber = parseInt(this.value);
 
   if (firstSurahNumber) {
@@ -1276,23 +1296,20 @@ firstSurahSelect.addEventListener("change", function () {
     secondAyahSelect.innerHTML = "";
     secondAyahSelect.appendChild(createOption("", "--  --"));
   }
-  changeRequirQantity()
 });
 
-secondSurahSelect.addEventListener("change", function () {
+secondSurahSelect.addEventListener("change", async function () {
   const secondSurahNumber = parseInt(this.value);
   checkSecondSurahAyahs(secondSurahNumber);
-  changeRequirQantity()
 });
 
-firstAyahSelect.addEventListener("change", function () {
+firstAyahSelect.addEventListener("change", async function () {
   const secondSurahNumber = parseInt(this.value);
   checkSecondSurahAyahs(secondSurahNumber);
-  changeRequirQantity()
 });
 
-secondAyahSelect.addEventListener("change", function () {
-  changeRequirQantity()
+secondAyahSelect.addEventListener("change", async function () {
+  changeRequirQantity();
 });
 
 // Function to count lines in a given text
@@ -1300,10 +1317,10 @@ function countLines(text) {
   const ctx = document.createElement("canvas").getContext("2d");
   ctx.font = "22.4px Arial";
   ctx.direction = "rtl";
-  return ctx.measureText(text).width / 378;
+  return ctx.measureText(text).width / (10*37.8);
 }
 
-function changeRequirQantity() {
+async function changeRequirQantity() {
   if (
     !firstSurahSelect.value ||
     !firstAyahSelect.value ||
@@ -1317,7 +1334,8 @@ function changeRequirQantity() {
     getAyahDifference(
       firstSurahSelect.options[firstSurahSelect.selectedIndex].dataset.surahNum,
       firstAyahSelect.options[firstAyahSelect.selectedIndex].value,
-      secondSurahSelect.options[secondSurahSelect.selectedIndex].dataset.surahNum,
+      secondSurahSelect.options[secondSurahSelect.selectedIndex].dataset
+        .surahNum,
       secondAyahSelect.options[secondAyahSelect.selectedIndex].value
     )
   );
@@ -1340,25 +1358,25 @@ function getAyahDifference(surahNum1, ayahNum1, surahNum2, ayahNum2) {
   }
 
   // Generate the full ayah ranges for both surahs
-  let result = ""
-  if(surah1 === surah2){
+  let result = "";
+  if (surah1 === surah2) {
     result = [
-    {
-      number: surah1.number,
-      ayah: generateAyahRange(ayahNum1, ayahNum2),
-    },
-  ];
-  }else{
+      {
+        number: surah1.number,
+        ayah: generateAyahRange(ayahNum1, ayahNum2),
+      },
+    ];
+  } else {
     result = [
-    {
-      number: surah1.number,
-      ayah: generateAyahRange(ayahNum1, surah1.numberOfAyahs),
-    },
-    {
-      number: surah2.number,
-      ayah: generateAyahRange(1, ayahNum2),
-    },
-  ];
+      {
+        number: surah1.number,
+        ayah: generateAyahRange(ayahNum1, surah1.numberOfAyahs),
+      },
+      {
+        number: surah2.number,
+        ayah: generateAyahRange(1, ayahNum2),
+      },
+    ];
   }
 
   // Include all surahs between them if they're not consecutive
@@ -1381,7 +1399,6 @@ function getAyahDifference(surahNum1, ayahNum1, surahNum2, ayahNum2) {
 function generateAyahRange(start, end) {
   return `${start}-${end}`;
 }
-
 
 function generatelignCount(ranges) {
   const conditions = ranges
