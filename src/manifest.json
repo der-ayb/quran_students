@@ -16,25 +16,25 @@
   "description": "A web application for Quran students.",
   "icons": [
     {
-      "src": "manifest-icon-192.maskable.png",
+      "src": "assets/manifest-icon-192.maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "manifest-icon-192.maskable.png",
+      "src": "assets/manifest-icon-192.maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "manifest-icon-512.maskable.png",
+      "src": "assets/manifest-icon-512.maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "manifest-icon-512.maskable.png",
+      "src": "assets/manifest-icon-512.maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -42,7 +42,7 @@
   ],
   "screenshots": [
     {
-      "src": "assets/screenshots/screen.png",
+      "src": "assets/manifest-icon-512.maskable.png",
       "sizes": "1617x1012",
       "type": "image/png"
     }
@@ -53,7 +53,7 @@
     "url": "/",
     "icons": [
       {
-        "src": "manifest-icon-192.maskable.png",
+        "src": "assets/manifest-icon-192.maskable.png",
         "sizes": "192x192",
         "type": "image/png"
       }

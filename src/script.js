@@ -11,23 +11,24 @@ const birthdayInput = $("#birthday");
 const parentPhoneInput = $("#parentPhone");
 const newStudentInfosModal = $("#newStudentInfosModal");
 const newStudentInfosForm = $("#newStudentInfosForm");
+const secondAyahSelect = document.getElementById("second-ayah");
+const firstAyahSelect = document.getElementById("first-ayah");
+const secondSurahSelect = document.getElementById("second-surah");
+const firstSurahSelect = document.getElementById("first-surah");
 
 // students tab
 function loadStudentsList() {
   $("#studentsListTable").bootstrapTable("destroy");
+  if (!project_db) {
+    showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    return;
+  }
   try {
-    if (!project_db) {
-      showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
-      return;
-    }
     const results = project_db.exec("SELECT * FROM students;");
-    if (!results.length) {
-      showToast("info", "Query OK (no result)");
-      return;
-    }
 
-    results.forEach((result) => {
-      const data = [];
+    const data = [];
+    if (results.length) {
+      const result = results[0];
       result.values.forEach((row) => {
         const dropdownDiv = document.createElement("div");
         dropdownDiv.className = "dropdown";
@@ -120,8 +121,8 @@ function loadStudentsList() {
           actions: dropdownDiv,
         });
       });
-      $("#studentsListTable").bootstrapTable({ data });
-    });
+    }
+    $("#studentsListTable").bootstrapTable({ data });
   } catch (e) {
     showToast("warning", "Error: " + e.message);
   }
@@ -207,7 +208,7 @@ $("#requirBook").on("change", function () {
     $("#quranSelectionSection1").hide();
     $("#quranSelectionSection2").hide();
     $("#requirQuantity").attr("readonly", false);
-    $("#requirQuantity").val("")
+    $("#requirQuantity").val("");
   }
 });
 
@@ -308,9 +309,7 @@ function update_day_module_evaluation(studentId) {
 function loadDayStudentsList() {
   $("#dayListTable").bootstrapTable("destroy");
   if (!project_db) {
-    $("#dayListTable tbody").append(
-      "<tr><td colspan='3'>لا توجد معلومات.</td></tr>"
-    );
+    showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
   }
   try {
@@ -343,14 +342,10 @@ function loadDayStudentsList() {
       ORDER BY 
         s.id 
       LIMIT 100`);
-    if (!results.length) {
-      showToast("info", "Query OK (no result)");
-      return;
-    }
 
-    console.log(results);
-    results.forEach((result) => {
-      const data = [];
+    const data = [];
+    if (results.length) {
+      const result = results[0];
       result.values.forEach((row) => {
         td = document.createElement("td");
         const editBtn = document.createElement("button");
@@ -418,10 +413,10 @@ function loadDayStudentsList() {
           actions: editBtn,
         });
       });
-      $("#dayListTable").bootstrapTable({ data });
-      // dayDateInput.prependTo('.fixed-table-toolbar');
-      // dayDateInput.addClass("float-left search form-control col-4");
-    });
+    }
+    $("#dayListTable").bootstrapTable({ data });
+    // dayDateInput.prependTo('.fixed-table-toolbar');
+    // dayDateInput.addClass("float-left search form-control col-4");
   } catch (e) {
     showToast("error", "Error: " + e.message);
   }
@@ -438,14 +433,18 @@ async function init() {
     if (savedData) {
       project_db = new SQL.Database(new Uint8Array(savedData));
     } else {
-      showToast("info", "no previous database in indexedDB!");
+      if (!confirm("ليس لديك قاعدة بيانات، هل تريد انشاء قاعدة جديدة؟")) {
+        return;
+      }
+      $("#loadingModal").modal("show");
+      fetchAndReadFile(
+        "https://der-ayb.github.io/quran_students/default.sqlite"
+      );
     }
   });
-
-  dayDateInput.val(new Date().toISOString().slice(0, 10)).change();
 }
 
-function openDatabase(callback) {
+async function openDatabase(callback) {
   const request = indexedDB.open(DB_KEY, 1);
 
   request.onupgradeneeded = function (event) {
@@ -465,7 +464,7 @@ function openDatabase(callback) {
   };
 }
 
-function saveToIndexedDB(data) {
+async function saveToIndexedDB(data) {
   openDatabase((idb) => {
     const tx = idb.transaction(DB_STORE_NAME, "readwrite");
     const store = tx.objectStore(DB_STORE_NAME);
@@ -474,7 +473,7 @@ function saveToIndexedDB(data) {
   });
 }
 
-function loadFromIndexedDB(callback) {
+async function loadFromIndexedDB(callback) {
   openDatabase((idb) => {
     const tx = idb.transaction(DB_STORE_NAME, "readonly");
     const store = tx.objectStore(DB_STORE_NAME);
@@ -491,7 +490,7 @@ function loadFromIndexedDB(callback) {
   });
 }
 
-function loadDBFromFile(file) {
+async function loadDBFromFile(file) {
   const reader = new FileReader();
   reader.onload = function () {
     const uInt8Array = new Uint8Array(reader.result);
@@ -503,7 +502,7 @@ function loadDBFromFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
-function downloadDB() {
+async function downloadDB() {
   const data = project_db.export();
   const blob = new Blob([data], { type: "application/octet-stream" });
   const a = document.createElement("a");
@@ -516,18 +515,22 @@ async function fetchAndReadFile(url) {
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch file");
-
     const blob = await response.blob();
-
     const reader = new FileReader();
-    reader.onload = function(event) {
-      const result = event.target.result;
-      console.log("File content:", result);
+    reader.onload = function (event) {
+      const uInt8Array = new Uint8Array(reader.result);
+      project_db = new SQL.Database(uInt8Array);
+      saveToIndexedDB(project_db.export());
+      loadStudentsList();
+      setTimeout(function () {
+        $("#loadingModal").modal("hide");
+        showToast("success", "Database loaded.");
+      }, 2000);
     };
 
-    reader.readAsText(blob); // or reader.readAsArrayBuffer(blob) / readAsDataURL(blob)
+    reader.readAsArrayBuffer(blob); // or reader.readAsArrayBuffer(blob) / readAsDataURL(blob)
   } catch (error) {
-    console.error("Error reading file:", error);
+    showToast("error", "Error reading file:", error);
   }
 }
 
@@ -551,7 +554,11 @@ function showTab(tabId) {
     loadStudentsList();
     newStudentInfosForm[0].reset();
   } else if (tabId === "pills-new_day") {
-    loadDayStudentsList();
+    if (!dayDateInput.val()) {
+      dayDateInput.val(new Date().toISOString().slice(0, 10)).change();
+    } else {
+      loadDayStudentsList();
+    }
     newStudentDayModal.modal("hide");
   }
 }
@@ -1179,10 +1186,6 @@ const surahsData = [
     numberOfAyahs: 6,
   },
 ];
-const secondAyahSelect = document.getElementById("second-ayah");
-const firstAyahSelect = document.getElementById("first-ayah");
-const secondSurahSelect = document.getElementById("second-surah");
-const firstSurahSelect = document.getElementById("first-surah");
 
 let firstSurahAyahs = 0;
 let secondSurahAyahs = 0;
@@ -1224,7 +1227,8 @@ function checkSecondSurahAyahs(secondSurahNumber) {
       ll = parseInt(firstAyahSelect.value) || 1;
     }
 
-    const selectedOption = secondSurahSelect.options[secondSurahSelect.selectedIndex];
+    const selectedOption =
+      secondSurahSelect.options[secondSurahSelect.selectedIndex];
     secondSurahAyahs = parseInt(selectedOption.dataset.ayahs);
     secondAyahSelect.disabled = false;
     secondAyahSelect.innerHTML = "";
@@ -1317,7 +1321,7 @@ function countLines(text) {
   const ctx = document.createElement("canvas").getContext("2d");
   ctx.font = "22.4px Arial";
   ctx.direction = "rtl";
-  return ctx.measureText(text).width / (10*37.8);
+  return ctx.measureText(text).width / (10 * 37.8);
 }
 
 async function changeRequirQantity() {
