@@ -25,9 +25,15 @@
     <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
       <button id="install" hidden>Install</button>
       <h1 class="text-center">تطبيق متابعة الحفظ</h1>
-      <input type="file" id="fileInput" />
-      <button id="downloadBtn">💾 Export DB</button>
-      <h2>Login</h2>
+      <div class="files-inputs">
+        <input type="file" id="fileInput">
+        <label for="fileInput">📥 استيراد</label>
+      </div>
+      <div class="files-inputs">
+        <button id="downloadBtn"></button>
+        <label for="downloadBtn">📤 تصدير</label>
+      </div>
+      
       <div id="loginUI">
         <div id="firebaseui-auth-container"></div>
       </div>

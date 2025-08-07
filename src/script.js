@@ -15,60 +15,6 @@ const secondAyahSelect = document.getElementById("second-ayah");
 const firstAyahSelect = document.getElementById("first-ayah");
 const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
-// main.js
-
-let installPrompt = null;
-const installButton = document.querySelector("#install");
-
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  installPrompt = event;
-  installButton.removeAttribute("hidden");
-});
-// main.js
-
-installButton.addEventListener("click", async () => {
-  if (!installPrompt) {
-    return;
-  }
-  const result = await installPrompt.prompt();
-  console.log(`Install prompt was: ${result.outcome}`);
-  disableInAppInstallPrompt();
-});
-
-function disableInAppInstallPrompt() {
-  installPrompt = null;
-  installButton.setAttribute("hidden", "");
-}
-// main.js
-
-window.addEventListener("appinstalled", () => {
-  disableInAppInstallPrompt();
-});
-
-function disableInAppInstallPrompt() {
-  installPrompt = null;
-  installButton.setAttribute("hidden", "");
-}
-const relatedApps = navigator.getInstalledRelatedApps();
-
-// Search for a specific installed platform-specific app
-const psApp = relatedApps.find((app) => app.id === "com.example.myapp");
-
-if (psApp) {
-  // Update UI as appropriate
-}
-window.addEventListener("beforeinstallprompt", async (event) => {
-  const relatedApps = await navigator.getInstalledRelatedApps();
-
-  // Search for a specific installed platform-specific app
-  const psApp = relatedApps.find((app) => app.id === "com.example.myapp");
-
-  if (psApp) {
-    event.preventDefault();
-    // Update UI as appropriate
-  }
-});
 
 
 // students tab
@@ -488,13 +434,13 @@ async function init() {
     if (savedData) {
       project_db = new SQL.Database(new Uint8Array(savedData));
     } else {
-      if (!confirm("ليس لديك قاعدة بيانات، هل تريد انشاء قاعدة جديدة؟")) {
-        return;
-      }
-      $("#loadingModal").modal("show");
-      fetchAndReadFile(
-        "https://der-ayb.github.io/quran_students/default.sqlite"
-      );
+      $(".mobile-nav").hide()
+      
+      // $("#loadingModal").modal("show");
+      
+      // fetchAndReadFile(
+      //   "https://der-ayb.github.io/quran_students/default.sqlite"
+      // );
     }
   });
 }
@@ -551,7 +497,6 @@ async function loadDBFromFile(file) {
     const uInt8Array = new Uint8Array(reader.result);
     project_db = new SQL.Database(uInt8Array);
     saveToIndexedDB(project_db.export());
-    loadStudentsList();
     showToast("success", "Database loaded.");
   };
   reader.readAsArrayBuffer(file);
@@ -576,7 +521,6 @@ async function fetchAndReadFile(url) {
       const uInt8Array = new Uint8Array(reader.result);
       project_db = new SQL.Database(uInt8Array);
       saveToIndexedDB(project_db.export());
-      loadStudentsList();
       setTimeout(function () {
         $("#loadingModal").modal("hide");
         showToast("success", "Database loaded.");
