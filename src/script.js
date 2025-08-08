@@ -700,7 +700,6 @@ const createOption = (value, text, dataset = {}) => {
 const checkSecondSurahAyahs = (secondSurahNumber) => {
   if (secondSurahNumber) {
     let ll = 1;
-
     if (
       parseInt(firstSurahSelect.value) === parseInt(secondSurahSelect.value)
     ) {
@@ -746,37 +745,24 @@ firstSurahSelect.addEventListener("change", async function () {
       createOption("", "--  --"),
       firstAyahSelect.firstChild
     );
+  
+    secondSurahSelect.disabled = false;
+    secondSurahSelect.value = firstSurahNumber;
+    surahsData.forEach((surah) => {
+      if (surah.number < firstSurahNumber) {
+        secondSurahSelect.querySelector('option[value="'+surah.number+'"]').style.display = 'none';
+      }else{
+        secondSurahSelect.querySelector('option[value="'+surah.number+'"]').style.display = 'block';
+      }
+    });
+    secondSurahSelect.dispatchEvent(new Event("change"));
   } else {
     firstAyahSelect.disabled = true;
     firstAyahSelect.innerHTML = "";
     firstAyahSelect.appendChild(createOption("", "--  --"));
-  }
 
-  // Second Surah
-  if (firstSurahNumber) {
-    secondSurahSelect.disabled = false;
-    secondSurahSelect.innerHTML = "";
-
-    surahsData.forEach((surah) => {
-      if (surah.number >= firstSurahNumber) {
-        secondSurahSelect.appendChild(
-          createOption(surah.number, `${surah.name}`, {
-            ayahs: surah.numberOfAyahs,
-            surahNum: surah.number,
-          })
-        );
-      }
-    });
-
-    secondSurahSelect.insertBefore(
-      createOption("", "--  --"),
-      secondSurahSelect.firstChild
-    );
-    secondSurahSelect.dispatchEvent(new Event("change"));
-  } else {
     secondSurahSelect.disabled = true;
-    secondSurahSelect.innerHTML = "";
-    secondSurahSelect.appendChild(createOption("", "--  --"));
+    secondSurahSelect.querySelector('option').style.display = 'none';
 
     secondAyahSelect.disabled = true;
     secondAyahSelect.innerHTML = "";

@@ -25,15 +25,6 @@
     <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
       <button id="install" hidden>Install</button>
       <h1 class="text-center">تطبيق متابعة الحفظ</h1>
-      <div class="files-inputs">
-        <input type="file" id="fileInput">
-        <label for="fileInput">📥 استيراد</label>
-      </div>
-      <div class="files-inputs">
-        <button id="downloadBtn"></button>
-        <label for="downloadBtn">📤 تصدير</label>
-      </div>
-      
       <div id="loginUI">
         <div id="firebaseui-auth-container"></div>
       </div>
@@ -129,14 +120,20 @@
             <h2 class="mb-0">
               <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
                 data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                Collapsible Group Item #3
+                البيانات
               </button>
             </h2>
           </div>
           <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
             <div class="card-body">
-              And lastly, the placeholder content for the third and final accordion panel. This panel is hidden by
-              default.
+              <div class="files-inputs">
+                <input type="file" id="fileInput">
+                <label for="fileInput">📥 استيراد</label>
+              </div>
+              <div class="files-inputs">
+                <button id="downloadBtn"></button>
+                <label for="downloadBtn">📤 تصدير</label>
+              </div>
             </div>
           </div>
         </div>
