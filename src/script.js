@@ -1,5 +1,5 @@
 // script.js
-let project_db, SQL, currentDay;
+let project_db,quran_db, SQL, currentDay;
 const DB_STORE_NAME = "sqlite-db2";
 const DB_KEY = "mydb";
 const dayDateInput = $("#dayDate");
@@ -616,572 +616,572 @@ init();
 const surahsData = [
   {
     number: 1,
-    name: "سُورَةُ ٱلْفَاتِحَةِ",
+    name: "ٱلْفَاتِحَةِ",
     numberOfAyahs: 7,
   },
   {
     number: 2,
-    name: "سُورَةُ البَقَرَةِ",
+    name: "البَقَرَةِ",
     numberOfAyahs: 286,
   },
   {
     number: 3,
-    name: "سُورَةُ آلِ عِمۡرَانَ",
+    name: "آلِ عِمۡرَانَ",
     numberOfAyahs: 200,
   },
   {
     number: 4,
-    name: "سُورَةُ النِّسَاءِ",
+    name: "النِّسَاءِ",
     numberOfAyahs: 176,
   },
   {
     number: 5,
-    name: "سُورَةُ المَائـِدَةِ",
+    name: "المَائـِدَةِ",
     numberOfAyahs: 120,
   },
   {
     number: 6,
-    name: "سُورَةُ الأَنۡعَامِ",
+    name: "الأَنۡعَامِ",
     numberOfAyahs: 165,
   },
   {
     number: 7,
-    name: "سُورَةُ الأَعۡرَافِ",
+    name: "الأَعۡرَافِ",
     numberOfAyahs: 206,
   },
   {
     number: 8,
-    name: "سُورَةُ الأَنفَالِ",
+    name: "الأَنفَالِ",
     numberOfAyahs: 75,
   },
   {
     number: 9,
-    name: "سُورَةُ التَّوۡبَةِ",
+    name: "التَّوۡبَةِ",
     numberOfAyahs: 129,
   },
   {
     number: 10,
-    name: "سُورَةُ يُونُسَ",
+    name: "يُونُسَ",
     numberOfAyahs: 109,
   },
   {
     number: 11,
-    name: "سُورَةُ هُودٍ",
+    name: "هُودٍ",
     numberOfAyahs: 123,
   },
   {
     number: 12,
-    name: "سُورَةُ يُوسُفَ",
+    name: "يُوسُفَ",
     numberOfAyahs: 111,
   },
   {
     number: 13,
-    name: "سُورَةُ الرَّعۡدِ",
+    name: "الرَّعۡدِ",
     numberOfAyahs: 43,
   },
   {
     number: 14,
-    name: "سُورَةُ إِبۡرَاهِيمَ",
+    name: "إِبۡرَاهِيمَ",
     numberOfAyahs: 52,
   },
   {
     number: 15,
-    name: "سُورَةُ الحِجۡرِ",
+    name: "الحِجۡرِ",
     numberOfAyahs: 99,
   },
   {
     number: 16,
-    name: "سُورَةُ النَّحۡلِ",
+    name: "النَّحۡلِ",
     numberOfAyahs: 128,
   },
   {
     number: 17,
-    name: "سُورَةُ الإِسۡرَاءِ",
+    name: "الإِسۡرَاءِ",
     numberOfAyahs: 111,
   },
   {
     number: 18,
-    name: "سُورَةُ الكَهۡفِ",
+    name: "الكَهۡفِ",
     numberOfAyahs: 110,
   },
   {
     number: 19,
-    name: "سُورَةُ مَرۡيَمَ",
+    name: "مَرۡيَمَ",
     numberOfAyahs: 98,
   },
   {
     number: 20,
-    name: "سُورَةُ طه",
+    name: "طه",
     numberOfAyahs: 135,
   },
   {
     number: 21,
-    name: "سُورَةُ الأَنبِيَاءِ",
+    name: "الأَنبِيَاءِ",
     numberOfAyahs: 112,
   },
   {
     number: 22,
-    name: "سُورَةُ الحَجِّ",
+    name: "الحَجِّ",
     numberOfAyahs: 78,
   },
   {
     number: 23,
-    name: "سُورَةُ المُؤۡمِنُونَ",
+    name: "المُؤۡمِنُونَ",
     numberOfAyahs: 118,
   },
   {
     number: 24,
-    name: "سُورَةُ النُّورِ",
+    name: "النُّورِ",
     numberOfAyahs: 64,
   },
   {
     number: 25,
-    name: "سُورَةُ الفُرۡقَانِ",
+    name: "الفُرۡقَانِ",
     numberOfAyahs: 77,
   },
   {
     number: 26,
-    name: "سُورَةُ الشُّعَرَاءِ",
+    name: "الشُّعَرَاءِ",
     numberOfAyahs: 227,
   },
   {
     number: 27,
-    name: "سُورَةُ النَّمۡلِ",
+    name: "النَّمۡلِ",
     numberOfAyahs: 93,
   },
   {
     number: 28,
-    name: "سُورَةُ القَصَصِ",
+    name: "القَصَصِ",
     numberOfAyahs: 88,
   },
   {
     number: 29,
-    name: "سُورَةُ العَنكَبُوتِ",
+    name: "العَنكَبُوتِ",
     numberOfAyahs: 69,
   },
   {
     number: 30,
-    name: "سُورَةُ الرُّومِ",
+    name: "الرُّومِ",
     numberOfAyahs: 60,
   },
   {
     number: 31,
-    name: "سُورَةُ لُقۡمَانَ",
+    name: "لُقۡمَانَ",
     numberOfAyahs: 34,
   },
   {
     number: 32,
-    name: "سُورَةُ السَّجۡدَةِ",
+    name: "السَّجۡدَةِ",
     numberOfAyahs: 30,
   },
   {
     number: 33,
-    name: "سُورَةُ الأَحۡزَابِ",
+    name: "الأَحۡزَابِ",
     numberOfAyahs: 73,
   },
   {
     number: 34,
-    name: "سُورَةُ سَبَإٍ",
+    name: "سَبَإٍ",
     numberOfAyahs: 54,
   },
   {
     number: 35,
-    name: "سُورَةُ فَاطِرٍ",
+    name: "فَاطِرٍ",
     numberOfAyahs: 45,
   },
   {
     number: 36,
-    name: "سُورَةُ يسٓ",
+    name: "يسٓ",
     numberOfAyahs: 83,
   },
   {
     number: 37,
-    name: "سُورَةُ الصَّافَّاتِ",
+    name: "الصَّافَّاتِ",
     numberOfAyahs: 182,
   },
   {
     number: 38,
-    name: "سُورَةُ صٓ",
+    name: "صٓ",
     numberOfAyahs: 88,
   },
   {
     number: 39,
-    name: "سُورَةُ الزُّمَرِ",
+    name: "الزُّمَرِ",
     numberOfAyahs: 75,
   },
   {
     number: 40,
-    name: "سُورَةُ غَافِرٍ",
+    name: "غَافِرٍ",
     numberOfAyahs: 85,
   },
   {
     number: 41,
-    name: "سُورَةُ فُصِّلَتۡ",
+    name: "فُصِّلَتۡ",
     numberOfAyahs: 54,
   },
   {
     number: 42,
-    name: "سُورَةُ الشُّورَىٰ",
+    name: "الشُّورَىٰ",
     numberOfAyahs: 53,
   },
   {
     number: 43,
-    name: "سُورَةُ الزُّخۡرُفِ",
+    name: "الزُّخۡرُفِ",
     numberOfAyahs: 89,
   },
   {
     number: 44,
-    name: "سُورَةُ الدُّخَانِ",
+    name: "الدُّخَانِ",
     numberOfAyahs: 59,
   },
   {
     number: 45,
-    name: "سُورَةُ الجَاثِيَةِ",
+    name: "الجَاثِيَةِ",
     numberOfAyahs: 37,
   },
   {
     number: 46,
-    name: "سُورَةُ الأَحۡقَافِ",
+    name: "الأَحۡقَافِ",
     numberOfAyahs: 35,
   },
   {
     number: 47,
-    name: "سُورَةُ مُحَمَّدٍ",
+    name: "مُحَمَّدٍ",
     numberOfAyahs: 38,
   },
   {
     number: 48,
-    name: "سُورَةُ الفَتۡحِ",
+    name: "الفَتۡحِ",
     numberOfAyahs: 29,
   },
   {
     number: 49,
-    name: "سُورَةُ الحُجُرَاتِ",
+    name: "الحُجُرَاتِ",
     numberOfAyahs: 18,
   },
   {
     number: 50,
-    name: "سُورَةُ قٓ",
+    name: "قٓ",
     numberOfAyahs: 45,
   },
   {
     number: 51,
-    name: "سُورَةُ الذَّارِيَاتِ",
+    name: "الذَّارِيَاتِ",
     numberOfAyahs: 60,
   },
   {
     number: 52,
-    name: "سُورَةُ الطُّورِ",
+    name: "الطُّورِ",
     numberOfAyahs: 49,
   },
   {
     number: 53,
-    name: "سُورَةُ النَّجۡمِ",
+    name: "النَّجۡمِ",
     numberOfAyahs: 62,
   },
   {
     number: 54,
-    name: "سُورَةُ القَمَرِ",
+    name: "القَمَرِ",
     numberOfAyahs: 55,
   },
   {
     number: 55,
-    name: "سُورَةُ الرَّحۡمَٰن",
+    name: "الرَّحۡمَٰن",
     numberOfAyahs: 78,
   },
   {
     number: 56,
-    name: "سُورَةُ الوَاقِعَةِ",
+    name: "الوَاقِعَةِ",
     numberOfAyahs: 96,
   },
   {
     number: 57,
-    name: "سُورَةُ الحَدِيدِ",
+    name: "الحَدِيدِ",
     numberOfAyahs: 29,
   },
   {
     number: 58,
-    name: "سُورَةُ المُجَادلَةِ",
+    name: "المُجَادلَةِ",
     numberOfAyahs: 22,
   },
   {
     number: 59,
-    name: "سُورَةُ الحَشۡرِ",
+    name: "الحَشۡرِ",
     numberOfAyahs: 24,
   },
   {
     number: 60,
-    name: "سُورَةُ المُمۡتَحنَةِ",
+    name: "المُمۡتَحنَةِ",
     numberOfAyahs: 13,
   },
   {
     number: 61,
-    name: "سُورَةُ الصَّفِّ",
+    name: "الصَّفِّ",
     numberOfAyahs: 14,
   },
   {
     number: 62,
-    name: "سُورَةُ الجُمُعَةِ",
+    name: "الجُمُعَةِ",
     numberOfAyahs: 11,
   },
   {
     number: 63,
-    name: "سُورَةُ المُنَافِقُونَ",
+    name: "المُنَافِقُونَ",
     numberOfAyahs: 11,
   },
   {
     number: 64,
-    name: "سُورَةُ التَّغَابُنِ",
+    name: "التَّغَابُنِ",
     numberOfAyahs: 18,
   },
   {
     number: 65,
-    name: "سُورَةُ الطَّلَاقِ",
+    name: "الطَّلَاقِ",
     numberOfAyahs: 12,
   },
   {
     number: 66,
-    name: "سُورَةُ التَّحۡرِيمِ",
+    name: "التَّحۡرِيمِ",
     numberOfAyahs: 12,
   },
   {
     number: 67,
-    name: "سُورَةُ المُلۡكِ",
+    name: "المُلۡكِ",
     numberOfAyahs: 30,
   },
   {
     number: 68,
-    name: "سُورَةُ القَلَمِ",
+    name: "القَلَمِ",
     numberOfAyahs: 52,
   },
   {
     number: 69,
-    name: "سُورَةُ الحَاقَّةِ",
+    name: "الحَاقَّةِ",
     numberOfAyahs: 52,
   },
   {
     number: 70,
-    name: "سُورَةُ المَعَارِجِ",
+    name: "المَعَارِجِ",
     numberOfAyahs: 44,
   },
   {
     number: 71,
-    name: "سُورَةُ نُوحٍ",
+    name: "نُوحٍ",
     numberOfAyahs: 28,
   },
   {
     number: 72,
-    name: "سُورَةُ الجِنِّ",
+    name: "الجِنِّ",
     numberOfAyahs: 28,
   },
   {
     number: 73,
-    name: "سُورَةُ المُزَّمِّلِ",
+    name: "المُزَّمِّلِ",
     numberOfAyahs: 20,
   },
   {
     number: 74,
-    name: "سُورَةُ المُدَّثِّرِ",
+    name: "المُدَّثِّرِ",
     numberOfAyahs: 56,
   },
   {
     number: 75,
-    name: "سُورَةُ القِيَامَةِ",
+    name: "القِيَامَةِ",
     numberOfAyahs: 40,
   },
   {
     number: 76,
-    name: "سُورَةُ الإِنسَانِ",
+    name: "الإِنسَانِ",
     numberOfAyahs: 31,
   },
   {
     number: 77,
-    name: "سُورَةُ المُرۡسَلَاتِ",
+    name: "المُرۡسَلَاتِ",
     numberOfAyahs: 50,
   },
   {
     number: 78,
-    name: "سُورَةُ النَّبَإِ",
+    name: "النَّبَإِ",
     numberOfAyahs: 40,
   },
   {
     number: 79,
-    name: "سُورَةُ النَّازِعَاتِ",
+    name: "النَّازِعَاتِ",
     numberOfAyahs: 46,
   },
   {
     number: 80,
-    name: "سُورَةُ عَبَسَ",
+    name: "عَبَسَ",
     numberOfAyahs: 42,
   },
   {
     number: 81,
-    name: "سُورَةُ التَّكۡوِيرِ",
+    name: "التَّكۡوِيرِ",
     numberOfAyahs: 29,
   },
   {
     number: 82,
-    name: "سُورَةُ الانفِطَارِ",
+    name: "الانفِطَارِ",
     numberOfAyahs: 19,
   },
   {
     number: 83,
-    name: "سُورَةُ المُطَفِّفِينَ",
+    name: "المُطَفِّفِينَ",
     numberOfAyahs: 36,
   },
   {
     number: 84,
-    name: "سُورَةُ الانشِقَاقِ",
+    name: "الانشِقَاقِ",
     numberOfAyahs: 25,
   },
   {
     number: 85,
-    name: "سُورَةُ البُرُوجِ",
+    name: "البُرُوجِ",
     numberOfAyahs: 22,
   },
   {
     number: 86,
-    name: "سُورَةُ الطَّارِقِ",
+    name: "الطَّارِقِ",
     numberOfAyahs: 17,
   },
   {
     number: 87,
-    name: "سُورَةُ الأَعۡلَىٰ",
+    name: "الأَعۡلَىٰ",
     numberOfAyahs: 19,
   },
   {
     number: 88,
-    name: "سُورَةُ الغَاشِيَةِ",
+    name: "الغَاشِيَةِ",
     numberOfAyahs: 26,
   },
   {
     number: 89,
-    name: "سُورَةُ الفَجۡرِ",
+    name: "الفَجۡرِ",
     numberOfAyahs: 30,
   },
   {
     number: 90,
-    name: "سُورَةُ البَلَدِ",
+    name: "البَلَدِ",
     numberOfAyahs: 20,
   },
   {
     number: 91,
-    name: "سُورَةُ الشَّمۡسِ",
+    name: "الشَّمۡسِ",
     numberOfAyahs: 15,
   },
   {
     number: 92,
-    name: "سُورَةُ اللَّيۡلِ",
+    name: "اللَّيۡلِ",
     numberOfAyahs: 21,
   },
   {
     number: 93,
-    name: "سُورَةُ الضُّحَىٰ",
+    name: "الضُّحَىٰ",
     numberOfAyahs: 11,
   },
   {
     number: 94,
-    name: "سُورَةُ الشَّرۡحِ",
+    name: "الشَّرۡحِ",
     numberOfAyahs: 8,
   },
   {
     number: 95,
-    name: "سُورَةُ التِّينِ",
+    name: "التِّينِ",
     numberOfAyahs: 8,
   },
   {
     number: 96,
-    name: "سُورَةُ العَلَقِ",
+    name: "العَلَقِ",
     numberOfAyahs: 19,
   },
   {
     number: 97,
-    name: "سُورَةُ القَدۡرِ",
+    name: "القَدۡرِ",
     numberOfAyahs: 5,
   },
   {
     number: 98,
-    name: "سُورَةُ البَيِّنَةِ",
+    name: "البَيِّنَةِ",
     numberOfAyahs: 8,
   },
   {
     number: 99,
-    name: "سُورَةُ الزَّلۡزَلَةِ",
+    name: "الزَّلۡزَلَةِ",
     numberOfAyahs: 8,
   },
   {
     number: 100,
-    name: "سُورَةُ العَادِيَاتِ",
+    name: "العَادِيَاتِ",
     numberOfAyahs: 11,
   },
   {
     number: 101,
-    name: "سُورَةُ القَارِعَةِ",
+    name: "القَارِعَةِ",
     numberOfAyahs: 11,
   },
   {
     number: 102,
-    name: "سُورَةُ التَّكَاثُرِ",
+    name: "التَّكَاثُرِ",
     numberOfAyahs: 8,
   },
   {
     number: 103,
-    name: "سُورَةُ العَصۡرِ",
+    name: "العَصۡرِ",
     numberOfAyahs: 3,
   },
   {
     number: 104,
-    name: "سُورَةُ الهُمَزَةِ",
+    name: "الهُمَزَةِ",
     numberOfAyahs: 9,
   },
   {
     number: 105,
-    name: "سُورَةُ الفِيلِ",
+    name: "الفِيلِ",
     numberOfAyahs: 5,
   },
   {
     number: 106,
-    name: "سُورَةُ قُرَيۡشٍ",
+    name: "قُرَيۡشٍ",
     numberOfAyahs: 4,
   },
   {
     number: 107,
-    name: "سُورَةُ المَاعُونِ",
+    name: "المَاعُونِ",
     numberOfAyahs: 7,
   },
   {
     number: 108,
-    name: "سُورَةُ الكَوۡثَرِ",
+    name: "الكَوۡثَرِ",
     numberOfAyahs: 3,
   },
   {
     number: 109,
-    name: "سُورَةُ الكَافِرُونَ",
+    name: "الكَافِرُونَ",
     numberOfAyahs: 6,
   },
   {
     number: 110,
-    name: "سُورَةُ النَّصۡرِ",
+    name: "النَّصۡرِ",
     numberOfAyahs: 3,
   },
   {
     number: 111,
-    name: "سُورَةُ المَسَدِ",
+    name: "المَسَدِ",
     numberOfAyahs: 5,
   },
   {
     number: 112,
-    name: "سُورَةُ الإِخۡلَاصِ",
+    name: "الإِخۡلَاصِ",
     numberOfAyahs: 4,
   },
   {
     number: 113,
-    name: "سُورَةُ الفَلَقِ",
+    name: "الفَلَقِ",
     numberOfAyahs: 5,
   },
   {
     number: 114,
-    name: "سُورَةُ النَّاسِ",
+    name: "النَّاسِ",
     numberOfAyahs: 6,
   },
 ];
@@ -1204,7 +1204,7 @@ const populateSurahDropdown = async (selectElement) => {
   selectElement.appendChild(createOption("", "--  --"));
   surahsData.forEach((surah) => {
     selectElement.appendChild(
-      createOption(surah.number, `${surah.name.replace("سُورَةُ ", "")}`, {
+      createOption(surah.number, `${surah.name}`, {
         ayahs: surah.numberOfAyahs,
         surahNum: surah.number,
       })
@@ -1277,7 +1277,7 @@ firstSurahSelect.addEventListener("change", async function () {
     surahsData.forEach((surah) => {
       if (surah.number >= firstSurahNumber) {
         secondSurahSelect.appendChild(
-          createOption(surah.number, `${surah.name.replace("سُورَةُ ", "")}`, {
+          createOption(surah.number, `${surah.name}`, {
             ayahs: surah.numberOfAyahs,
             surahNum: surah.number,
           })
@@ -1342,7 +1342,7 @@ async function changeRequirQantity() {
       secondAyahSelect.options[secondAyahSelect.selectedIndex].value
     )
   );
-  const results = project_db.exec(query);
+  const results = quran_db.exec(query);
   if (!results || !results.length || !results[0].values.length) {
     $("#requirQuantity").val("");
     return;
