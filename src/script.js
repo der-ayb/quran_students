@@ -672,17 +672,6 @@ const initializeAyatdata = async (db) => {
   });
   populateSurahDropdown(firstSurahSelect);
   populateSurahDropdown(secondSurahSelect);
-  secondSurahSelect.disabled = true;
-};
-
-const createOption = (value, text, dataset = {}) => {
-  const option = document.createElement("option");
-  option.value = value;
-  option.textContent = text;
-  for (const key in dataset) {
-    option.dataset[key] = dataset[key];
-  }
-  return option;
 };
 
 const populateSurahDropdown = async (selectElement) => {
@@ -696,6 +685,16 @@ const populateSurahDropdown = async (selectElement) => {
       })
     );
   });
+};
+
+const createOption = (value, text, dataset = {}) => {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = text;
+  for (const key in dataset) {
+    option.dataset[key] = dataset[key];
+  }
+  return option;
 };
 
 const checkSecondSurahAyahs = (secondSurahNumber) => {
@@ -822,7 +821,7 @@ secondAyahSelect.addEventListener("change", async function () {
 });
 
 // // Function to get the difference in ayahs between two surahs
-function getAyahDifference(surahNum1, ayahNum1, surahNum2, ayahNum2) {
+const getAyahDifference = (surahNum1, ayahNum1, surahNum2, ayahNum2) => {
   const surah1 = surahsData.find((s) => s.number === Number(surahNum1));
   const surah2 = surahsData.find((s) => s.number === Number(surahNum2));
 
@@ -867,13 +866,13 @@ function getAyahDifference(surahNum1, ayahNum1, surahNum2, ayahNum2) {
   }
 
   return result;
-}
+};
 
-function generateAyahRange(start, end) {
+const generateAyahRange = (start, end) => {
   return `${start}-${end}`;
-}
+};
 
-function generatelignCount(ranges) {
+const generatelignCount = (ranges) => {
   const conditions = ranges
     .map((range) => {
       const [start, end] = range.ayah.split("-").map(Number);
@@ -887,7 +886,7 @@ function generatelignCount(ranges) {
     FROM quran_ayat
     WHERE ${conditions};
   `;
-}
+};
 
 // Function to count lines in a given text
 function countLines(text) {
