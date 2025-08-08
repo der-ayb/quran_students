@@ -1,6 +1,7 @@
 // script.js
-let project_db,quran_db, SQL, currentDay;
-const DB_STORE_NAME = "sqlite-db2";
+let project_db, quran_db, SQL, currentDay;
+const surahsData = [];
+const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
 const dayDateInput = $("#dayDate");
@@ -16,7 +17,6 @@ const secondAyahSelect = document.getElementById("second-ayah");
 const firstAyahSelect = document.getElementById("first-ayah");
 const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
-
 
 // students tab
 function loadStudentsList() {
@@ -431,18 +431,28 @@ async function init() {
       `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/${file}`,
   });
 
-  loadFromIndexedDB((savedData) => {
-    if (savedData) {
-      project_db = new SQL.Database(new Uint8Array(savedData));
+  loadFromIndexedDB((savedProjectData, savedQuranData) => {
+    if (savedProjectData) {
+      project_db = new SQL.Database(new Uint8Array(savedProjectData));
     } else {
-      $(".mobile-nav").hide()
-      
+      $(".mobile-nav").hide();
       $("#loadingModal").modal("show");
-      project_db = fetchAndReadFile(
+      fetchAndReadFile(
         PROJECT_DB_KEY,
         "https://der-ayb.github.io/quran_students/default.sqlite"
       );
-      quran_db = fetchAndReadFile(
+      setTimeout(function () {
+        $("#loadingModal").modal("hide");
+        showToast("success", "Database loaded.");
+      }, 2000);
+    }
+    if (savedQuranData) {
+      quran_db = new SQL.Database(new Uint8Array(savedQuranData));
+      initializeAyatdata(quran_db);
+    } else {
+      $(".mobile-nav").hide();
+      $("#loadingModal").modal("show");
+      fetchAndReadFile(
         QURAN_DB_KEY,
         "https://der-ayb.github.io/quran_students/quran.sqlite"
       );
@@ -451,6 +461,7 @@ async function init() {
         showToast("success", "Database loaded.");
       }, 2000);
     }
+    $(".mobile-nav").show();
   });
 }
 
@@ -474,7 +485,7 @@ async function openDatabase(callback) {
   };
 }
 
-async function saveToIndexedDB(data,db_key=PROJECT_DB_KEY) {
+async function saveToIndexedDB(data, db_key = PROJECT_DB_KEY) {
   openDatabase((idb) => {
     const tx = idb.transaction(DB_STORE_NAME, "readwrite");
     const store = tx.objectStore(DB_STORE_NAME);
@@ -487,15 +498,42 @@ async function loadFromIndexedDB(callback) {
   openDatabase((idb) => {
     const tx = idb.transaction(DB_STORE_NAME, "readonly");
     const store = tx.objectStore(DB_STORE_NAME);
-    const getRequest = store.get(PROJECT_DB_KEY);
-    getRequest.onsuccess = () => {
-      callback(getRequest.result || null);
-      idb.close();
+    const getProjectRequest = store.get(PROJECT_DB_KEY);
+    const getQuranRequest = store.get(QURAN_DB_KEY);
+
+    let projectResult, quranResult;
+    let projectDone = false,
+      quranDone = false;
+
+    function maybeCallback() {
+      if (projectDone && quranDone) {
+        callback(projectResult, quranResult);
+        idb.close();
+      }
+    }
+
+    getProjectRequest.onsuccess = () => {
+      projectResult = getProjectRequest.result || null;
+      projectDone = true;
+      maybeCallback();
     };
-    getRequest.onerror = () => {
+    getQuranRequest.onsuccess = () => {
+      quranResult = getQuranRequest.result || null;
+      quranDone = true;
+      maybeCallback();
+    };
+
+    getProjectRequest.onerror = () => {
       console.error("Error reading from IndexedDB");
-      callback(null);
-      idb.close();
+      projectResult = null;
+      projectDone = true;
+      maybeCallback();
+    };
+    getQuranRequest.onerror = () => {
+      console.error("Error reading from IndexedDB");
+      quranResult = null;
+      quranDone = true;
+      maybeCallback();
     };
   });
 }
@@ -520,7 +558,7 @@ async function downloadDB() {
   a.click();
 }
 
-async function fetchAndReadFile(db_key,url) {
+async function fetchAndReadFile(db_key, url) {
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch file");
@@ -529,8 +567,13 @@ async function fetchAndReadFile(db_key,url) {
     reader.onload = function (event) {
       const uInt8Array = new Uint8Array(reader.result);
       const db = new SQL.Database(uInt8Array);
-      saveToIndexedDB(db.export(),db_key);
-      return db;
+      saveToIndexedDB(db.export(), db_key);
+      if (db_key === QURAN_DB_KEY) {
+        quran_db = db;
+        initializeAyatdata(db);
+      } else if (db_key === PROJECT_DB_KEY) {
+        project_db = db;
+      }
     };
 
     reader.readAsArrayBuffer(blob); // or reader.readAsArrayBuffer(blob) / readAsDataURL(blob)
@@ -618,582 +661,19 @@ function showToast(type, message) {
 // Initialize the application
 init();
 
-// surah selects
-const surahsData = [
-  {
-    number: 1,
-    name: "ٱلْفَاتِحَةِ",
-    numberOfAyahs: 7,
-  },
-  {
-    number: 2,
-    name: "البَقَرَةِ",
-    numberOfAyahs: 286,
-  },
-  {
-    number: 3,
-    name: "آلِ عِمۡرَانَ",
-    numberOfAyahs: 200,
-  },
-  {
-    number: 4,
-    name: "النِّسَاءِ",
-    numberOfAyahs: 176,
-  },
-  {
-    number: 5,
-    name: "المَائـِدَةِ",
-    numberOfAyahs: 120,
-  },
-  {
-    number: 6,
-    name: "الأَنۡعَامِ",
-    numberOfAyahs: 165,
-  },
-  {
-    number: 7,
-    name: "الأَعۡرَافِ",
-    numberOfAyahs: 206,
-  },
-  {
-    number: 8,
-    name: "الأَنفَالِ",
-    numberOfAyahs: 75,
-  },
-  {
-    number: 9,
-    name: "التَّوۡبَةِ",
-    numberOfAyahs: 129,
-  },
-  {
-    number: 10,
-    name: "يُونُسَ",
-    numberOfAyahs: 109,
-  },
-  {
-    number: 11,
-    name: "هُودٍ",
-    numberOfAyahs: 123,
-  },
-  {
-    number: 12,
-    name: "يُوسُفَ",
-    numberOfAyahs: 111,
-  },
-  {
-    number: 13,
-    name: "الرَّعۡدِ",
-    numberOfAyahs: 43,
-  },
-  {
-    number: 14,
-    name: "إِبۡرَاهِيمَ",
-    numberOfAyahs: 52,
-  },
-  {
-    number: 15,
-    name: "الحِجۡرِ",
-    numberOfAyahs: 99,
-  },
-  {
-    number: 16,
-    name: "النَّحۡلِ",
-    numberOfAyahs: 128,
-  },
-  {
-    number: 17,
-    name: "الإِسۡرَاءِ",
-    numberOfAyahs: 111,
-  },
-  {
-    number: 18,
-    name: "الكَهۡفِ",
-    numberOfAyahs: 110,
-  },
-  {
-    number: 19,
-    name: "مَرۡيَمَ",
-    numberOfAyahs: 98,
-  },
-  {
-    number: 20,
-    name: "طه",
-    numberOfAyahs: 135,
-  },
-  {
-    number: 21,
-    name: "الأَنبِيَاءِ",
-    numberOfAyahs: 112,
-  },
-  {
-    number: 22,
-    name: "الحَجِّ",
-    numberOfAyahs: 78,
-  },
-  {
-    number: 23,
-    name: "المُؤۡمِنُونَ",
-    numberOfAyahs: 118,
-  },
-  {
-    number: 24,
-    name: "النُّورِ",
-    numberOfAyahs: 64,
-  },
-  {
-    number: 25,
-    name: "الفُرۡقَانِ",
-    numberOfAyahs: 77,
-  },
-  {
-    number: 26,
-    name: "الشُّعَرَاءِ",
-    numberOfAyahs: 227,
-  },
-  {
-    number: 27,
-    name: "النَّمۡلِ",
-    numberOfAyahs: 93,
-  },
-  {
-    number: 28,
-    name: "القَصَصِ",
-    numberOfAyahs: 88,
-  },
-  {
-    number: 29,
-    name: "العَنكَبُوتِ",
-    numberOfAyahs: 69,
-  },
-  {
-    number: 30,
-    name: "الرُّومِ",
-    numberOfAyahs: 60,
-  },
-  {
-    number: 31,
-    name: "لُقۡمَانَ",
-    numberOfAyahs: 34,
-  },
-  {
-    number: 32,
-    name: "السَّجۡدَةِ",
-    numberOfAyahs: 30,
-  },
-  {
-    number: 33,
-    name: "الأَحۡزَابِ",
-    numberOfAyahs: 73,
-  },
-  {
-    number: 34,
-    name: "سَبَإٍ",
-    numberOfAyahs: 54,
-  },
-  {
-    number: 35,
-    name: "فَاطِرٍ",
-    numberOfAyahs: 45,
-  },
-  {
-    number: 36,
-    name: "يسٓ",
-    numberOfAyahs: 83,
-  },
-  {
-    number: 37,
-    name: "الصَّافَّاتِ",
-    numberOfAyahs: 182,
-  },
-  {
-    number: 38,
-    name: "صٓ",
-    numberOfAyahs: 88,
-  },
-  {
-    number: 39,
-    name: "الزُّمَرِ",
-    numberOfAyahs: 75,
-  },
-  {
-    number: 40,
-    name: "غَافِرٍ",
-    numberOfAyahs: 85,
-  },
-  {
-    number: 41,
-    name: "فُصِّلَتۡ",
-    numberOfAyahs: 54,
-  },
-  {
-    number: 42,
-    name: "الشُّورَىٰ",
-    numberOfAyahs: 53,
-  },
-  {
-    number: 43,
-    name: "الزُّخۡرُفِ",
-    numberOfAyahs: 89,
-  },
-  {
-    number: 44,
-    name: "الدُّخَانِ",
-    numberOfAyahs: 59,
-  },
-  {
-    number: 45,
-    name: "الجَاثِيَةِ",
-    numberOfAyahs: 37,
-  },
-  {
-    number: 46,
-    name: "الأَحۡقَافِ",
-    numberOfAyahs: 35,
-  },
-  {
-    number: 47,
-    name: "مُحَمَّدٍ",
-    numberOfAyahs: 38,
-  },
-  {
-    number: 48,
-    name: "الفَتۡحِ",
-    numberOfAyahs: 29,
-  },
-  {
-    number: 49,
-    name: "الحُجُرَاتِ",
-    numberOfAyahs: 18,
-  },
-  {
-    number: 50,
-    name: "قٓ",
-    numberOfAyahs: 45,
-  },
-  {
-    number: 51,
-    name: "الذَّارِيَاتِ",
-    numberOfAyahs: 60,
-  },
-  {
-    number: 52,
-    name: "الطُّورِ",
-    numberOfAyahs: 49,
-  },
-  {
-    number: 53,
-    name: "النَّجۡمِ",
-    numberOfAyahs: 62,
-  },
-  {
-    number: 54,
-    name: "القَمَرِ",
-    numberOfAyahs: 55,
-  },
-  {
-    number: 55,
-    name: "الرَّحۡمَٰن",
-    numberOfAyahs: 78,
-  },
-  {
-    number: 56,
-    name: "الوَاقِعَةِ",
-    numberOfAyahs: 96,
-  },
-  {
-    number: 57,
-    name: "الحَدِيدِ",
-    numberOfAyahs: 29,
-  },
-  {
-    number: 58,
-    name: "المُجَادلَةِ",
-    numberOfAyahs: 22,
-  },
-  {
-    number: 59,
-    name: "الحَشۡرِ",
-    numberOfAyahs: 24,
-  },
-  {
-    number: 60,
-    name: "المُمۡتَحنَةِ",
-    numberOfAyahs: 13,
-  },
-  {
-    number: 61,
-    name: "الصَّفِّ",
-    numberOfAyahs: 14,
-  },
-  {
-    number: 62,
-    name: "الجُمُعَةِ",
-    numberOfAyahs: 11,
-  },
-  {
-    number: 63,
-    name: "المُنَافِقُونَ",
-    numberOfAyahs: 11,
-  },
-  {
-    number: 64,
-    name: "التَّغَابُنِ",
-    numberOfAyahs: 18,
-  },
-  {
-    number: 65,
-    name: "الطَّلَاقِ",
-    numberOfAyahs: 12,
-  },
-  {
-    number: 66,
-    name: "التَّحۡرِيمِ",
-    numberOfAyahs: 12,
-  },
-  {
-    number: 67,
-    name: "المُلۡكِ",
-    numberOfAyahs: 30,
-  },
-  {
-    number: 68,
-    name: "القَلَمِ",
-    numberOfAyahs: 52,
-  },
-  {
-    number: 69,
-    name: "الحَاقَّةِ",
-    numberOfAyahs: 52,
-  },
-  {
-    number: 70,
-    name: "المَعَارِجِ",
-    numberOfAyahs: 44,
-  },
-  {
-    number: 71,
-    name: "نُوحٍ",
-    numberOfAyahs: 28,
-  },
-  {
-    number: 72,
-    name: "الجِنِّ",
-    numberOfAyahs: 28,
-  },
-  {
-    number: 73,
-    name: "المُزَّمِّلِ",
-    numberOfAyahs: 20,
-  },
-  {
-    number: 74,
-    name: "المُدَّثِّرِ",
-    numberOfAyahs: 56,
-  },
-  {
-    number: 75,
-    name: "القِيَامَةِ",
-    numberOfAyahs: 40,
-  },
-  {
-    number: 76,
-    name: "الإِنسَانِ",
-    numberOfAyahs: 31,
-  },
-  {
-    number: 77,
-    name: "المُرۡسَلَاتِ",
-    numberOfAyahs: 50,
-  },
-  {
-    number: 78,
-    name: "النَّبَإِ",
-    numberOfAyahs: 40,
-  },
-  {
-    number: 79,
-    name: "النَّازِعَاتِ",
-    numberOfAyahs: 46,
-  },
-  {
-    number: 80,
-    name: "عَبَسَ",
-    numberOfAyahs: 42,
-  },
-  {
-    number: 81,
-    name: "التَّكۡوِيرِ",
-    numberOfAyahs: 29,
-  },
-  {
-    number: 82,
-    name: "الانفِطَارِ",
-    numberOfAyahs: 19,
-  },
-  {
-    number: 83,
-    name: "المُطَفِّفِينَ",
-    numberOfAyahs: 36,
-  },
-  {
-    number: 84,
-    name: "الانشِقَاقِ",
-    numberOfAyahs: 25,
-  },
-  {
-    number: 85,
-    name: "البُرُوجِ",
-    numberOfAyahs: 22,
-  },
-  {
-    number: 86,
-    name: "الطَّارِقِ",
-    numberOfAyahs: 17,
-  },
-  {
-    number: 87,
-    name: "الأَعۡلَىٰ",
-    numberOfAyahs: 19,
-  },
-  {
-    number: 88,
-    name: "الغَاشِيَةِ",
-    numberOfAyahs: 26,
-  },
-  {
-    number: 89,
-    name: "الفَجۡرِ",
-    numberOfAyahs: 30,
-  },
-  {
-    number: 90,
-    name: "البَلَدِ",
-    numberOfAyahs: 20,
-  },
-  {
-    number: 91,
-    name: "الشَّمۡسِ",
-    numberOfAyahs: 15,
-  },
-  {
-    number: 92,
-    name: "اللَّيۡلِ",
-    numberOfAyahs: 21,
-  },
-  {
-    number: 93,
-    name: "الضُّحَىٰ",
-    numberOfAyahs: 11,
-  },
-  {
-    number: 94,
-    name: "الشَّرۡحِ",
-    numberOfAyahs: 8,
-  },
-  {
-    number: 95,
-    name: "التِّينِ",
-    numberOfAyahs: 8,
-  },
-  {
-    number: 96,
-    name: "العَلَقِ",
-    numberOfAyahs: 19,
-  },
-  {
-    number: 97,
-    name: "القَدۡرِ",
-    numberOfAyahs: 5,
-  },
-  {
-    number: 98,
-    name: "البَيِّنَةِ",
-    numberOfAyahs: 8,
-  },
-  {
-    number: 99,
-    name: "الزَّلۡزَلَةِ",
-    numberOfAyahs: 8,
-  },
-  {
-    number: 100,
-    name: "العَادِيَاتِ",
-    numberOfAyahs: 11,
-  },
-  {
-    number: 101,
-    name: "القَارِعَةِ",
-    numberOfAyahs: 11,
-  },
-  {
-    number: 102,
-    name: "التَّكَاثُرِ",
-    numberOfAyahs: 8,
-  },
-  {
-    number: 103,
-    name: "العَصۡرِ",
-    numberOfAyahs: 3,
-  },
-  {
-    number: 104,
-    name: "الهُمَزَةِ",
-    numberOfAyahs: 9,
-  },
-  {
-    number: 105,
-    name: "الفِيلِ",
-    numberOfAyahs: 5,
-  },
-  {
-    number: 106,
-    name: "قُرَيۡشٍ",
-    numberOfAyahs: 4,
-  },
-  {
-    number: 107,
-    name: "المَاعُونِ",
-    numberOfAyahs: 7,
-  },
-  {
-    number: 108,
-    name: "الكَوۡثَرِ",
-    numberOfAyahs: 3,
-  },
-  {
-    number: 109,
-    name: "الكَافِرُونَ",
-    numberOfAyahs: 6,
-  },
-  {
-    number: 110,
-    name: "النَّصۡرِ",
-    numberOfAyahs: 3,
-  },
-  {
-    number: 111,
-    name: "المَسَدِ",
-    numberOfAyahs: 5,
-  },
-  {
-    number: 112,
-    name: "الإِخۡلَاصِ",
-    numberOfAyahs: 4,
-  },
-  {
-    number: 113,
-    name: "الفَلَقِ",
-    numberOfAyahs: 5,
-  },
-  {
-    number: 114,
-    name: "النَّاسِ",
-    numberOfAyahs: 6,
-  },
-];
-
-let firstSurahAyahs = 0;
-let secondSurahAyahs = 0;
+const initializeAyatdata = async (db) => {
+  const results = db.exec("SELECT * FROM quran_index");
+  results[0].values.forEach((row) => {
+    surahsData.push({
+      number: row[0],
+      name: row[1],
+      numberOfAyahs: row[2],
+    });
+  });
+  populateSurahDropdown(firstSurahSelect);
+  populateSurahDropdown(secondSurahSelect);
+  secondSurahSelect.disabled = true;
+};
 
 const createOption = (value, text, dataset = {}) => {
   const option = document.createElement("option");
@@ -1218,11 +698,7 @@ const populateSurahDropdown = async (selectElement) => {
   });
 };
 
-populateSurahDropdown(firstSurahSelect);
-populateSurahDropdown(secondSurahSelect);
-secondSurahSelect.disabled = true;
-
-function checkSecondSurahAyahs(secondSurahNumber) {
+const checkSecondSurahAyahs = (secondSurahNumber) => {
   if (secondSurahNumber) {
     let ll = 1;
 
@@ -1234,6 +710,7 @@ function checkSecondSurahAyahs(secondSurahNumber) {
 
     const selectedOption =
       secondSurahSelect.options[secondSurahSelect.selectedIndex];
+    let secondSurahAyahs = 0;
     secondSurahAyahs = parseInt(selectedOption.dataset.ayahs);
     secondAyahSelect.disabled = false;
     secondAyahSelect.innerHTML = "";
@@ -1251,13 +728,14 @@ function checkSecondSurahAyahs(secondSurahNumber) {
     secondAyahSelect.innerHTML = "";
     secondAyahSelect.appendChild(createOption("", "--  --"));
   }
-}
+};
 
 firstSurahSelect.addEventListener("change", async function () {
   const firstSurahNumber = parseInt(this.value);
 
   if (firstSurahNumber) {
     const selectedOption = this.options[this.selectedIndex];
+    let firstSurahAyahs = 0;
     firstSurahAyahs = parseInt(selectedOption.dataset.ayahs);
     firstAyahSelect.disabled = false;
     firstAyahSelect.innerHTML = "";
@@ -1308,28 +786,14 @@ firstSurahSelect.addEventListener("change", async function () {
 });
 
 secondSurahSelect.addEventListener("change", async function () {
-  const secondSurahNumber = parseInt(this.value);
-  checkSecondSurahAyahs(secondSurahNumber);
+  checkSecondSurahAyahs(parseInt(this.value));
 });
 
 firstAyahSelect.addEventListener("change", async function () {
-  const secondSurahNumber = parseInt(this.value);
-  checkSecondSurahAyahs(secondSurahNumber);
+  checkSecondSurahAyahs(parseInt(this.value));
 });
 
 secondAyahSelect.addEventListener("change", async function () {
-  changeRequirQantity();
-});
-
-// Function to count lines in a given text
-function countLines(text) {
-  const ctx = document.createElement("canvas").getContext("2d");
-  ctx.font = "22.4px Arial";
-  ctx.direction = "rtl";
-  return ctx.measureText(text).width / (10 * 37.8);
-}
-
-async function changeRequirQantity() {
   if (
     !firstSurahSelect.value ||
     !firstAyahSelect.value ||
@@ -1355,10 +819,10 @@ async function changeRequirQantity() {
   }
   const totalLines = results[0].values[0][0];
   $("#requirQuantity").val(totalLines);
-}
+});
+
 // // Function to get the difference in ayahs between two surahs
 function getAyahDifference(surahNum1, ayahNum1, surahNum2, ayahNum2) {
-  // Find the surahs in the data
   const surah1 = surahsData.find((s) => s.number === Number(surahNum1));
   const surah2 = surahsData.find((s) => s.number === Number(surahNum2));
 
@@ -1423,4 +887,12 @@ function generatelignCount(ranges) {
     FROM quran_ayat
     WHERE ${conditions};
   `;
+}
+
+// Function to count lines in a given text
+function countLines(text) {
+  const ctx = document.createElement("canvas").getContext("2d");
+  ctx.font = "22.4px Arial";
+  ctx.direction = "rtl";
+  return ctx.measureText(text).width / (10 * 37.8);
 }
