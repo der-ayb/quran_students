@@ -1,7 +1,8 @@
 // script.js
 let project_db,quran_db, SQL, currentDay;
 const DB_STORE_NAME = "sqlite-db2";
-const DB_KEY = "mydb";
+const PROJECT_DB_KEY = "projectDB";
+const QURAN_DB_KEY = "quranDB";
 const dayDateInput = $("#dayDate");
 const newStudentDayModal = $("#newStudentDayModal");
 const studentDayForm = $("#studentDayForm");
@@ -436,17 +437,25 @@ async function init() {
     } else {
       $(".mobile-nav").hide()
       
-      // $("#loadingModal").modal("show");
-      
-      // fetchAndReadFile(
-      //   "https://der-ayb.github.io/quran_students/default.sqlite"
-      // );
+      $("#loadingModal").modal("show");
+      project_db = fetchAndReadFile(
+        PROJECT_DB_KEY,
+        "https://der-ayb.github.io/quran_students/default.sqlite"
+      );
+      quran_db = fetchAndReadFile(
+        QURAN_DB_KEY,
+        "https://der-ayb.github.io/quran_students/quran.sqlite"
+      );
+      setTimeout(function () {
+        $("#loadingModal").modal("hide");
+        showToast("success", "Database loaded.");
+      }, 2000);
     }
   });
 }
 
 async function openDatabase(callback) {
-  const request = indexedDB.open(DB_KEY, 1);
+  const request = indexedDB.open(PROJECT_DB_KEY, 1);
 
   request.onupgradeneeded = function (event) {
     const db = event.target.result;
@@ -465,11 +474,11 @@ async function openDatabase(callback) {
   };
 }
 
-async function saveToIndexedDB(data) {
+async function saveToIndexedDB(data,db_key=PROJECT_DB_KEY) {
   openDatabase((idb) => {
     const tx = idb.transaction(DB_STORE_NAME, "readwrite");
     const store = tx.objectStore(DB_STORE_NAME);
-    store.put(data, DB_KEY);
+    store.put(data, db_key);
     tx.oncomplete = () => idb.close();
   });
 }
@@ -478,7 +487,7 @@ async function loadFromIndexedDB(callback) {
   openDatabase((idb) => {
     const tx = idb.transaction(DB_STORE_NAME, "readonly");
     const store = tx.objectStore(DB_STORE_NAME);
-    const getRequest = store.get(DB_KEY);
+    const getRequest = store.get(PROJECT_DB_KEY);
     getRequest.onsuccess = () => {
       callback(getRequest.result || null);
       idb.close();
@@ -511,7 +520,7 @@ async function downloadDB() {
   a.click();
 }
 
-async function fetchAndReadFile(url) {
+async function fetchAndReadFile(db_key,url) {
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch file");
@@ -519,12 +528,9 @@ async function fetchAndReadFile(url) {
     const reader = new FileReader();
     reader.onload = function (event) {
       const uInt8Array = new Uint8Array(reader.result);
-      project_db = new SQL.Database(uInt8Array);
-      saveToIndexedDB(project_db.export());
-      setTimeout(function () {
-        $("#loadingModal").modal("hide");
-        showToast("success", "Database loaded.");
-      }, 2000);
+      const db = new SQL.Database(uInt8Array);
+      saveToIndexedDB(db.export(),db_key);
+      return db;
     };
 
     reader.readAsArrayBuffer(blob); // or reader.readAsArrayBuffer(blob) / readAsDataURL(blob)
