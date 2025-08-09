@@ -17,6 +17,13 @@ const secondAyahSelect = document.getElementById("second-ayah");
 const firstAyahSelect = document.getElementById("first-ayah");
 const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
+$(function() {
+  const today = new Date();
+  birthdayInput.attr({
+    'max': new Date(today.setFullYear(today.getFullYear() - 3)).toISOString().split('T')[0],
+    'min': new Date(today.setFullYear(today.getFullYear() - 97)).toISOString().split('T')[0]
+  });
+});
 
 // students tab
 function loadStudentsList() {
