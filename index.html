@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="stylesheet" href="https://cdn.rtlcss.com/bootstrap/v4.5.3/css/bootstrap.min.css"
-    integrity="sha384-JvExCACAZcHNJEc7156QaHXTnQL3hQBixvj5RV5buE7vgnNEzzskDtx9NQ4p6BJe" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.rtl.min.css"
+    integrity="sha384-Xbg45MqvDIk1e563NLpGEulpX6AvL404DP+/iCgW9eFa2BqztiwTexswJo2jLMue" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.2/dist/bootstrap-table.min.css">
 </head>
 <link type="text/css" rel="stylesheet" href="src/style.css" />
@@ -34,7 +34,7 @@
 
     <div class="tab-pane fade" id="pills-students" role="tabpanel" aria-labelledby="pills-students-tab">
       <h2 class="text-center">قائمة التلاميذ</h2>
-      <button class="btn btn-primary mb-2" data-toggle="modal" data-target="#newStudentInfosModal">إظافة تلميذ
+      <button class="btn btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#newStudentInfosModal">إظافة تلميذ
         جديد</button>
 
       <table id="studentsListTable" data-search="true">
@@ -53,7 +53,7 @@
 
     <div class="tab-pane fade" id="pills-new_day" role="tabpanel" aria-labelledby="pills-new_day-tab">
       <h2 class="text-center">التقييم اليومي</h2>
-      <div class="form-group">
+      <div class="mb-3">
         <label for="dayDate">تاريخ اليوم:</label>
         <input type="date" id="dayDate" class="form-control" />
       </div>
@@ -85,13 +85,13 @@
         <div class="card">
           <div class="card-header" id="headingOne">
             <h2 class="mb-0">
-              <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse"
-                data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+              <button class="btn btn-link btn-block text-start" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                 عامة
               </button>
             </h2>
           </div>
-          <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
+          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne">
             <div class="card-body">
               Some placeholder content for the first accordion panel. This panel is shown by default, thanks to the
               <code>.show</code> class.
@@ -102,13 +102,13 @@
         <div class="card">
           <div class="card-header" id="headingTwo">
             <h2 class="mb-0">
-              <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
-                data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+              <button class="btn btn-link btn-block text-start collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
                 Collapsible Group Item #2
               </button>
             </h2>
           </div>
-          <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
+          <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo">
             <div class="card-body">
               Some placeholder content for the second accordion panel. This panel is hidden by default.
             </div>
@@ -118,13 +118,13 @@
         <div class="card">
           <div class="card-header" id="headingThree">
             <h2 class="mb-0">
-              <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
-                data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+              <button class="btn btn-link btn-block text-start collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
                 البيانات
               </button>
             </h2>
           </div>
-          <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree">
             <div class="card-body">
               <div class="files-inputs">
                 <input type="file" id="fileInput">
@@ -142,30 +142,48 @@
 
   </div>
 
-  <nav class="mobile-nav">
-    <a href="#" class="bloc-icon" onclick="showTab('pills-home'); return false;">
-      <i class="fa-solid fa-house"></i>
-    </a>
-    <a href="#" class="bloc-icon" onclick="showTab('pills-students'); return false;">
-      <i class="fa-solid fa-address-book"></i>
-    </a>
-    <a href="#" class="bloc-icon" onclick="showTab('pills-new_day'); return false;">
-      <i class="fa-solid fa-list-check"></i>
-    </a>
-    <a href="#" class="bloc-icon" onclick="showTab('pills-preferences'); return false;">
-      <i class="fa-solid fa-gear"></i>
-    </a>
-  </nav>
+  <div class="nav-mobile">
+    <button  onclick="showTab('pills-home'); return false;">
+      <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024" height="1em"
+        width="1em" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M946.5 505L560.1 118.8l-25.9-25.9a31.5 31.5 0 0 0-44.4 0L77.5 505a63.9 63.9 0 0 0-18.8 46c.4 35.2 29.7 63.3 64.9 63.3h42.5V940h691.8V614.3h43.4c17.1 0 33.2-6.7 45.3-18.8a63.6 63.6 0 0 0 18.7-45.3c0-17-6.7-33.1-18.8-45.2zM568 868H456V664h112v204zm217.9-325.7V868H632V640c0-22.1-17.9-40-40-40H432c-22.1 0-40 17.9-40 40v228H238.1V542.3h-96l370-369.7 23.1 23.1L882 542.3h-96.1z">
+        </path>
+      </svg>
+    </button>
+    <button  onclick="showTab('pills-students'); return false;">
+      <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"
+        height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+    </button>
+    <button  onclick="showTab('pills-new_day'); return false;">
+      <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em"
+        width="1em" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M12 2.5a5.5 5.5 0 0 1 3.096 10.047 9.005 9.005 0 0 1 5.9 8.181.75.75 0 1 1-1.499.044 7.5 7.5 0 0 0-14.993 0 .75.75 0 0 1-1.5-.045 9.005 9.005 0 0 1 5.9-8.18A5.5 5.5 0 0 1 12 2.5ZM8 8a4 4 0 1 0 8 0 4 4 0 0 0-8 0Z">
+        </path>
+      </svg>
+    </button>
+
+    <button  onclick="showTab('pills-preferences'); return false;">
+      <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round"
+        stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      </svg>
+    </button>
+  </div>
 
   <!-- Modal for adding a new student -->
-  <div class="modal fade" id="newStudentInfosModal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+  <div class="modal fade" id="newStudentInfosModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
     aria-labelledby="newStudentDayModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="newStudentInfosModalLabel">معلومات التلميذ</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
           </button>
         </div>
         <div class="modal-body">
@@ -182,7 +200,7 @@
             </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
           <button type="submit" class="btn btn-primary">إظافة</button>
         </div>
         </form>
@@ -191,23 +209,22 @@
   </div>
 
   <!-- Modal for adding a new student -->
-  <div class="modal fade" id="newStudentDayModal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+  <div class="modal fade" id="newStudentDayModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
     aria-labelledby="newStudentDayModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="newStudentDayModalLabel">يوم التلميذ</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
           </button>
         </div>
         <div class="modal-body">
           <form id="studentDayForm">
-            <div class="form-group">
+            <div class="mb-3">
               <label for="studentName">اسم التلميذ:</label>
               <input type="text" class="form-control" id="studentName" readonly />
             </div>
-            <div class="form-group">
+            <div class="mb-3">
               <label for="attendance">الحضور:</label>
               <select class="form-control" id="attendance" required>
                 <option value="10">حضور كلي</option>
@@ -225,7 +242,7 @@
 
             <div class="row">
               <div class="col">
-                <div class="form-group">
+                <div class="mb-3">
                   <label for="requirBook">الكتاب:</label>
                   <input list="requirBookOptions" class="form-control" id="requirBook"
                     placeholder="اختر أو أدخل قيمة..." required />
@@ -236,7 +253,7 @@
                 </div>
               </div>
               <div class="col">
-                <div class="form-group">
+                <div class="mb-3">
                   <label for="requirType">النوع:</label>
                   <select class="form-control" id="requirType" required>
                     <option value="حفظ">حفظ</option>
@@ -246,7 +263,7 @@
               </div>
               <div class="w-100"></div>
               <div class="col" id="quranSelectionSection1" style="display: none;">
-                <div class="form-group">
+                <div class="mb-3">
                   <label>من:</label>
                   <div class="row mx-0">
                     <select id="first-surah" class="col form-control surah-select">
@@ -257,7 +274,7 @@
                 </div>
               </div>
               <div class="col" id="quranSelectionSection2" style="display: none;">
-                <div class="form-group">
+                <div class="mb-3">
                   <label>إلى:</label>
                   <div class="row mx-0">
                     <select id="second-surah" class="col form-control surah-select" disabled>
@@ -272,20 +289,20 @@
 
               </div>
               <div class="col">
-                <div class="form-group">
+                <div class="mb-3">
                   <label for="requirQuantity">المقدار:</label>
                   <input type="number" id="requirQuantity" class="form-control" min="0" step="0.5" required />
                 </div>
               </div>
               <div class="col">
-                <div class="form-group">
+                <div class="mb-3">
                   <label for="requirEvaluation">التقدير:</label>
                   <input type="number" id="requirEvaluation" class="form-control" min="0" max="10" step="0.5"
                     required />
                 </div>
               </div>
             </div>
-            <div class="form-group">
+            <div class="mb-3">
               <label for="requirement">معدل المطلوب:</label>
               <input type="number" class="form-control" id="requirement" readonly required />
             </div>
@@ -296,7 +313,7 @@
             </div>
             <div class="row">
               <div class="col">
-                <div class="form-group">
+                <div class="mb-3">
                   <label for="dressCode">الهندام:</label>
                   <select class="form-control" id="dressCode" required>
                     <option value="10">ممتاز</option>
@@ -307,7 +324,7 @@
                 </div>
               </div>
               <div class="col">
-                <div class="form-group">
+                <div class="mb-3">
                   <label for="haircut">الحلاقة:</label>
                   <select class="form-control" id="haircut" required>
                     <option value="10">ممتاز</option>
@@ -319,7 +336,7 @@
               </div>
               <div class="w-100"></div>
               <div class="col">
-                <div class="form-group">
+                <div class="mb-3">
                   <label for="behavior">السلوك:</label>
                   <select class="form-control" id="behavior" required>
                     <option value="10">ممتاز</option>
@@ -330,7 +347,7 @@
                 </div>
               </div>
               <div class="col">
-                <div class="form-group">
+                <div class="mb-3">
                   <label for="prayer">الصلاة:</label>
                   <select class="form-control" id="prayer" required>
                     <option value="10">ممتاز</option>
@@ -341,7 +358,7 @@
             </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
           <button type="submit" class="btn btn-primary">حفظ</button>
         </div>
         </form>
@@ -349,7 +366,7 @@
     </div>
   </div>
 
-  <div class="modal fade" id="loadingModal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+  <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
     aria-labelledby="loadingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-sm px-5">
       <div class="modal-content">
@@ -360,17 +377,12 @@
     </div>
   </div>
 
-  <div aria-live="polite" aria-atomic="true" style="z-index: -1;"
-    class="polite d-flex justify-content-center align-items-start"">
-    <div class=" toast-container"></div>
-  </div>
+  <div id="toastWrapper" class="toast-wrapper" aria-live="polite" aria-atomic="true"></div>
 </body>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
   integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
-  integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-<script src="https://cdn.rtlcss.com/bootstrap/v4.5.3/js/bootstrap.min.js"
-  integrity="sha384-VmD+lKnI0Y4FPvr6hvZRw6xvdt/QZoNHQ4h5k0RL30aGkR9ylHU56BzrE2UoohWK" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js"
   integrity="sha512-Yra4xuTWinXfBpG2ftgDX8MVmMiOev1FtqiYs51+kEna/5peD0kZqAL1syYCH61f9gxmAFidIJz42IKcRhWMkw=="
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>

@@ -1,27 +1,42 @@
 // script.js
+window._toastQueue = window._toastQueue || [];
+window._toastReady = false;
 let project_db, quran_db, SQL, currentDay;
 const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
 const dayDateInput = $("#dayDate");
-const newStudentDayModal = $("#newStudentDayModal");
+
+const newStudentInfosForm = $("#newStudentInfosForm");
 const studentDayForm = $("#studentDayForm");
 const studentIdInput = $("#studentId");
 const nameInput = $("#name");
 const birthdayInput = $("#birthday");
 const parentPhoneInput = $("#parentPhone");
-const newStudentInfosModal = $("#newStudentInfosModal");
-const newStudentInfosForm = $("#newStudentInfosForm");
+
+const newStudentDayModal = new bootstrap.Modal(
+  document.getElementById("newStudentDayModal")
+);
+const newStudentInfosModal = new bootstrap.Modal(
+  document.getElementById("newStudentInfosModal")
+);
+const loadingModal = new bootstrap.Modal(
+  document.getElementById("loadingModal")
+);
 const secondAyahSelect = document.getElementById("second-ayah");
 const firstAyahSelect = document.getElementById("first-ayah");
 const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
-$(function() {
+$(function () {
   const today = new Date();
   birthdayInput.attr({
-    'max': new Date(today.setFullYear(today.getFullYear() - 3)).toISOString().split('T')[0],
-    'min': new Date(today.setFullYear(today.getFullYear() - 97)).toISOString().split('T')[0]
+    max: new Date(today.setFullYear(today.getFullYear() - 3))
+      .toISOString()
+      .split("T")[0],
+    min: new Date(today.setFullYear(today.getFullYear() - 97))
+      .toISOString()
+      .split("T")[0],
   });
 });
 
@@ -29,7 +44,7 @@ $(function() {
 function loadStudentsList() {
   $("#studentsListTable").bootstrapTable("destroy");
   if (!project_db) {
-    showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
   try {
@@ -45,7 +60,7 @@ function loadStudentsList() {
         const dropdownBtn = document.createElement("button");
         dropdownBtn.className = "btn btn-sm btn-primary dropdown-toggle";
         dropdownBtn.type = "button";
-        dropdownBtn.setAttribute("data-toggle", "dropdown");
+        dropdownBtn.setAttribute("data-bs-toggle", "dropdown");
         dropdownBtn.setAttribute("aria-expanded", "false");
 
         const dropdownMenu = document.createElement("div");
@@ -78,7 +93,7 @@ function loadStudentsList() {
         editBtn.type = "button";
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
         editBtn.onclick = function () {
-          newStudentInfosModal.modal("show");
+          newStudentInfosModal.show();
           const row = $(this).closest("tr");
           const cells = row.find("td");
           const studentId = cells.eq(0).text();
@@ -106,16 +121,16 @@ function loadStudentsList() {
             return;
           }
           if (!project_db) {
-            showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+            window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
             return;
           }
           try {
             project_db.run("DELETE FROM students WHERE id = ?;", [studentId]);
             saveToIndexedDB(project_db.export());
             loadStudentsList();
-            showToast("success", "تم حذف الطالب بنجاح.");
+            window.showToast("success", "تم حذف الطالب بنجاح.");
           } catch (e) {
-            showToast("warning", "Error: " + e.message);
+            window.showToast("warning", "Error: " + e.message);
           }
         };
         dropdownMenu.appendChild(deleteBtn);
@@ -133,7 +148,7 @@ function loadStudentsList() {
     }
     $("#studentsListTable").bootstrapTable({ data });
   } catch (e) {
-    showToast("warning", "Error: " + e.message);
+    window.showToast("warning", "Error: " + e.message);
   }
 }
 
@@ -141,7 +156,7 @@ function loadStudentsList() {
 newStudentInfosForm.on("submit", (e) => {
   e.preventDefault();
   if (!project_db) {
-    showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
   const name = nameInput.val();
@@ -149,11 +164,11 @@ newStudentInfosForm.on("submit", (e) => {
   const parentPhone = parentPhoneInput.val();
 
   if (!name || !birthday || !parentPhone) {
-    showToast("error", "الرجاء ملء جميع الحقول.");
+    window.showToast("error", "الرجاء ملء جميع الحقول.");
     return;
   }
   if (!/^(05|06|07)\d{8}$/.test(parentPhone)) {
-    showToast(
+    window.showToast(
       "error",
       "رقم الهاتف غير صالح. يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام."
     );
@@ -165,48 +180,54 @@ newStudentInfosForm.on("submit", (e) => {
         "UPDATE students SET name = ?, birthday = ?, parent_phone = ? WHERE id = ?;",
         [name, birthday, parentPhone, studentIdInput.val()]
       );
-      showToast("success", "تم تعديل الطالب بنجاح.");
+      window.showToast("success", "تم تعديل الطالب بنجاح.");
     } else {
       project_db.run(
         "INSERT INTO students (name, birthday, parent_phone) VALUES (?, ?, ?);",
         [name, birthday, parentPhone]
       );
       newStudentInfosForm[0].reset();
-      showToast("success", "تم إضافة الطالب بنجاح.");
+      window.showToast("success", "تم إضافة الطالب بنجاح.");
     }
     saveToIndexedDB(project_db.export());
-    newStudentInfosModal.modal("hide");
+    newStudentInfosModal.hide();
     loadStudentsList();
   } catch (e) {
-    showToast("error", "Error: " + e.message);
+    window.showToast("error", "Error: " + e.message);
   }
 });
 
-newStudentInfosModal.on("show.bs.modal", function () {
-  newStudentInfosForm[0].reset();
-});
+document
+  .getElementById("newStudentInfosModal")
+  .addEventListener("show.bs.modal", function () {
+    newStudentInfosForm[0].reset();
+  });
 
-newStudentInfosModal.on("shown.bs.modal", function () {
-  if (studentIdInput.val()) {
-    $("#newStudentInfosModal [type='submit']").text("تحديث");
-  } else {
-    $("#newStudentInfosModal [type='submit']").text("إظافة");
-  }
-});
+document
+  .getElementById("newStudentInfosModal")
+  .addEventListener("shown.bs.modal", function () {
+    if (studentIdInput.val()) {
+      $("#newStudentInfosModal [type='submit']").text("تحديث");
+    } else {
+      $("#newStudentInfosModal [type='submit']").text("إظافة");
+    }
+  });
 
-newStudentDayModal.on("show.bs.modal", function () {
-  $("#studentName").attr("disabled", false);
-  $("#requirBook").attr("disabled", false);
-  $("#requirType").attr("disabled", false);
-  $("#requirQuantity").attr("disabled", false);
-  $("#requirEvaluation").attr("disabled", false);
-  $("#requirement").attr("disabled", false);
-  $("#dressCode").attr("disabled", false);
-  $("#haircut").attr("disabled", false);
-  $("#behavior").attr("disabled", false);
-  $("#prayer").attr("disabled", false);
-  studentDayForm[0].reset();
-});
+document
+  .getElementById("newStudentDayModal")
+  .addEventListener("show.bs.modal", function () {
+    $("#studentName").attr("disabled", false);
+    $("#requirBook").attr("disabled", false);
+    $("#requirType").attr("disabled", false);
+    $("#requirQuantity").attr("disabled", false);
+    $("#requirEvaluation").attr("disabled", false);
+    $("#requirement").attr("disabled", false);
+    $("#dressCode").attr("disabled", false);
+    $("#haircut").attr("disabled", false);
+    $("#behavior").attr("disabled", false);
+    $("#prayer").attr("disabled", false);
+    studentDayForm[0].reset();
+  });
 
 $("#requirBook").on("change", function () {
   if ($(this).val() === "القرآن") {
@@ -271,7 +292,7 @@ $("#requirQuantity, #requirEvaluation, #requirType").on(
 
 function update_day_module_evaluation(studentId) {
   if (!project_db) {
-    showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
   try {
@@ -311,14 +332,14 @@ function update_day_module_evaluation(studentId) {
     saveToIndexedDB(project_db.export());
     loadDayStudentsList();
   } catch (e) {
-    showToast("error", "Error: " + e.message);
+    window.showToast("error", "Error: " + e.message);
   }
 }
 
 function loadDayStudentsList() {
   $("#dayListTable").bootstrapTable("destroy");
   if (!project_db) {
-    showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
   }
   try {
@@ -361,7 +382,7 @@ function loadDayStudentsList() {
         editBtn.className = "btn btn-sm btn-primary";
         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
         editBtn.onclick = function () {
-          newStudentDayModal.modal("show");
+          newStudentDayModal.show();
           $("#studentName").val(row[1]);
           $("#requirBook")
             .val(row[2] || "")
@@ -387,17 +408,17 @@ function loadDayStudentsList() {
           studentDayForm.on("submit", function (e) {
             e.preventDefault();
             if (!project_db) {
-              showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+              window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
               return;
             }
             update_day_module_evaluation(row[0]);
-            newStudentDayModal.modal("hide");
+            newStudentDayModal.hide();
           });
         };
         data.push({
           id: row[0],
           student: row[1],
-          attendance: $('#attendance option[value="' + row[7] + '"]').text(),
+          attendance: $("#attendance option[value='" + row[7] + "']").text(),
           book: row[7] === 1 ? "/" : row[2] || "",
           type: row[7] === 1 ? "/" : row[3] || "",
           quantity: row[7] === 1 ? "/" : row[4] || "",
@@ -406,19 +427,19 @@ function loadDayStudentsList() {
           dressCode:
             row[7] === 1
               ? "/"
-              : $('#dressCode option[value="' + row[8] + '"]').text(),
+              : $("#dressCode option[value='" + row[8] + "']").text(),
           haircut:
             row[7] === 1
               ? "/"
-              : $('#haircut option[value="' + row[9] + '"]').text(),
+              : $("#haircut option[value='" + row[9] + "']").text(),
           behavior:
             row[7] === 1
               ? "/"
-              : $('#behavior option[value="' + row[10] + '"]').text(),
+              : $("#behavior option[value='" + row[10] + "']").text(),
           prayer:
             row[7] === 1
               ? "/"
-              : $('#prayer option[value="' + row[11] + '"]').text(),
+              : $("#prayer option[value='" + row[11] + "']").text(),
           actions: editBtn,
         });
       });
@@ -427,12 +448,13 @@ function loadDayStudentsList() {
     // dayDateInput.prependTo('.fixed-table-toolbar');
     // dayDateInput.addClass("float-left search form-control col-4");
   } catch (e) {
-    showToast("error", "Error: " + e.message);
+    window.showToast("error", "Error: " + e.message);
   }
 }
 
 // global functions
 async function init() {
+  initializeToast();
   SQL = await initSqlJs({
     locateFile: (file) =>
       `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/${file}`,
@@ -442,34 +464,101 @@ async function init() {
     if (savedProjectData) {
       project_db = new SQL.Database(new Uint8Array(savedProjectData));
     } else {
-      $(".mobile-nav").hide();
-      $("#loadingModal").modal("show");
+      $(".nav-mobile").hide();
+      const loadingModal = new bootstrap.Modal(
+        document.getElementById("loadingModal")
+      );
+      loadingModal.show();
       fetchAndReadFile(
         PROJECT_DB_KEY,
         "https://der-ayb.github.io/quran_students/default.sqlite"
       );
       setTimeout(function () {
-        $("#loadingModal").modal("hide");
-        showToast("success", "Database loaded.");
+        loadingModal.hide();
+        window.showToast("success", "Database loaded.");
       }, 2000);
     }
     if (savedQuranData) {
       quran_db = new SQL.Database(new Uint8Array(savedQuranData));
       initializeAyatdata(quran_db);
     } else {
-      $(".mobile-nav").hide();
-      $("#loadingModal").modal("show");
+      $(".nav-mobile").hide();
+      loadingModal.show();
       fetchAndReadFile(
         QURAN_DB_KEY,
         "https://der-ayb.github.io/quran_students/quran.sqlite"
       );
       setTimeout(function () {
-        $("#loadingModal").modal("hide");
-        showToast("success", "Database loaded.");
+        loadingModal.hide();
+        window.showToast("success", "Database loaded.");
       }, 2000);
     }
-    $(".mobile-nav").show();
+    $(".nav-mobile").show();
   });
+}
+
+function initializeToast() {
+  window.showToast = function (type, message, delay = 4000) {
+    if (!window._toastReady) {
+      window._toastQueue.push({ message, type, delay });
+      return;
+    }
+    window._realShowToast(message, type, delay);
+  };
+
+  function createToastElement(message, type) {
+    const el = document.createElement("div");
+    const bg =
+      type === "error"
+        ? "bg-danger text-white"
+        : type === "success"
+        ? "bg-success text-white"
+        : type === "warning"
+        ? "bg-warning text-dark"
+        : "bg-info text-white";
+    el.className = `toast ${bg} border-0`;
+    el.setAttribute("role", "alert");
+    el.setAttribute("aria-live", "assertive");
+    el.setAttribute("aria-atomic", "true");
+    el.innerHTML = `
+          <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        `;
+    return el;
+  }
+  window._realShowToast = function (message, type, delay = 4000) {
+    if (!toastWrapper) {
+      alert(message);
+      return;
+    }
+    const el = createToastElement(message, type);
+    toastWrapper.appendChild(el);
+
+    if (window.bootstrap && typeof window.bootstrap.Toast === "function") {
+      try {
+        const bsToast = new bootstrap.Toast(el, { delay });
+        bsToast.show();
+        el.addEventListener("hidden.bs.toast", () => el.remove());
+        return;
+      } catch (err) {
+        console.warn("bootstrap.Toast threw, falling back:", err);
+      }
+    }
+
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 10);
+    setTimeout(() => el.remove(), delay + 250);
+  };
+
+  window._toastReady = true;
+  if (Array.isArray(window._toastQueue) && window._toastQueue.length) {
+    window._toastQueue.forEach((t) =>
+      window._realShowToast(t.message, t.type, t.delay)
+    );
+    window._toastQueue.length = 0;
+  }
 }
 
 async function openDatabase(callback) {
@@ -551,7 +640,7 @@ async function loadDBFromFile(file) {
     const uInt8Array = new Uint8Array(reader.result);
     project_db = new SQL.Database(uInt8Array);
     saveToIndexedDB(project_db.export());
-    showToast("success", "Database loaded.");
+    window.showToast("success", "Database loaded.");
   };
   reader.readAsArrayBuffer(file);
 }
@@ -585,7 +674,7 @@ async function fetchAndReadFile(db_key, url) {
 
     reader.readAsArrayBuffer(blob); // or reader.readAsArrayBuffer(blob) / readAsDataURL(blob)
   } catch (error) {
-    showToast("error", "Error reading file:", error);
+    window.showToast("Error reading file:", error);
   }
 }
 
@@ -604,7 +693,9 @@ dayDateInput.on("change", () => {
 
 function showTab(tabId) {
   $(".tab-pane").removeClass("show active");
-  $("#" + tabId).tab("show");
+  $("#" + tabId).addClass("show active");
+  // const tab = new bootstrap.Tab(document.getElementById(tabId.replace('pills', 'pills-tab')));
+  // tab.show();
   if (tabId === "pills-students") {
     loadStudentsList();
     newStudentInfosForm[0].reset();
@@ -614,56 +705,8 @@ function showTab(tabId) {
     } else {
       loadDayStudentsList();
     }
-    newStudentDayModal.modal("hide");
+    newStudentDayModal.hide();
   }
-}
-
-function showToast(type, message) {
-  let type_style;
-  if (type == "error") {
-    type_style = "bg-danger text-white";
-  } else if (type == "warning") {
-    type_style = "bg-warning text-dark";
-  } else if (type == "success") {
-    type_style = "bg-success text-white";
-  } else if (type == "info") {
-    type_style = "bg-info text-white";
-  }
-
-  const toast = $("<div>", {
-    class: "toast border-0 ",
-    role: "alert",
-    "aria-live": "assertive",
-    "aria-atomic": "true",
-    "data-delay": "5000",
-  }).append(
-    $("<div>", {
-      class: "toast-body " + type_style,
-      html:
-        message +
-        $("<button>", {
-          type: "button",
-          class: "close position-absolute",
-          style: "top: 5px; right: 5px;",
-          "data-dismiss": "toast",
-          "aria-label": "Close",
-          html: $("<span>", {
-            "aria-hidden": "true",
-            class: "text-white",
-            html: "&times;",
-          }),
-        }).prop("outerHTML"),
-    })
-  );
-  toast.on("hidden.bs.toast", function () {
-    $(this).remove();
-    if ($(".toast-container").is(":empty")) {
-      $(".polite").css("z-index", "-1");
-    }
-  });
-  $(".polite").css("z-index", "1050");
-  $(".toast-container").append(toast);
-  toast.toast("show");
 }
 // Initialize the application
 init();
@@ -752,14 +795,18 @@ firstSurahSelect.addEventListener("change", async function () {
       createOption("", "--  --"),
       firstAyahSelect.firstChild
     );
-  
+
     secondSurahSelect.disabled = false;
     secondSurahSelect.value = firstSurahNumber;
     surahsData.forEach((surah) => {
       if (surah.number < firstSurahNumber) {
-        secondSurahSelect.querySelector('option[value="'+surah.number+'"]').style.display = 'none';
-      }else{
-        secondSurahSelect.querySelector('option[value="'+surah.number+'"]').style.display = 'block';
+        secondSurahSelect.querySelector(
+          'option[value="' + surah.number + '"]'
+        ).style.display = "none";
+      } else {
+        secondSurahSelect.querySelector(
+          'option[value="' + surah.number + '"]'
+        ).style.display = "block";
       }
     });
     secondSurahSelect.dispatchEvent(new Event("change"));
@@ -769,7 +816,7 @@ firstSurahSelect.addEventListener("change", async function () {
     firstAyahSelect.appendChild(createOption("", "--  --"));
 
     secondSurahSelect.disabled = true;
-    secondSurahSelect.querySelector('option').style.display = 'none';
+    secondSurahSelect.querySelector("option").style.display = "none";
 
     secondAyahSelect.disabled = true;
     secondAyahSelect.innerHTML = "";
