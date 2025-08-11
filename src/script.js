@@ -153,7 +153,7 @@ function loadStudentsList() {
 }
 
 // day students list tab
-newStudentInfosForm.on("submit", (e) => {
+newStudentInfosForm.submit((e) => {
   e.preventDefault();
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
@@ -229,7 +229,7 @@ document
     studentDayForm[0].reset();
   });
 
-$("#requirBook").on("change", function () {
+$("#requirBook").change(function () {
   if ($(this).val() === "القرآن") {
     $("#quranSelectionSection1").show();
     $("#quranSelectionSection2").show();
@@ -242,7 +242,7 @@ $("#requirBook").on("change", function () {
   }
 });
 
-$("#attendance").on("change", function () {
+$("#attendance").change(function () {
   if ($(this).val() === "1") {
     $("#studentName").attr("disabled", true);
     $("#requirBook").attr("disabled", true);
@@ -404,8 +404,7 @@ function loadDayStudentsList() {
           $("#haircut").val(row[9] || "");
           $("#behavior").val(row[10] || "");
           $("#prayer").val(row[11] || "");
-          studentDayForm.off("submit"); // Remove previous submit handler
-          studentDayForm.on("submit", function (e) {
+          studentDayForm.submit(function (e) {
             e.preventDefault();
             if (!project_db) {
               window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
@@ -678,13 +677,13 @@ async function fetchAndReadFile(db_key, url) {
   }
 }
 
-$("#downloadBtn").on("click", downloadDB);
-$("#fileInput").on("change", (e) => {
+$("#downloadBtn").click(downloadDB);
+$("#fileInput").change((e) => {
   if (e.target.files.length) {
     loadDBFromFile(e.target.files[0]);
   }
 });
-dayDateInput.on("change", () => {
+dayDateInput.change(() => {
   if (dayDateInput.val()) {
     currentDay = dayDateInput.val();
     loadDayStudentsList();
