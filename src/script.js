@@ -6,14 +6,20 @@ const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
-const dayDateInput = $("#dayDate");
+const dayDateInput = document.getElementById("dayDate");
 
-const newStudentInfosForm = $("#newStudentInfosForm");
-const studentDayForm = $("#studentDayForm");
-const studentIdInput = $("#studentId");
-const nameInput = $("#name");
-const birthdayInput = $("#birthday");
-const parentPhoneInput = $("#parentPhone");
+const newStudentInfosForm = document.getElementById("newStudentInfosForm");
+const studentDayForm = document.getElementById("studentDayForm");
+const studentIdInput = document.getElementById("studentId");
+const attendance = document.getElementById("attendance");
+const requirEvaluation = document.getElementById("requirEvaluation");
+const requireBookInput = document.getElementById("requirBook")
+const requirQuantity = document.getElementById("requirQuantity");
+const requirementInput = document.getElementById("requirement");
+const requirType = document.getElementById("requirType");
+const nameInput = document.getElementById("name");
+const birthdayInput = document.getElementById("birthday");
+const parentPhoneInput = document.getElementById("parentPhone");
 
 const newStudentDayModal = new bootstrap.Modal(
   document.getElementById("newStudentDayModal")
@@ -28,16 +34,20 @@ const secondAyahSelect = document.getElementById("second-ayah");
 const firstAyahSelect = document.getElementById("first-ayah");
 const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
-$(function () {
+document.addEventListener("DOMContentLoaded", function () {
   const today = new Date();
-  birthdayInput.attr({
-    max: new Date(today.setFullYear(today.getFullYear() - 3))
+  birthdayInput.setAttribute(
+    "max",
+    new Date(today.setFullYear(today.getFullYear() - 3))
       .toISOString()
-      .split("T")[0],
-    min: new Date(today.setFullYear(today.getFullYear() - 97))
+      .split("T")[0]
+  );
+  birthdayInput.setAttribute(
+    "min",
+    new Date(today.setFullYear(today.getFullYear() - 97))
       .toISOString()
-      .split("T")[0],
-  });
+      .split("T")[0]
+  );
 });
 
 // students tab
@@ -72,19 +82,19 @@ function loadStudentsList() {
         detailBtn.type = "button";
         detailBtn.innerHTML =
           '<i class="fa-regular fa-address-card"></i> تفاصيل';
-        detailBtn.onclick = function () {
-          const row = $(this).closest("tr");
-          const cells = row.find("td");
+        detailBtn.addEventListener("click", function () {
+          const row = this.closest("tr");
+          const cells = row.querySelectorAll("td");
           const studentDetails = {
-            id: cells.eq(0).text(),
-            name: cells.eq(1).text(),
-            age: cells.eq(2).text(),
-            parentPhone: cells.eq(3).text(),
+            id: cells[0].textContent,
+            name: cells[1].textContent,
+            age: cells[2].textContent,
+            parentPhone: cells[3].textContent,
           };
           alert(
             `تفاصيل الطالب:\nالمعرف: ${studentDetails.id}\nالاسم: ${studentDetails.name}\nالعمر: ${studentDetails.age}\nهاتف الولي: ${studentDetails.parentPhone}`
           );
-        };
+        });
         dropdownMenu.appendChild(detailBtn);
 
         // Edit
@@ -92,20 +102,20 @@ function loadStudentsList() {
         editBtn.className = "dropdown-item btn-secondary";
         editBtn.type = "button";
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
-        editBtn.onclick = function () {
+        editBtn.addEventListener("click", function () {
           newStudentInfosModal.show();
-          const row = $(this).closest("tr");
-          const cells = row.find("td");
-          const studentId = cells.eq(0).text();
+          const row = this.closest("tr");
+          const cells = row.querySelectorAll("td");
+          const studentId = cells[0].textContent;
           const result = project_db.exec(
             "SELECT * FROM students WHERE id = ?;",
             [studentId]
           );
-          studentIdInput.val(studentId);
-          nameInput.val(result[0].values[0][1]);
-          birthdayInput.val(result[0].values[0][2]);
-          parentPhoneInput.val(result[0].values[0][3]);
-        };
+          studentIdInput.value = studentId;
+          nameInput.value = result[0].values[0][1];
+          birthdayInput.value = result[0].values[0][2];
+          parentPhoneInput.value = result[0].values[0][3];
+        });
         dropdownMenu.appendChild(editBtn);
 
         // Delete
@@ -113,10 +123,10 @@ function loadStudentsList() {
         deleteBtn.className = "dropdown-item btn-danger";
         deleteBtn.type = "button";
         deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
-        deleteBtn.onclick = function () {
-          const row = $(this).closest("tr");
-          const cells = row.find("td");
-          const studentId = cells.eq(0).text();
+        deleteBtn.addEventListener("click", function () {
+          const row = this.closest("tr");
+          const cells = row.querySelectorAll("td");
+          const studentId = cells[0].textContent;
           if (!confirm("هل أنت متأكد أنك تريد حذف هذا الطالب؟")) {
             return;
           }
@@ -132,7 +142,7 @@ function loadStudentsList() {
           } catch (e) {
             window.showToast("warning", "Error: " + e.message);
           }
-        };
+        });
         dropdownMenu.appendChild(deleteBtn);
 
         dropdownDiv.appendChild(dropdownBtn);
@@ -149,9 +159,9 @@ function loadStudentsList() {
     students_table = new DataTable("#studentsListTable", {
       data: data,
       scrollX: true,
-      info:false,
+      info: false,
       oLanguage: {
-        "sSearch": "بحث"
+        sSearch: "بحث",
       },
       paging: false,
       responsive: true,
@@ -169,15 +179,15 @@ function loadStudentsList() {
 }
 
 // day students list tab
-newStudentInfosForm.submit((e) => {
+newStudentInfosForm.addEventListener("submit", (e) => {
   e.preventDefault();
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
-  const name = nameInput.val();
-  const birthday = birthdayInput.val();
-  const parentPhone = parentPhoneInput.val();
+  const name = nameInput.value;
+  const birthday = birthdayInput.value;
+  const parentPhone = parentPhoneInput.value;
 
   if (!name || !birthday || !parentPhone) {
     window.showToast("error", "الرجاء ملء جميع الحقول.");
@@ -191,10 +201,10 @@ newStudentInfosForm.submit((e) => {
     return;
   }
   try {
-    if (studentIdInput.val()) {
+    if (studentIdInput.value) {
       project_db.run(
         "UPDATE students SET name = ?, birthday = ?, parent_phone = ? WHERE id = ?;",
-        [name, birthday, parentPhone, studentIdInput.val()]
+        [name, birthday, parentPhone, studentIdInput.value]
       );
       window.showToast("success", "تم تعديل الطالب بنجاح.");
     } else {
@@ -202,7 +212,7 @@ newStudentInfosForm.submit((e) => {
         "INSERT INTO students (name, birthday, parent_phone) VALUES (?, ?, ?);",
         [name, birthday, parentPhone]
       );
-      newStudentInfosForm[0].reset();
+      newStudentInfosForm.reset();
       window.showToast("success", "تم إضافة الطالب بنجاح.");
     }
     saveToIndexedDB(project_db.export());
@@ -216,95 +226,108 @@ newStudentInfosForm.submit((e) => {
 document
   .getElementById("newStudentInfosModal")
   .addEventListener("show.bs.modal", function () {
-    newStudentInfosForm[0].reset();
+    newStudentInfosForm.reset();
   });
 
 document
   .getElementById("newStudentInfosModal")
   .addEventListener("shown.bs.modal", function () {
-    if (studentIdInput.val()) {
-      $("#newStudentInfosModal [type='submit']").text("تحديث");
+    const submitButton = document.querySelector(
+      "#newStudentInfosModal [type='submit']"
+    );
+    if (studentIdInput.value) {
+      submitButton.textContent = "تحديث";
     } else {
-      $("#newStudentInfosModal [type='submit']").text("إظافة");
+      submitButton.textContent = "إظافة";
     }
   });
 
 document
   .getElementById("newStudentDayModal")
   .addEventListener("show.bs.modal", function () {
-    $("#studentName").attr("disabled", false);
-    $("#requirBook").attr("disabled", false);
-    $("#requirType").attr("disabled", false);
-    $("#requirQuantity").attr("disabled", false);
-    $("#requirEvaluation").attr("disabled", false);
-    $("#requirement").attr("disabled", false);
-    $("#dressCode").attr("disabled", false);
-    $("#haircut").attr("disabled", false);
-    $("#behavior").attr("disabled", false);
-    $("#prayer").attr("disabled", false);
-    studentDayForm[0].reset();
+    document.getElementById("studentName").disabled = false;
+    requireBookInput.disabled = false;
+    requirType.disabled = false;
+    requirQuantity.disabled = false;
+    requirEvaluation.disabled = false;
+    requirementInput.disabled = false;
+    document.getElementById("dressCode").disabled = false;
+    document.getElementById("haircut").disabled = false;
+    document.getElementById("behavior").disabled = false;
+    document.getElementById("prayer").disabled = false;
+    studentDayForm.reset();
   });
 
-$("#requirBook").change(function () {
-  if ($(this).val() === "القرآن") {
-    $("#quranSelectionSection1").show();
-    $("#quranSelectionSection2").show();
-    $("#requirQuantity").attr("readonly", true);
+requireBookInput.addEventListener("change", function () {
+  const quranSelectionSection1 = document.getElementById(
+    "quranSelectionSection1"
+  );
+  const quranSelectionSection2 = document.getElementById(
+    "quranSelectionSection2"
+  );
+  
+  if (this.value === "القرآن") {
+    quranSelectionSection1.style.display = "block";
+    quranSelectionSection2.style.display = "block";
+    requirQuantity.readOnly = true;
   } else {
-    $("#quranSelectionSection1").hide();
-    $("#quranSelectionSection2").hide();
-    $("#requirQuantity").attr("readonly", false);
-    $("#requirQuantity").val("");
+    quranSelectionSection1.style.display = "none";
+    quranSelectionSection2.style.display = "none";
+    requirQuantity.readOnly = false;
+    requirQuantity.value = "";
   }
 });
 
-$("#attendance").change(function () {
-  if ($(this).val() === "1") {
-    $("#studentName").attr("disabled", true);
-    $("#requirBook").attr("disabled", true);
-    $("#requirType").attr("disabled", true);
-    $("#requirQuantity").attr("disabled", true);
-    $("#requirEvaluation").attr("disabled", true);
-    $("#requirement").attr("disabled", true);
-    $("#dressCode").attr("disabled", true);
-    $("#haircut").attr("disabled", true);
-    $("#behavior").attr("disabled", true);
-    $("#prayer").attr("disabled", true);
-  } else {
-    $("#studentName").attr("disabled", false);
-    $("#requirBook").attr("disabled", false);
-    $("#requirType").attr("disabled", false);
-    $("#requirQuantity").attr("disabled", false);
-    $("#requirEvaluation").attr("disabled", false);
-    $("#requirement").attr("disabled", false);
-    $("#dressCode").attr("disabled", false);
-    $("#haircut").attr("disabled", false);
-    $("#behavior").attr("disabled", false);
-    $("#prayer").attr("disabled", false);
-  }
+attendance.addEventListener("change", function () {
+  const elementsToDisable = [
+    "#studentName",
+    "#requirBook",
+    "#requirType",
+    "#requirQuantity",
+    "#requirEvaluation",
+    "#requirement",
+    "#dressCode",
+    "#haircut",
+    "#behavior",
+    "#prayer",
+  ];
+  const disable = this.value === "1";
+  elementsToDisable.forEach((selector) => {
+    document.querySelector(selector).disabled = disable;
+  });
+  requireBookInput.value = "";
+  requireBookInput.dispatchEvent(new Event("change"));
 });
 
-$("#requirQuantity, #requirEvaluation, #requirType").on(
-  "change input",
-  function () {
-    const quantity = parseFloat($("#requirQuantity").val());
-    const evaluation = parseFloat($("#requirEvaluation").val());
-    const type = $("#requirType").val();
+["#requirQuantity", "#requirEvaluation", "#requirType"].forEach((selector) => {
+  document
+    .querySelector(selector)
+    .addEventListener("change", calculateRequirement);
+  document
+    .querySelector(selector)
+    .addEventListener("input", calculateRequirement);
+});
 
-    if (!quantity || !evaluation || !type) {
-      $("#requirement").val("");
-      return;
-    }
+function calculateRequirement() {
+  const quantity = parseFloat(requirQuantity.value);
+  const evaluation = parseFloat(
+    requirEvaluation.value
+  );
+  const type = requirType.value;
 
-    let value = 0;
-    if (type === "حفظ") {
-      value = evaluation * quantity;
-    } else if (type === "مراجعة") {
-      value = evaluation * (quantity / 3);
-    }
-    $("#requirement").val(value ? value.toFixed(2) : "");
+  if (!quantity || !evaluation || !type) {
+    requirementInput.value = "";
+    return;
   }
-);
+
+  let value = 0;
+  if (type === "حفظ") {
+    value = evaluation * quantity;
+  } else if (type === "مراجعة") {
+    value = evaluation * (quantity / 3);
+  }
+  requirementInput.value = value ? value.toFixed(2) : "";
+}
 
 function update_day_module_evaluation(studentId) {
   if (!project_db) {
@@ -312,16 +335,16 @@ function update_day_module_evaluation(studentId) {
     return;
   }
   try {
-    if ($("#attendance").val() !== "1") {
+    if (attendance.value !== "1") {
       project_db.run(
         "INSERT OR REPLACE INTO day_requirements (student_id, day, book, type,quantity, evaluation) VALUES (?, ?, ?, ?,?,?);",
         [
           studentId,
           currentDay,
-          $("#requirBook").val(),
-          $("#requirType").val(),
-          $("#requirQuantity").val(),
-          $("#requirEvaluation").val(),
+          requireBookInput.value,
+          requirType.value,
+          requirQuantity.value,
+          requirEvaluation.value,
         ]
       );
 
@@ -336,13 +359,18 @@ function update_day_module_evaluation(studentId) {
       modules.forEach((mod) => {
         project_db.run(
           "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
-          [studentId, mod.id, currentDay, $(mod.selector).val()]
+          [
+            studentId,
+            mod.id,
+            currentDay,
+            document.getElementById(mod.selector).value,
+          ]
         );
       });
     } else {
       project_db.run(
         "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
-        [studentId, 2, currentDay, $("#attendance").val()]
+        [studentId, 2, currentDay, attendance.value]
       );
     }
     saveToIndexedDB(project_db.export());
@@ -393,34 +421,36 @@ function loadDayStudentsList() {
     if (results.length) {
       const result = results[0];
       result.values.forEach((row) => {
-        td = document.createElement("td");
+        const td = document.createElement("td");
         const editBtn = document.createElement("button");
         editBtn.className = "btn btn-sm btn-primary";
         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
-        editBtn.onclick = function () {
+        editBtn.addEventListener("click", function () {
           newStudentDayModal.show();
-          $("#studentName").val(row[1]);
-          $("#requirBook")
-            .val(row[2] || "")
-            .change();
-          $("#requirType")
-            .val(row[3] || "")
-            .change();
-          $("#requirQuantity")
-            .val(row[4] || "")
-            .change();
-          $("#requirEvaluation")
-            .val(row[5] || "")
-            .change();
-          $("#requirement").val(row[6] || "");
-          $("#attendance")
-            .val(row[7] || "")
-            .change();
-          $("#dressCode").val(row[8] || "");
-          $("#haircut").val(row[9] || "");
-          $("#behavior").val(row[10] || "");
-          $("#prayer").val(row[11] || "");
-          studentDayForm.submit(function (e) {
+          document.getElementById("studentName").value = row[1];
+          requireBookInput.value = row[2] || "";
+          requireBookInput.dispatchEvent(new Event("change"));
+
+          requirType.value = row[3] || "";
+          requirType.dispatchEvent(new Event("change"));
+
+          requirQuantity.value = row[4] || "";
+          requirQuantity.dispatchEvent(new Event("change"));
+
+          requirEvaluation.value = row[5] || "";
+          requirEvaluation.dispatchEvent(new Event("change"));
+
+          requirementInput.value = row[6] || "";
+
+          attendance.value = row[7] || "";
+          attendance.dispatchEvent(new Event("change"));
+
+          document.getElementById("dressCode").value = row[8] || "";
+          document.getElementById("haircut").value = row[9] || "";
+          document.getElementById("behavior").value = row[10] || "";
+          document.getElementById("prayer").value = row[11] || "";
+
+          studentDayForm.addEventListener("submit", function (e) {
             e.preventDefault();
             if (!project_db) {
               window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
@@ -429,11 +459,26 @@ function loadDayStudentsList() {
             update_day_module_evaluation(row[0]);
             newStudentDayModal.hide();
           });
-        };
+        });
+        const attendanceOption = document.querySelector(
+          `#attendance option[value='${row[7]}']`
+        );
+        const dressCodeOption = document.querySelector(
+          `#dressCode option[value='${row[8]}']`
+        );
+        const haircutOption = document.querySelector(
+          `#haircut option[value='${row[9]}']`
+        );
+        const behaviorOption = document.querySelector(
+          `#behavior option[value='${row[10]}']`
+        );
+        const prayerOption = document.querySelector(
+          `#prayer option[value='${row[11]}']`
+        );
         data.push({
           id: row[0],
           student: row[1],
-          attendance: $("#attendance option[value='" + row[7] + "']").text(),
+          attendance: attendanceOption ? attendanceOption.textContent : "",
           book: row[7] === 1 ? "/" : row[2] || "",
           type: row[7] === 1 ? "/" : row[3] || "",
           quantity: row[7] === 1 ? "/" : row[4] || "",
@@ -442,19 +487,19 @@ function loadDayStudentsList() {
           dressCode:
             row[7] === 1
               ? "/"
-              : $("#dressCode option[value='" + row[8] + "']").text(),
+              : dressCodeOption
+              ? dressCodeOption.textContent
+              : "",
           haircut:
-            row[7] === 1
-              ? "/"
-              : $("#haircut option[value='" + row[9] + "']").text(),
+            row[7] === 1 ? "/" : haircutOption ? haircutOption.textContent : "",
           behavior:
             row[7] === 1
               ? "/"
-              : $("#behavior option[value='" + row[10] + "']").text(),
+              : behaviorOption
+              ? behaviorOption.textContent
+              : "",
           prayer:
-            row[7] === 1
-              ? "/"
-              : $("#prayer option[value='" + row[11] + "']").text(),
+            row[7] === 1 ? "/" : prayerOption ? prayerOption.textContent : "",
           actions: editBtn,
         });
       });
@@ -462,9 +507,9 @@ function loadDayStudentsList() {
     students_day_table = new DataTable("#dayListTable", {
       data: data,
       scrollX: true,
-      info:false,
+      info: false,
       oLanguage: {
-        "sSearch": "بحث"
+        sSearch: "بحث",
       },
       paging: false,
       responsive: true,
@@ -501,7 +546,7 @@ async function init() {
     if (savedProjectData) {
       project_db = new SQL.Database(new Uint8Array(savedProjectData));
     } else {
-      $(".nav-mobile").hide();
+      document.getElementsByClassName("nav-mobile").style.display = "none";
       const loadingModal = new bootstrap.Modal(
         document.getElementById("loadingModal")
       );
@@ -519,7 +564,7 @@ async function init() {
       quran_db = new SQL.Database(new Uint8Array(savedQuranData));
       initializeAyatdata(quran_db);
     } else {
-      $(".nav-mobile").hide();
+      document.getElementsByClassName("nav-mobile").style.display = "none";
       loadingModal.show();
       fetchAndReadFile(
         QURAN_DB_KEY,
@@ -530,7 +575,7 @@ async function init() {
         window.showToast("success", "Database loaded.");
       }, 2000);
     }
-    $(".nav-mobile").show();
+    document.getElementsByClassName("nav-mobile").style.display = "block";
   });
 }
 
@@ -715,30 +760,33 @@ async function fetchAndReadFile(db_key, url) {
   }
 }
 
-$("#downloadBtn").click(downloadDB);
-$("#fileInput").change((e) => {
+document.getElementById("downloadBtn").addEventListener("click", downloadDB);
+document.getElementById("fileInput").addEventListener("change", (e) => {
   if (e.target.files.length) {
     loadDBFromFile(e.target.files[0]);
   }
 });
-dayDateInput.change(() => {
-  if (dayDateInput.val()) {
-    currentDay = dayDateInput.val();
+dayDateInput.addEventListener("change", () => {
+  if (dayDateInput.value) {
+    currentDay = dayDateInput.value;
     loadDayStudentsList();
   }
 });
 
 function showTab(tabId) {
-  $(".tab-pane").removeClass("show active");
-  $("#" + tabId).addClass("show active");
+  document
+    .querySelectorAll(".tab-pane")
+    .forEach((el) => el.classList.remove("show", "active"));
+  document.getElementById(tabId).classList.add("show", "active");
   // const tab = new bootstrap.Tab(document.getElementById(tabId.replace('pills', 'pills-tab')));
   // tab.show();
   if (tabId === "pills-students") {
     loadStudentsList();
-    newStudentInfosForm[0].reset();
+    newStudentInfosForm.reset();
   } else if (tabId === "pills-new_day") {
-    if (!dayDateInput.val()) {
-      dayDateInput.val(new Date().toISOString().slice(0, 10)).change();
+    if (!dayDateInput.value) {
+      dayDateInput.value = new Date().toISOString().slice(0, 10);
+      dayDateInput.dispatchEvent(new Event("change"));
     } else {
       loadDayStudentsList();
     }
@@ -876,7 +924,7 @@ secondAyahSelect.addEventListener("change", async function () {
     !secondSurahSelect.value ||
     !secondAyahSelect.value
   ) {
-    $("#requirQuantity").val("");
+    requirQuantity.value = "";
     return;
   }
   const query = generatelignCount(
@@ -890,11 +938,11 @@ secondAyahSelect.addEventListener("change", async function () {
   );
   const results = quran_db.exec(query);
   if (!results || !results.length || !results[0].values.length) {
-    $("#requirQuantity").val("");
+    requirQuantity.value = "";
     return;
   }
   const totalLines = results[0].values[0][0];
-  $("#requirQuantity").val(totalLines);
+  requirQuantity.value = totalLines;
 });
 
 // // Function to get the difference in ayahs between two surahs
