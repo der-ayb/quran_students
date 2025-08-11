@@ -1,7 +1,7 @@
 // script.js
 window._toastQueue = window._toastQueue || [];
 window._toastReady = false;
-let project_db, quran_db, SQL, currentDay;
+let project_db, quran_db, SQL, currentDay, students_table, students_day_table;
 const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
@@ -42,7 +42,7 @@ $(function () {
 
 // students tab
 function loadStudentsList() {
-  $("#studentsListTable").bootstrapTable("destroy");
+  if (students_table) students_table.destroy();
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
@@ -146,7 +146,23 @@ function loadStudentsList() {
         });
       });
     }
-    $("#studentsListTable").bootstrapTable({ data });
+    students_table = new DataTable("#studentsListTable", {
+      data: data,
+      scrollX: true,
+      info:false,
+      oLanguage: {
+        "sSearch": "بحث"
+      },
+      paging: false,
+      responsive: true,
+      columns: [
+        { data: "id" },
+        { data: "name" },
+        { data: "age" },
+        { data: "parentPhone" },
+        { data: "actions" },
+      ],
+    });
   } catch (e) {
     window.showToast("warning", "Error: " + e.message);
   }
@@ -337,7 +353,7 @@ function update_day_module_evaluation(studentId) {
 }
 
 function loadDayStudentsList() {
-  $("#dayListTable").bootstrapTable("destroy");
+  if (students_day_table) students_day_table.destroy();
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
@@ -443,9 +459,31 @@ function loadDayStudentsList() {
         });
       });
     }
-    $("#dayListTable").bootstrapTable({ data });
-    // dayDateInput.prependTo('.fixed-table-toolbar');
-    // dayDateInput.addClass("float-left search form-control col-4");
+    students_day_table = new DataTable("#dayListTable", {
+      data: data,
+      scrollX: true,
+      info:false,
+      oLanguage: {
+        "sSearch": "بحث"
+      },
+      paging: false,
+      responsive: true,
+      columns: [
+        { data: "id" },
+        { data: "student" },
+        { data: "attendance" },
+        { data: "book", defaultContent: "/" },
+        { data: "type", defaultContent: "/" },
+        { data: "quantity", defaultContent: "/" },
+        { data: "evaluation", defaultContent: "/" },
+        { data: "requirement", defaultContent: "/" },
+        { data: "dressCode", defaultContent: "/" },
+        { data: "haircut", defaultContent: "/" },
+        { data: "behavior", defaultContent: "/" },
+        { data: "prayer", defaultContent: "/" },
+        { data: "actions" },
+      ],
+    });
   } catch (e) {
     window.showToast("error", "Error: " + e.message);
   }
