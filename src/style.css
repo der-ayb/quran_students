@@ -4,6 +4,10 @@ body {
   font-family: "Noto Sans Arabic", sans-serif;
 }
 
+input {
+  direction: rtl !important;
+}
+
 #fileInput,
 #downloadBtn {
   opacity: 0;

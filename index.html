@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.rtl.min.css"
     integrity="sha384-Xbg45MqvDIk1e563NLpGEulpX6AvL404DP+/iCgW9eFa2BqztiwTexswJo2jLMue" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.css" />
   <link type="text/css" rel="stylesheet" href="src/style.css" />
   <link rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.css" />
 </head>
@@ -89,26 +90,9 @@
               </button>
             </h2>
           </div>
-          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne">
+          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#pills-preferences">
             <div class="card-body">
-              Some placeholder content for the first accordion panel. This panel is shown by default, thanks to the
-              <code>.show</code> class.
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header" id="headingTwo">
-            <h2 class="mb-0">
-              <button class="btn btn-link btn-block text-start collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                Collapsible Group Item #2
-              </button>
-            </h2>
-          </div>
-          <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo">
-            <div class="card-body">
-              Some placeholder content for the second accordion panel. This panel is hidden by default.
+              اعدادات عامة
             </div>
           </div>
         </div>
@@ -122,8 +106,12 @@
               </button>
             </h2>
           </div>
-          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree">
+          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#pills-preferences">
             <div class="card-body">
+              <div class="files-inputs">
+                <button id="newDBbtn"></button>
+                <label for="newDBbtn">جديد</label>
+              </div>
               <div class="files-inputs">
                 <input type="file" id="fileInput">
                 <label for="fileInput">📥 استيراد</label>
@@ -444,6 +432,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.js"></script>
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.js"></script>
+
 
 <script src="src/auth.js"></script>
 <script src="src/script.js"></script>

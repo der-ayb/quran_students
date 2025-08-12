@@ -6,17 +6,22 @@ const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
-const dayDateInput = document.getElementById("dayDate");
+let loadingModalQueue = 0
 
+const dayDateInput = document.getElementById("dayDate");
 const newStudentInfosForm = document.getElementById("newStudentInfosForm");
 const studentDayForm = document.getElementById("studentDayForm");
 const studentIdInput = document.getElementById("studentId");
-const attendance = document.getElementById("attendance");
-const requirEvaluation = document.getElementById("requirEvaluation");
-const requireBookInput = document.getElementById("requirBook")
-const requirQuantity = document.getElementById("requirQuantity");
+const attendanceInput = document.getElementById("attendance");
+const requirEvaluationInput = document.getElementById("requirEvaluation");
+const requireBookInput = document.getElementById("requirBook");
+const requirQuantityInput = document.getElementById("requirQuantity");
 const requirementInput = document.getElementById("requirement");
-const requirType = document.getElementById("requirType");
+const requirTypeInput = document.getElementById("requirType");
+const dressCodeInput = document.getElementById("dressCode");
+const haircutInput = document.getElementById("haircut");
+const behaviorInput = document.getElementById("behavior");
+const prayerInput = document.getElementById("prayer");
 const nameInput = document.getElementById("name");
 const birthdayInput = document.getElementById("birthday");
 const parentPhoneInput = document.getElementById("parentPhone");
@@ -82,7 +87,7 @@ function loadStudentsList() {
         detailBtn.type = "button";
         detailBtn.innerHTML =
           '<i class="fa-regular fa-address-card"></i> تفاصيل';
-        detailBtn.addEventListener("click", function () {
+        detailBtn.onclick = function () {
           const row = this.closest("tr");
           const cells = row.querySelectorAll("td");
           const studentDetails = {
@@ -94,7 +99,7 @@ function loadStudentsList() {
           alert(
             `تفاصيل الطالب:\nالمعرف: ${studentDetails.id}\nالاسم: ${studentDetails.name}\nالعمر: ${studentDetails.age}\nهاتف الولي: ${studentDetails.parentPhone}`
           );
-        });
+        };
         dropdownMenu.appendChild(detailBtn);
 
         // Edit
@@ -102,7 +107,7 @@ function loadStudentsList() {
         editBtn.className = "dropdown-item btn-secondary";
         editBtn.type = "button";
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
-        editBtn.addEventListener("click", function () {
+        editBtn.onclick = function () {
           newStudentInfosModal.show();
           const row = this.closest("tr");
           const cells = row.querySelectorAll("td");
@@ -115,7 +120,7 @@ function loadStudentsList() {
           nameInput.value = result[0].values[0][1];
           birthdayInput.value = result[0].values[0][2];
           parentPhoneInput.value = result[0].values[0][3];
-        });
+        };
         dropdownMenu.appendChild(editBtn);
 
         // Delete
@@ -123,7 +128,7 @@ function loadStudentsList() {
         deleteBtn.className = "dropdown-item btn-danger";
         deleteBtn.type = "button";
         deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
-        deleteBtn.addEventListener("click", function () {
+        deleteBtn.onclick = function () {
           const row = this.closest("tr");
           const cells = row.querySelectorAll("td");
           const studentId = cells[0].textContent;
@@ -142,7 +147,7 @@ function loadStudentsList() {
           } catch (e) {
             window.showToast("warning", "Error: " + e.message);
           }
-        });
+        };
         dropdownMenu.appendChild(deleteBtn);
 
         dropdownDiv.appendChild(dropdownBtn);
@@ -162,6 +167,7 @@ function loadStudentsList() {
       info: false,
       oLanguage: {
         sSearch: "بحث",
+        emptyTable: "لا توجد بيانات في الجدول."
       },
       paging: false,
       responsive: true,
@@ -247,73 +253,68 @@ document
   .addEventListener("show.bs.modal", function () {
     document.getElementById("studentName").disabled = false;
     requireBookInput.disabled = false;
-    requirType.disabled = false;
-    requirQuantity.disabled = false;
-    requirEvaluation.disabled = false;
+    requirTypeInput.disabled = false;
+    requirQuantityInput.disabled = false;
+    requirEvaluationInput.disabled = false;
     requirementInput.disabled = false;
-    document.getElementById("dressCode").disabled = false;
-    document.getElementById("haircut").disabled = false;
-    document.getElementById("behavior").disabled = false;
-    document.getElementById("prayer").disabled = false;
+    dressCodeInput.disabled = false;
+    haircutInput.disabled = false;
+    behaviorInput.disabled = false;
+    prayerInput.disabled = false;
     studentDayForm.reset();
   });
 
-requireBookInput.addEventListener("change", function () {
+requireBookInput.onchange = function () {
   const quranSelectionSection1 = document.getElementById(
     "quranSelectionSection1"
   );
   const quranSelectionSection2 = document.getElementById(
     "quranSelectionSection2"
   );
-  
+
   if (this.value === "القرآن") {
     quranSelectionSection1.style.display = "block";
     quranSelectionSection2.style.display = "block";
-    requirQuantity.readOnly = true;
+    requirQuantityInput.readOnly = true;
   } else {
     quranSelectionSection1.style.display = "none";
     quranSelectionSection2.style.display = "none";
-    requirQuantity.readOnly = false;
-    requirQuantity.value = "";
+    requirQuantityInput.readOnly = false;
+    requirQuantityInput.value = "";
   }
-});
+};
 
-attendance.addEventListener("change", function () {
+attendanceInput.onchange = function () {
   const elementsToDisable = [
-    "#studentName",
-    "#requirBook",
-    "#requirType",
-    "#requirQuantity",
-    "#requirEvaluation",
-    "#requirement",
-    "#dressCode",
-    "#haircut",
-    "#behavior",
-    "#prayer",
-  ];
+    "studentName",
+    "requirBook",
+    "requirType",
+    "requirQuantity",
+    "requirEvaluation",
+    "requirement",
+    "dressCode",
+    "haircut",
+    "behavior",
+    "prayer",
+  ].map((id) => document.getElementById(id));
   const disable = this.value === "1";
-  elementsToDisable.forEach((selector) => {
-    document.querySelector(selector).disabled = disable;
+  elementsToDisable.forEach((element) => {
+    element.disabled = disable;
   });
   requireBookInput.value = "";
   requireBookInput.dispatchEvent(new Event("change"));
-});
+};
 
-["#requirQuantity", "#requirEvaluation", "#requirType"].forEach((selector) => {
-  document
-    .querySelector(selector)
-    .addEventListener("change", calculateRequirement);
-  document
-    .querySelector(selector)
-    .addEventListener("input", calculateRequirement);
+["requirQuantity", "requirEvaluation", "requirType"].forEach((id) => {
+  const element = document.getElementById(id);
+  element.onchange = calculateRequirement;
+  element.oninput = calculateRequirement;
 });
 
 function calculateRequirement() {
-  const quantity = parseFloat(requirQuantity.value);
-  const evaluation = parseFloat(
-    requirEvaluation.value
-  );
-  const type = requirType.value;
+  const quantity = parseFloat(requirQuantityInput.value);
+  const evaluation = parseFloat(requirEvaluationInput.value);
+  const type = requirTypeInput.value;
 
   if (!quantity || !evaluation || !type) {
     requirementInput.value = "";
@@ -334,50 +335,41 @@ function update_day_module_evaluation(studentId) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
-  try {
-    if (attendance.value !== "1") {
-      project_db.run(
-        "INSERT OR REPLACE INTO day_requirements (student_id, day, book, type,quantity, evaluation) VALUES (?, ?, ?, ?,?,?);",
-        [
-          studentId,
-          currentDay,
-          requireBookInput.value,
-          requirType.value,
-          requirQuantity.value,
-          requirEvaluation.value,
-        ]
-      );
+  if (attendanceInput.value !== "1") {
+    project_db.run(
+      "INSERT OR REPLACE INTO day_requirements (student_id, day, book, type,quantity, evaluation) VALUES (?, ?, ?, ?,?,?);",
+      [
+        studentId,
+        currentDay,
+        requireBookInput.value,
+        requirTypeInput.value,
+        requirQuantityInput.value,
+        requirEvaluationInput.value,
+      ]
+    );
 
-      const modules = [
-        { id: 1, selector: "#requirement" },
-        { id: 2, selector: "#attendance" },
-        { id: 3, selector: "#dressCode" },
-        { id: 4, selector: "#haircut" },
-        { id: 5, selector: "#behavior" },
-        { id: 6, selector: "#prayer" },
-      ];
-      modules.forEach((mod) => {
-        project_db.run(
-          "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
-          [
-            studentId,
-            mod.id,
-            currentDay,
-            document.getElementById(mod.selector).value,
-          ]
-        );
-      });
-    } else {
+    const modules = [
+      { id: 1, selector: requirementInput.value },
+      { id: 2, selector: attendanceInput.value },
+      { id: 3, selector: dressCodeInput.value },
+      { id: 4, selector: haircutInput.value },
+      { id: 5, selector: behaviorInput.value },
+      { id: 6, selector: prayerInput.value },
+    ];
+    modules.forEach((mod) => {
       project_db.run(
         "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
-        [studentId, 2, currentDay, attendance.value]
+        [studentId, mod.id, currentDay, mod.selector]
       );
-    }
-    saveToIndexedDB(project_db.export());
-    loadDayStudentsList();
-  } catch (e) {
-    window.showToast("error", "Error: " + e.message);
+    });
+  } else {
+    project_db.run(
+      "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
+      [studentId, 2, currentDay, attendanceInput.value]
+    );
   }
+  saveToIndexedDB(project_db.export());
+  loadDayStudentsList();
 }
 
 function loadDayStudentsList() {
@@ -389,28 +381,24 @@ function loadDayStudentsList() {
   try {
     const results = project_db.exec(`
       SELECT 
-        s.id AS student_id, s.name AS student_name,
-        MAX(dr.book) AS "الكتاب",
-        MAX(dr.type) AS "النوع",
-        MAX(dr.quantity) AS "المقدار",
-        MAX(dr.evaluation) AS "التقدير",
-        MAX(CASE WHEN m.id = 1 THEN dmm.evaluation ELSE NULL END) AS "الحفظ",
-        MAX(CASE WHEN m.id = 2 THEN dmm.evaluation ELSE NULL END) AS "الحظور",
-        MAX(CASE WHEN m.id = 3 THEN dmm.evaluation ELSE NULL END) AS "الهندام",
-        MAX(CASE WHEN m.id = 4 THEN dmm.evaluation ELSE NULL END) AS "الحلاقة",
-        MAX(CASE WHEN m.id = 5 THEN dmm.evaluation ELSE NULL END) AS "السلوك",
-        MAX(CASE WHEN m.id = 6 THEN dmm.evaluation ELSE NULL END) AS "الصلاة"
+        s.id AS student_id, 
+        s.name AS student_name,
+        dr.book AS "الكتاب",
+        dr.type AS "النوع",
+        dr.quantity AS "المقدار",
+        dr.evaluation AS "التقدير",
+        dme.evaluation AS "الحفظ",
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 2 AND day = '${currentDay}') AS "الحظور",
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 3 AND day = '${currentDay}') AS "الهندام",
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 4 AND day = '${currentDay}') AS "الحلاقة",
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 5 AND day = '${currentDay}') AS "السلوك",
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 6 AND day = '${currentDay}') AS "الصلاة"
       FROM 
         students s
-      CROSS JOIN 
-        modules m
       LEFT JOIN 
-        day_module_evaluation dmm ON s.id = dmm.student_id 
-        AND m.id = dmm.module_id 
-        AND dmm.day = '${currentDay}'
+        day_requirements dr ON s.id = dr.student_id AND dr.day = '${currentDay}'
       LEFT JOIN 
-        day_requirements dr ON s.id = dr.student_id 
-        AND dr.day = '${currentDay}'
+        day_module_evaluation dme ON s.id = dme.student_id AND dme.module_id = 1 AND dme.day = '${currentDay}'
       GROUP BY 
         s.id, s.name
       ORDER BY 
@@ -420,35 +408,37 @@ function loadDayStudentsList() {
     const data = [];
     if (results.length) {
       const result = results[0];
+      const studentNameEl = document.getElementById("studentName");
+
       result.values.forEach((row) => {
         const td = document.createElement("td");
         const editBtn = document.createElement("button");
         editBtn.className = "btn btn-sm btn-primary";
         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
-        editBtn.addEventListener("click", function () {
+        editBtn.onclick = function () {
           newStudentDayModal.show();
-          document.getElementById("studentName").value = row[1];
+          studentNameEl.value = row[1];
           requireBookInput.value = row[2] || "";
           requireBookInput.dispatchEvent(new Event("change"));
 
-          requirType.value = row[3] || "";
-          requirType.dispatchEvent(new Event("change"));
+          requirTypeInput.value = row[3] || "";
+          requirTypeInput.dispatchEvent(new Event("change"));
 
-          requirQuantity.value = row[4] || "";
-          requirQuantity.dispatchEvent(new Event("change"));
+          requirQuantityInput.value = row[4] || "";
+          requirQuantityInput.dispatchEvent(new Event("change"));
 
-          requirEvaluation.value = row[5] || "";
-          requirEvaluation.dispatchEvent(new Event("change"));
+          requirEvaluationInput.value = row[5] || "";
+          requirEvaluationInput.dispatchEvent(new Event("change"));
 
           requirementInput.value = row[6] || "";
 
-          attendance.value = row[7] || "";
-          attendance.dispatchEvent(new Event("change"));
+          attendanceInput.value = row[7] || "";
+          attendanceInput.dispatchEvent(new Event("change"));
 
-          document.getElementById("dressCode").value = row[8] || "";
-          document.getElementById("haircut").value = row[9] || "";
-          document.getElementById("behavior").value = row[10] || "";
-          document.getElementById("prayer").value = row[11] || "";
+          dressCodeInput.value = row[8] || "";
+          haircutInput.value = row[9] || "";
+          behaviorInput.value = row[10] || "";
+          prayerInput.value = row[11] || "";
 
           studentDayForm.addEventListener("submit", function (e) {
             e.preventDefault();
@@ -459,7 +449,7 @@ function loadDayStudentsList() {
             update_day_module_evaluation(row[0]);
             newStudentDayModal.hide();
           });
-        });
+        };
         const attendanceOption = document.querySelector(
           `#attendance option[value='${row[7]}']`
         );
@@ -505,11 +495,13 @@ function loadDayStudentsList() {
       });
     }
     students_day_table = new DataTable("#dayListTable", {
+      columnDefs: [{ visible: false, targets: 0 }],
       data: data,
       scrollX: true,
       info: false,
       oLanguage: {
         sSearch: "بحث",
+        emptyTable: "لا توجد بيانات في الجدول."
       },
       paging: false,
       responsive: true,
@@ -543,40 +535,55 @@ async function init() {
   });
 
   loadFromIndexedDB((savedProjectData, savedQuranData) => {
+    const navMobile = document.querySelector(".nav-mobile");
     if (savedProjectData) {
       project_db = new SQL.Database(new Uint8Array(savedProjectData));
     } else {
-      document.getElementsByClassName("nav-mobile").style.display = "none";
-      const loadingModal = new bootstrap.Modal(
-        document.getElementById("loadingModal")
-      );
-      loadingModal.show();
-      fetchAndReadFile(
-        PROJECT_DB_KEY,
-        "https://der-ayb.github.io/quran_students/default.sqlite"
-      );
-      setTimeout(function () {
-        loadingModal.hide();
-        window.showToast("success", "Database loaded.");
-      }, 2000);
+      navMobile.style.display = "none";
+      newDB();
     }
     if (savedQuranData) {
       quran_db = new SQL.Database(new Uint8Array(savedQuranData));
       initializeAyatdata(quran_db);
     } else {
-      document.getElementsByClassName("nav-mobile").style.display = "none";
-      loadingModal.show();
-      fetchAndReadFile(
-        QURAN_DB_KEY,
-        "https://der-ayb.github.io/quran_students/quran.sqlite"
-      );
-      setTimeout(function () {
-        loadingModal.hide();
-        window.showToast("success", "Database loaded.");
-      }, 2000);
+      navMobile.style.display = "none";
+      downloadQuranDB();
     }
-    document.getElementsByClassName("nav-mobile").style.display = "block";
+    navMobile.style.removeProperty("display");
   });
+}
+
+function downloadQuranDB() {
+  showModalLoading();
+  fetchAndReadFile(
+    QURAN_DB_KEY,
+    "https://der-ayb.github.io/quran_students/quran.sqlite"
+  ).finally(() => hideModalLoading);
+}
+
+function newDB() {
+  showModalLoading();
+  fetchAndReadFile(
+    PROJECT_DB_KEY,
+    "https://der-ayb.github.io/quran_students/default.sqlite"
+  ).finally(() => hideModalLoading());
+  if(quran_db){
+    downloadQuranDB()
+  }
+}
+
+function showModalLoading(){
+  if(!loadingModal._isShown){
+    loadingModal.show();
+    loadingModalQueue +=1;
+  }
+}
+
+function hideModalLoading(){
+  if(loadingModal._isShown && loadingModalQueue == 1){
+    loadingModal.hide();
+    loadingModalQueue -=1;
+  }
 }
 
 function initializeToast() {
@@ -722,7 +729,7 @@ async function loadDBFromFile(file) {
     const uInt8Array = new Uint8Array(reader.result);
     project_db = new SQL.Database(uInt8Array);
     saveToIndexedDB(project_db.export());
-    window.showToast("success", "Database loaded.");
+    window.showToast("success", "تم تحميل قاعدة البيانات.");
   };
   reader.readAsArrayBuffer(file);
 }
@@ -741,37 +748,34 @@ async function fetchAndReadFile(db_key, url) {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch file");
     const blob = await response.blob();
-    const reader = new FileReader();
-    reader.onload = function (event) {
-      const uInt8Array = new Uint8Array(reader.result);
-      const db = new SQL.Database(uInt8Array);
-      saveToIndexedDB(db.export(), db_key);
-      if (db_key === QURAN_DB_KEY) {
-        quran_db = db;
-        initializeAyatdata(db);
-      } else if (db_key === PROJECT_DB_KEY) {
-        project_db = db;
-      }
-    };
-
-    reader.readAsArrayBuffer(blob); // or reader.readAsArrayBuffer(blob) / readAsDataURL(blob)
+    const uInt8Array = new Uint8Array(await blob.arrayBuffer());
+    const db = new SQL.Database(uInt8Array);
+    await saveToIndexedDB(db.export(), db_key);
+    if (db_key === QURAN_DB_KEY) {
+      quran_db = db;
+      initializeAyatdata(db);
+    } else if (db_key === PROJECT_DB_KEY) {
+      project_db = db;
+    }
+    window.showToast("success", "تم تحميل قاعدة البيانات.");
   } catch (error) {
     window.showToast("Error reading file:", error);
   }
 }
 
-document.getElementById("downloadBtn").addEventListener("click", downloadDB);
-document.getElementById("fileInput").addEventListener("change", (e) => {
+document.getElementById("newDBbtn").onclick = newDB;
+document.getElementById("downloadBtn").onclick = downloadDB;
+document.getElementById("fileInput").onchange = (e) => {
   if (e.target.files.length) {
     loadDBFromFile(e.target.files[0]);
   }
-});
-dayDateInput.addEventListener("change", () => {
+};
+dayDateInput.onchange = () => {
   if (dayDateInput.value) {
     currentDay = dayDateInput.value;
     loadDayStudentsList();
   }
-});
+};
 
 function showTab(tabId) {
   document
@@ -781,13 +785,15 @@ function showTab(tabId) {
   // const tab = new bootstrap.Tab(document.getElementById(tabId.replace('pills', 'pills-tab')));
   // tab.show();
   if (tabId === "pills-students") {
-    loadStudentsList();
+    if (!students_table) {
+      loadStudentsList();
+    }
     newStudentInfosForm.reset();
   } else if (tabId === "pills-new_day") {
     if (!dayDateInput.value) {
       dayDateInput.value = new Date().toISOString().slice(0, 10);
       dayDateInput.dispatchEvent(new Event("change"));
-    } else {
+    } else if (!students_day_table) {
       loadDayStudentsList();
     }
     newStudentDayModal.hide();
@@ -863,7 +869,7 @@ const checkSecondSurahAyahs = (secondSurahNumber) => {
   }
 };
 
-firstSurahSelect.addEventListener("change", async function () {
+firstSurahSelect.onchange = async function () {
   const firstSurahNumber = parseInt(this.value);
 
   if (firstSurahNumber) {
@@ -907,24 +913,24 @@ firstSurahSelect.addEventListener("change", async function () {
     secondAyahSelect.innerHTML = "";
     secondAyahSelect.appendChild(createOption("", "--  --"));
   }
-});
+};
 
-secondSurahSelect.addEventListener("change", async function () {
+secondSurahSelect.onchange = async function () {
   checkSecondSurahAyahs(parseInt(this.value));
-});
+};
 
-firstAyahSelect.addEventListener("change", async function () {
+firstAyahSelect.onchange = async function () {
   checkSecondSurahAyahs(parseInt(this.value));
-});
+};
 
-secondAyahSelect.addEventListener("change", async function () {
+secondAyahSelect.onchange = async function () {
   if (
     !firstSurahSelect.value ||
     !firstAyahSelect.value ||
     !secondSurahSelect.value ||
     !secondAyahSelect.value
   ) {
-    requirQuantity.value = "";
+    requirQuantityInput.value = "";
     return;
   }
   const query = generatelignCount(
@@ -938,12 +944,12 @@ secondAyahSelect.addEventListener("change", async function () {
   );
   const results = quran_db.exec(query);
   if (!results || !results.length || !results[0].values.length) {
-    requirQuantity.value = "";
+    requirQuantityInput.value = "";
     return;
   }
   const totalLines = results[0].values[0][0];
-  requirQuantity.value = totalLines;
-});
+  requirQuantityInput.value = totalLines;
+};
 
 // // Function to get the difference in ayahs between two surahs
 const getAyahDifference = (surahNum1, ayahNum1, surahNum2, ayahNum2) => {
