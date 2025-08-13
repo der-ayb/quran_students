@@ -6,7 +6,8 @@ const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
-let loadingModalQueue = 0
+let loadingModalQueue = 0;
+let userAuth = false
 
 const dayDateInput = document.getElementById("dayDate");
 const newStudentInfosForm = document.getElementById("newStudentInfosForm");
@@ -167,7 +168,7 @@ function loadStudentsList() {
       info: false,
       oLanguage: {
         sSearch: "بحث",
-        emptyTable: "لا توجد بيانات في الجدول."
+        emptyTable: "لا توجد بيانات في الجدول.",
       },
       paging: false,
       responsive: true,
@@ -467,6 +468,7 @@ function loadDayStudentsList() {
         );
         data.push({
           id: row[0],
+          actions: editBtn,
           student: row[1],
           attendance: attendanceOption ? attendanceOption.textContent : "",
           book: row[7] === 1 ? "/" : row[2] || "",
@@ -490,23 +492,29 @@ function loadDayStudentsList() {
               : "",
           prayer:
             row[7] === 1 ? "/" : prayerOption ? prayerOption.textContent : "",
-          actions: editBtn,
         });
       });
     }
     students_day_table = new DataTable("#dayListTable", {
-      columnDefs: [{ visible: false, targets: 0 }],
+      columnDefs: [
+        { visible: false, targets: 0 },
+        {
+          targets: 1,
+          orderable: false,
+        },
+      ],
       data: data,
       scrollX: true,
       info: false,
       oLanguage: {
         sSearch: "بحث",
-        emptyTable: "لا توجد بيانات في الجدول."
+        emptyTable: "لا توجد بيانات في الجدول.",
       },
       paging: false,
       responsive: true,
       columns: [
         { data: "id" },
+        { data: "actions" },
         { data: "student" },
         { data: "attendance" },
         { data: "book", defaultContent: "/" },
@@ -518,7 +526,6 @@ function loadDayStudentsList() {
         { data: "haircut", defaultContent: "/" },
         { data: "behavior", defaultContent: "/" },
         { data: "prayer", defaultContent: "/" },
-        { data: "actions" },
       ],
     });
   } catch (e) {
@@ -535,21 +542,21 @@ async function init() {
   });
 
   loadFromIndexedDB((savedProjectData, savedQuranData) => {
-    const navMobile = document.querySelector(".nav-mobile");
+    const nav_bar = document.querySelector(".nav-bar");
     if (savedProjectData) {
       project_db = new SQL.Database(new Uint8Array(savedProjectData));
     } else {
-      navMobile.style.display = "none";
+      nav_bar.style.display = "none";
       newDB();
     }
     if (savedQuranData) {
       quran_db = new SQL.Database(new Uint8Array(savedQuranData));
       initializeAyatdata(quran_db);
     } else {
-      navMobile.style.display = "none";
+      nav_bar.style.display = "none";
       downloadQuranDB();
     }
-    navMobile.style.removeProperty("display");
+    nav_bar.style.removeProperty("display");
   });
 }
 
@@ -557,32 +564,42 @@ function downloadQuranDB() {
   showModalLoading();
   fetchAndReadFile(
     QURAN_DB_KEY,
-    "https://der-ayb.github.io/quran_students/quran.sqlite"
-  ).finally(() => hideModalLoading);
+    "https://der-ayb.github.io/quran_students/quran.sqlite",
+    (db) => {
+      quran_db = db;
+      initializeAyatdata(db);
+      hideModalLoading();
+    }
+  );
 }
 
 function newDB() {
   showModalLoading();
   fetchAndReadFile(
     PROJECT_DB_KEY,
-    "https://der-ayb.github.io/quran_students/default.sqlite"
-  ).finally(() => hideModalLoading());
-  if(quran_db){
-    downloadQuranDB()
-  }
+    "https://der-ayb.github.io/quran_students/default.sqlite",
+    (db) => {
+      project_db = db;
+      hideModalLoading();
+    }
+  );
+  downloadQuranDB();
 }
 
-function showModalLoading(){
-  if(!loadingModal._isShown){
-    loadingModal.show();
-    loadingModalQueue +=1;
-  }
+async function showModalLoading() {
+  loadingModalQueue += 1;
+  loadingModal.show();
+  // setTimeout(() => {
+  //   if (loadingModalQueue == 0) {
+  //     loadingModal.hide();
+  //   }
+  // }, 1000);
 }
 
-function hideModalLoading(){
-  if(loadingModal._isShown && loadingModalQueue == 1){
+async function hideModalLoading() {
+  loadingModalQueue -= 1;
+  if (loadingModalQueue == 0) {
     loadingModal.hide();
-    loadingModalQueue -=1;
   }
 }
 
@@ -743,7 +760,7 @@ async function downloadDB() {
   a.click();
 }
 
-async function fetchAndReadFile(db_key, url) {
+async function fetchAndReadFile(db_key, url, callback = function () {}) {
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch file");
@@ -751,12 +768,13 @@ async function fetchAndReadFile(db_key, url) {
     const uInt8Array = new Uint8Array(await blob.arrayBuffer());
     const db = new SQL.Database(uInt8Array);
     await saveToIndexedDB(db.export(), db_key);
-    if (db_key === QURAN_DB_KEY) {
-      quran_db = db;
-      initializeAyatdata(db);
-    } else if (db_key === PROJECT_DB_KEY) {
-      project_db = db;
-    }
+    callback(db);
+    // if (db_key === QURAN_DB_KEY) {
+    //   quran_db = db;
+    //   initializeAyatdata(db);
+    // } else if (db_key === PROJECT_DB_KEY) {
+    //   project_db = db;
+    // }
     window.showToast("success", "تم تحميل قاعدة البيانات.");
   } catch (error) {
     window.showToast("Error reading file:", error);
@@ -782,8 +800,6 @@ function showTab(tabId) {
     .querySelectorAll(".tab-pane")
     .forEach((el) => el.classList.remove("show", "active"));
   document.getElementById(tabId).classList.add("show", "active");
-  // const tab = new bootstrap.Tab(document.getElementById(tabId.replace('pills', 'pills-tab')));
-  // tab.show();
   if (tabId === "pills-students") {
     if (!students_table) {
       loadStudentsList();
@@ -792,10 +808,9 @@ function showTab(tabId) {
   } else if (tabId === "pills-new_day") {
     if (!dayDateInput.value) {
       dayDateInput.value = new Date().toISOString().slice(0, 10);
-      dayDateInput.dispatchEvent(new Event("change"));
-    } else if (!students_day_table) {
-      loadDayStudentsList();
+      // dayDateInput.dispatchEvent(new Event("change"));
     }
+    loadDayStudentsList();
     newStudentDayModal.hide();
   }
 }

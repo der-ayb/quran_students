@@ -42,7 +42,7 @@ input {
 }
 
 /* nav bar */
-.nav-mobile {
+.nav-bar {
   position: fixed;
   bottom: 10px;
   left: 50%;
@@ -59,7 +59,7 @@ input {
   z-index: 1100;
 }
 
-.nav-mobile button {
+.nav-bar button {
   outline: 0 !important;
   border: 0 !important;
   width: 40px;
@@ -78,7 +78,7 @@ input {
   transform: translateY(-3px);
 }
 
-.nav-mobile button svg {
+.nav-bar button svg {
   font-size: 25px;
 }
 
