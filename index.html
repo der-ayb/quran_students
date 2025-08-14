@@ -29,21 +29,21 @@
       z-index: 9999;
       transition: opacity 0.5s ease;
     }
-    
+
     .fa-spinner {
       font-size: 3rem;
       color: #3498db;
       margin-bottom: 1rem;
       animation: fa-spin 2s linear infinite;
     }
-    
+
     .loading-text {
       font-family: Arial, sans-serif;
       color: #333;
       font-size: 1.2rem;
       letter-spacing: 1px;
     }
-    
+
     .progress-container {
       width: 200px;
       height: 4px;
@@ -52,31 +52,44 @@
       margin-top: 1rem;
       overflow: hidden;
     }
-    
+
     .progress-bar {
       height: 100%;
       width: 0;
       background: linear-gradient(90deg, #3498db, #2ecc71);
       animation: progress 2s ease-in-out infinite;
     }
-    
+
     @keyframes fa-spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
-    
+
     @keyframes progress {
-      0% { width: 0; }
-      50% { width: 100%; }
-      100% { width: 0; margin-left: 100%; }
+      0% {
+        width: 0;
+      }
+
+      50% {
+        width: 100%;
+      }
+
+      100% {
+        width: 0;
+        margin-left: 100%;
+      }
     }
   </style>
 </head>
 
 <body class="container-fluid" style="width: 100vw;margin-bottom: 4rem!important;">
-  <!-- Font Awesome Preloader -->
+  <!-- Preloader -->
   <div class="fa-preloader">
-    <i class="fas fa-spinner fa-spinner"></i>
     <div class="loading-text">مرحبا بك</div>
     <div class="progress-container">
       <div class="progress-bar"></div>
@@ -96,7 +109,7 @@
 
     <div class="tab-pane fade" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
       <h2 class="text-center">الملخص</h2>
-      
+
     </div>
 
     <div class="tab-pane fade" id="pills-students" role="tabpanel" aria-labelledby="pills-students-tab">
@@ -159,7 +172,8 @@
               </button>
             </h2>
           </div>
-          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#pills-preferences">
+          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
+            data-bs-parent="#pills-preferences">
             <div class="card-body">
               اعدادات عامة
             </div>
@@ -175,7 +189,8 @@
               </button>
             </h2>
           </div>
-          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#pills-preferences">
+          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree"
+            data-bs-parent="#pills-preferences">
             <div class="card-body">
               <div class="files-inputs">
                 <button id="newDBbtn"></button>
@@ -199,30 +214,28 @@
 
   <div class="nav-bar" style="display: none;">
     <button onclick="showTab('pills-summary'); return false;">
-      <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024" height="1em" width="1em"
-        xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M946.5 505L560.1 118.8l-25.9-25.9a31.5 31.5 0 0 0-44.4 0L77.5 505a63.9 63.9 0 0 0-18.8 46c.4 35.2 29.7 63.3 64.9 63.3h42.5V940h691.8V614.3h43.4c17.1 0 33.2-6.7 45.3-18.8a63.6 63.6 0 0 0 18.7-45.3c0-17-6.7-33.1-18.8-45.2zM568 868H456V664h112v204zm217.9-325.7V868H632V640c0-22.1-17.9-40-40-40H432c-22.1 0-40 17.9-40 40v228H238.1V542.3h-96l370-369.7 23.1 23.1L882 542.3h-96.1z">
-        </path>
-      </svg>
-    </button>
-    <button onclick="showTab('pills-students'); return false;">
-      <svg width="256px" height="256px" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink" fill="#000000" data-darkreader-inline-fill=""
-        style="--darkreader-inline-fill: var(--darkreader-background-000000, #000000);">
+      <svg width="256px" height="256px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
         <g id="SVGRepo_iconCarrier">
-          <title>contact-details</title>
-          <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: none;">
-            <g id="icon" fill="#000000" transform="translate(42.666667, 85.333333)" data-darkreader-inline-fill=""
-              style="--darkreader-inline-fill: var(--darkreader-background-000000, #000000);">
-              <path
-                d="M426.666667,1.42108547e-14 L426.666667,341.333333 L3.55271368e-14,341.333333 L3.55271368e-14,1.42108547e-14 L426.666667,1.42108547e-14 Z M384,42.6666667 L42.6666667,42.6666667 L42.6666667,298.666667 L384,298.666667 L384,42.6666667 Z M341.333333,213.333333 L341.333333,245.333333 L234.666667,245.333333 L234.666667,213.333333 L341.333333,213.333333 Z M146.666667,155.733333 C177.493333,155.733333 202.666667,181.333333 202.666667,213.333333 L74.6666667,213.333333 C74.6666667,181.333333 99.7387207,155.733333 130.666667,155.733333 L146.666667,155.733333 Z M341.333333,149.333333 L341.333333,181.333333 L234.666667,181.333333 L234.666667,149.333333 L341.333333,149.333333 Z M138.666667,78.62624 C154.13064,78.62624 166.666667,91.162267 166.666667,106.62624 C166.666667,122.090213 154.13064,134.62624 138.666667,134.62624 C123.202694,134.62624 110.666667,122.090213 110.666667,106.62624 C110.666667,91.162267 123.202694,78.62624 138.666667,78.62624 Z M341.333333,85.3333333 L341.333333,117.333333 L234.666667,117.333333 L234.666667,85.3333333 L341.333333,85.3333333 Z"
-                id="Combined-Shape"> </path>
-            </g>
-          </g>
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M4.18753 11.3788C4.03002 11.759 4 11.9533 4 12V20.0018C4 20.5529 4.44652 21 5 21H8V15C8 13.8954 8.89543 13 10 13H14C15.1046 13 16 13.8954 16 15V21H19C19.5535 21 20 20.5529 20 20.0018V12C20 11.9533 19.97 11.759 19.8125 11.3788C19.6662 11.0256 19.4443 10.5926 19.1547 10.1025C18.5764 9.1238 17.765 7.97999 16.8568 6.89018C15.9465 5.79788 14.9639 4.78969 14.0502 4.06454C13.5935 3.70204 13.1736 3.42608 12.8055 3.2444C12.429 3.05862 12.1641 3 12 3C11.8359 3 11.571 3.05862 11.1945 3.2444C10.8264 3.42608 10.4065 3.70204 9.94978 4.06454C9.03609 4.78969 8.05348 5.79788 7.14322 6.89018C6.23505 7.97999 5.42361 9.1238 4.8453 10.1025C4.55568 10.5926 4.33385 11.0256 4.18753 11.3788ZM10.3094 1.45091C10.8353 1.19138 11.4141 1 12 1C12.5859 1 13.1647 1.19138 13.6906 1.45091C14.2248 1.71454 14.7659 2.07921 15.2935 2.49796C16.3486 3.33531 17.4285 4.45212 18.3932 5.60982C19.3601 6.77001 20.2361 8.0012 20.8766 9.08502C21.1963 9.62614 21.4667 10.1462 21.6602 10.6134C21.8425 11.0535 22 11.5467 22 12V20.0018C22 21.6599 20.6557 23 19 23H16C14.8954 23 14 22.1046 14 21V15H10V21C10 22.1046 9.10457 23 8 23H5C3.34434 23 2 21.6599 2 20.0018V12C2 11.5467 2.15748 11.0535 2.33982 10.6134C2.53334 10.1462 2.80369 9.62614 3.12345 9.08502C3.76389 8.0012 4.63995 6.77001 5.60678 5.60982C6.57152 4.45212 7.65141 3.33531 8.70647 2.49796C9.2341 2.07921 9.77521 1.71454 10.3094 1.45091Z"
+            fill="#0F0F0F" data-darkreader-inline-fill=""
+            style="--darkreader-inline-fill: var(--darkreader-background-0f0f0f, #0b0c0d);"></path>
+        </g>
+      </svg>
+    </button>
+    <button onclick="showTab('pills-students'); return false;">
+      <svg fill="#ffffff" width="256px" height="256px" viewBox="0 0 24.00 24.00" xmlns="http://www.w3.org/2000/svg"
+        data-darkreader-inline-fill=""
+        style="--darkreader-inline-fill: var(--darkreader-background-ffffff, #181a1b); --darkreader-inline-stroke: var(--darkreader-text-ffffff, #e8e6e3);"
+        stroke="#ffffff" stroke-width="0.00024000000000000003" data-darkreader-inline-stroke="">
+        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+        <g id="SVGRepo_iconCarrier">
+          <path
+            d="M20,1H4A1,1,0,0,0,3,2V22a1,1,0,0,0,1,1H20a1,1,0,0,0,1-1V2A1,1,0,0,0,20,1ZM19,21H5V3H19ZM9,8.5a3,3,0,1,1,3,3A3,3,0,0,1,9,8.5Zm-2,9a5,5,0,0,1,10,0,1,1,0,0,1-2,0,3,3,0,0,0-6,0,1,1,0,0,1-2,0Z">
+          </path>
         </g>
       </svg>
     </button>
@@ -251,37 +264,24 @@
     </button>
 
     <button onclick="showTab('pills-preferences'); return false;">
-      <svg width="256px" height="256px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="256px" height="256px" viewBox="0 0 32 32" enable-background="new 0 0 32 32" id="Stock_cut"
+        version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        fill="#000000" data-darkreader-inline-fill=""
+        style="--darkreader-inline-fill: var(--darkreader-background-000000, #000000);">
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
         <g id="SVGRepo_iconCarrier">
-          <path d="M19 22V11" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
-            stroke-linejoin="round" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: var(--darkreader-text-292d32, #cbc7c0);"></path>
-          <path d="M19 7V2" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
-            stroke-linejoin="round" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: var(--darkreader-text-292d32, #cbc7c0);"></path>
-          <path d="M12 22V17" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
-            stroke-linejoin="round" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: var(--darkreader-text-292d32, #cbc7c0);"></path>
-          <path d="M12 13V2" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
-            stroke-linejoin="round" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: var(--darkreader-text-292d32, #cbc7c0);"></path>
-          <path d="M5 22V11" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
-            stroke-linejoin="round" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: var(--darkreader-text-292d32, #cbc7c0);"></path>
-          <path d="M5 7V2" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
-            stroke-linejoin="round" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: var(--darkreader-text-292d32, #cbc7c0);"></path>
-          <path d="M3 11H7" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
-            stroke-linejoin="round" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: var(--darkreader-text-292d32, #cbc7c0);"></path>
-          <path d="M17 11H21" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
-            stroke-linejoin="round" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: var(--darkreader-text-292d32, #cbc7c0);"></path>
-          <path d="M10 13H14" stroke="#292D32" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
-            stroke-linejoin="round" data-darkreader-inline-stroke=""
-            style="--darkreader-inline-stroke: var(--darkreader-text-292d32, #cbc7c0);"></path>
+          <desc></desc>
+          <g>
+            <path
+              d="M31,19v-6h-4.425 c-0.252-0.888-0.611-1.729-1.065-2.51L29,7l-4-4l-3.49,3.49C21.028,6.21,20.525,5.967,20,5.761V1h-8v4.761 c-0.525,0.205-1.028,0.449-1.51,0.728L7,3L3,7l3.49,3.49C6.036,11.271,5.676,12.112,5.425,13H1v6h4.425 c0.252,0.888,0.611,1.729,1.065,2.51L3,25l4,4l3.49-3.49c0.482,0.28,0.986,0.523,1.51,0.728V31h8v-4.761 c0.525-0.205,1.028-0.449,1.51-0.728L25,29l4-4l-3.49-3.49c0.454-0.781,0.813-1.622,1.065-2.51H31z"
+              fill="none" stroke="#000000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2"
+              data-darkreader-inline-stroke=""
+              style="--darkreader-inline-stroke: var(--darkreader-text-000000, #e8e6e3);"></path>
+            <circle cx="16" cy="16" fill="none" r="5" stroke="#000000" stroke-linejoin="round" stroke-miterlimit="10"
+              stroke-width="2" data-darkreader-inline-stroke=""
+              style="--darkreader-inline-stroke: var(--darkreader-text-000000, #e8e6e3);"></circle>
+          </g>
         </g>
       </svg>
     </button>
@@ -491,14 +491,14 @@
   <div id="toastWrapper" class="toast-wrapper" aria-live="polite" aria-atomic="true"></div>
 </body>
 <script>
-     window.addEventListener('load', function() {
-      const preloader = document.querySelector('.fa-preloader');
-      preloader.style.opacity = '0';
-      setTimeout(() => {
-        preloader.style.display = 'none';
-      }, 500);
-    });
-  </script>
+  window.addEventListener('load', function () {
+    const preloader = document.querySelector('.fa-preloader');
+    preloader.style.opacity = '0';
+    setTimeout(() => {
+      preloader.style.display = 'none';
+    }, 500);
+  });
+</script>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
   integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"

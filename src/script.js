@@ -7,7 +7,7 @@ const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
 let loadingModalQueue = 0;
-let userAuth = false
+let userIsAuth = false
 
 const dayDateInput = document.getElementById("dayDate");
 const newStudentInfosForm = document.getElementById("newStudentInfosForm");
@@ -71,7 +71,7 @@ function loadStudentsList() {
       const result = results[0];
       result.values.forEach((row) => {
         const dropdownDiv = document.createElement("div");
-        dropdownDiv.className = "dropdown";
+        dropdownDiv.className = "btn-group dropstart";
 
         const dropdownBtn = document.createElement("button");
         dropdownBtn.className = "btn btn-sm btn-primary dropdown-toggle";
@@ -157,13 +157,14 @@ function loadStudentsList() {
           id: row[0],
           name: row[1],
           age: new Date().getFullYear() - new Date(row[2]).getFullYear(),
-          parentPhone: row[3],
+          parentPhone: "<a href='tel:"+row[3]+"'>"+row[3]+"</a>",
           actions: dropdownDiv,
         });
       });
     }
     students_table = new DataTable("#studentsListTable", {
       data: data,
+      // scrollY:300,
       scrollX: true,
       info: false,
       oLanguage: {
@@ -589,11 +590,11 @@ function newDB() {
 async function showModalLoading() {
   loadingModalQueue += 1;
   loadingModal.show();
-  // setTimeout(() => {
-  //   if (loadingModalQueue == 0) {
-  //     loadingModal.hide();
-  //   }
-  // }, 1000);
+  setTimeout(() => {
+    if (loadingModalQueue == 0) {
+      loadingModal.hide();
+    }
+  }, 1000);
 }
 
 async function hideModalLoading() {
@@ -679,6 +680,7 @@ async function openDatabase(callback) {
 
   request.onsuccess = function () {
     const db = request.result;
+    console.log(db.objectStoreNames)
     callback(db);
   };
 
@@ -769,15 +771,10 @@ async function fetchAndReadFile(db_key, url, callback = function () {}) {
     const db = new SQL.Database(uInt8Array);
     await saveToIndexedDB(db.export(), db_key);
     callback(db);
-    // if (db_key === QURAN_DB_KEY) {
-    //   quran_db = db;
-    //   initializeAyatdata(db);
-    // } else if (db_key === PROJECT_DB_KEY) {
-    //   project_db = db;
-    // }
     window.showToast("success", "تم تحميل قاعدة البيانات.");
   } catch (error) {
-    window.showToast("Error reading file:", error);
+    window.showToast("error","Error reading file:"+ error);
+    hideModalLoading();
   }
 }
 
@@ -801,9 +798,7 @@ function showTab(tabId) {
     .forEach((el) => el.classList.remove("show", "active"));
   document.getElementById(tabId).classList.add("show", "active");
   if (tabId === "pills-students") {
-    if (!students_table) {
-      loadStudentsList();
-    }
+    loadStudentsList();
     newStudentInfosForm.reset();
   } else if (tabId === "pills-new_day") {
     if (!dayDateInput.value) {

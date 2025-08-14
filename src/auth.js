@@ -65,6 +65,7 @@ openAuthDB().then(async (res) => {
         ).textContent = `Welcome, ${authResult.user.email}`;
         document.getElementById("logoutBtn").style.display = "block";
         document.getElementById("loginUI").style.display = "none";
+        userIsAuth = true
         return false;
       },
     },
@@ -79,9 +80,11 @@ openAuthDB().then(async (res) => {
       ).textContent = `Welcome back, ${user.email}`;
       document.getElementById("logoutBtn").style.display = "block";
       document.getElementById("loginUI").style.display = "none";
+      userIsAuth = true
     } else {
       document.getElementById("logoutBtn").style.display = "none";
       document.getElementById("loginUI").style.display = "block";
+      userIsAuth = false
       ui.start("#firebaseui-auth-container", uiConfig);
     }
   });
@@ -99,6 +102,7 @@ openAuthDB().then(async (res) => {
     document.getElementById("status").textContent = "Logged out.";
     document.getElementById("logoutBtn").style.display = "none";
     document.getElementById("loginUI").style.display = "block";
+    userIsAuth = false
     ui.start("#firebaseui-auth-container", uiConfig);
   });
 });
