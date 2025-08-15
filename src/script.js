@@ -7,8 +7,10 @@ const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
 let loadingModalQueue = 0;
-let userIsAuth = false
+let userIsAuth = false;
+const today = new Date();
 
+const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = document.getElementById("dayDate");
 const newStudentInfosForm = document.getElementById("newStudentInfosForm");
 const studentDayForm = document.getElementById("studentDayForm");
@@ -41,7 +43,6 @@ const firstAyahSelect = document.getElementById("first-ayah");
 const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
 document.addEventListener("DOMContentLoaded", function () {
-  const today = new Date();
   birthdayInput.setAttribute(
     "max",
     new Date(today.setFullYear(today.getFullYear() - 3))
@@ -54,6 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .toISOString()
       .split("T")[0]
   );
+  dayDateInput.setAttribute("max", today.toISOString().slice(0, 10));
 });
 
 // students tab
@@ -156,15 +158,23 @@ function loadStudentsList() {
         data.push({
           id: row[0],
           name: row[1],
-          age: new Date().getFullYear() - new Date(row[2]).getFullYear(),
-          parentPhone: "<a href='tel:"+row[3]+"'>"+row[3]+"</a>",
+          age: today.getFullYear() - new Date(row[2]).getFullYear(),
+          parentPhone: "<a href='tel:" + row[3] + "'>" + row[3] + "</a>",
           actions: dropdownDiv,
         });
       });
     }
     students_table = new DataTable("#studentsListTable", {
       data: data,
-      // scrollY:300,
+      columnDefs: [
+        { visible: false, targets: 2 },
+        {
+          targets: 4,
+          orderable: false,
+        },
+      ],
+      searching: false,
+      scrollY: data.length * 50 + 30,
       scrollX: true,
       info: false,
       oLanguage: {
@@ -504,6 +514,7 @@ function loadDayStudentsList() {
           orderable: false,
         },
       ],
+      searching: false,
       data: data,
       scrollX: true,
       info: false,
@@ -543,25 +554,21 @@ async function init() {
   });
 
   loadFromIndexedDB((savedProjectData, savedQuranData) => {
-    const nav_bar = document.querySelector(".nav-bar");
     if (savedProjectData) {
       project_db = new SQL.Database(new Uint8Array(savedProjectData));
+      if (savedQuranData) {
+        quran_db = new SQL.Database(new Uint8Array(savedQuranData));
+        initializeAyatdata(quran_db);
+      } else {
+        downloadQuranDB();
+      }
     } else {
-      nav_bar.style.display = "none";
-      newDB();
+      showTab("pills-home");
     }
-    if (savedQuranData) {
-      quran_db = new SQL.Database(new Uint8Array(savedQuranData));
-      initializeAyatdata(quran_db);
-    } else {
-      nav_bar.style.display = "none";
-      downloadQuranDB();
-    }
-    nav_bar.style.removeProperty("display");
   });
 }
 
-function downloadQuranDB() {
+async function downloadQuranDB() {
   showModalLoading();
   fetchAndReadFile(
     QURAN_DB_KEY,
@@ -572,19 +579,6 @@ function downloadQuranDB() {
       hideModalLoading();
     }
   );
-}
-
-function newDB() {
-  showModalLoading();
-  fetchAndReadFile(
-    PROJECT_DB_KEY,
-    "https://der-ayb.github.io/quran_students/default.sqlite",
-    (db) => {
-      project_db = db;
-      hideModalLoading();
-    }
-  );
-  downloadQuranDB();
 }
 
 async function showModalLoading() {
@@ -680,7 +674,7 @@ async function openDatabase(callback) {
 
   request.onsuccess = function () {
     const db = request.result;
-    console.log(db.objectStoreNames)
+    console.log(db.objectStoreNames);
     callback(db);
   };
 
@@ -753,7 +747,7 @@ async function loadDBFromFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
-async function downloadDB() {
+async function exportDB() {
   const data = project_db.export();
   const blob = new Blob([data], { type: "application/octet-stream" });
   const a = document.createElement("a");
@@ -773,13 +767,27 @@ async function fetchAndReadFile(db_key, url, callback = function () {}) {
     callback(db);
     window.showToast("success", "تم تحميل قاعدة البيانات.");
   } catch (error) {
-    window.showToast("error","Error reading file:"+ error);
+    window.showToast("error", "Error reading file:" + error);
     hideModalLoading();
   }
 }
 
-document.getElementById("newDBbtn").onclick = newDB;
-document.getElementById("downloadBtn").onclick = downloadDB;
+document.getElementById("newDBbtn").onclick = async function () {
+  showModalLoading();
+  await fetchAndReadFile(
+    PROJECT_DB_KEY,
+    "https://der-ayb.github.io/quran_students/default.sqlite",
+    (db) => {
+      project_db = db;
+      hideModalLoading();
+    }
+  );
+  await downloadQuranDB();
+  nav_bar.style.removeProperty("display");
+  showTab("pills-summary");
+};
+
+document.getElementById("downloadBtn").onclick = exportDB;
 document.getElementById("fileInput").onchange = (e) => {
   if (e.target.files.length) {
     loadDBFromFile(e.target.files[0]);
@@ -800,10 +808,11 @@ function showTab(tabId) {
   if (tabId === "pills-students") {
     loadStudentsList();
     newStudentInfosForm.reset();
+  } else if (tabId === "pills-home") {
+    nav_bar.style.display = "none";
   } else if (tabId === "pills-new_day") {
     if (!dayDateInput.value) {
-      dayDateInput.value = new Date().toISOString().slice(0, 10);
-      // dayDateInput.dispatchEvent(new Event("change"));
+      dayDateInput.value = today.toISOString().slice(0, 10);
     }
     loadDayStudentsList();
     newStudentDayModal.hide();

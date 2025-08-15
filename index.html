@@ -97,7 +97,7 @@
   </div>
   <div class="tab-content" id="pills-tabContent">
 
-    <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+    <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
       <button id="install">Install</button>
       <h1 class="text-center">تطبيق متابعة الحفظ</h1>
       <div id="loginUI">
@@ -105,22 +105,31 @@
       </div>
       <p id="status"></p>
       <button id="logoutBtn" style="display: none;">Logout</button>
+      <div class="files-inputs">
+        <button id="newDBbtn"></button>
+        <label for="newDBbtn">جديد</label>
+      </div>
+      <div class="files-inputs">
+        <input type="file" id="fileInput">
+        <label for="fileInput">📥 استيراد</label>
+      </div>
     </div>
 
-    <div class="tab-pane fade" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
-      <h2 class="text-center">الملخص</h2>
+    <div class="tab-pane fade show active" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
+      <h2 class="text-center mb-4">الملخص</h2>
 
     </div>
 
     <div class="tab-pane fade" id="pills-students" role="tabpanel" aria-labelledby="pills-students-tab">
-      <h2 class="text-center">قائمة التلاميذ</h2>
-      <button class="btn btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#newStudentInfosModal">إظافة تلميذ
+      <h2 class="text-center mb-4">قائمة التلاميذ</h2>
+      <button class="btn btn-primary text-center" data-bs-toggle="modal" data-bs-target="#newStudentInfosModal">إظافة
+        تلميذ
         جديد</button>
 
       <table id="studentsListTable" class="display responsive nowrap" width="100%">
         <thead>
           <tr>
-            <th>#</th>
+            <th></th>
             <th>الاسم</th>
             <th>العمر</th>
             <th>هاتف الولي</th>
@@ -133,11 +142,15 @@
     </div>
 
     <div class="tab-pane fade" id="pills-new_day" role="tabpanel" aria-labelledby="pills-new_day-tab">
-      <h2 class="text-center">التقييم اليومي</h2>
-      <div class="mb-3">
-        <label for="dayDate">تاريخ اليوم:</label>
-        <input type="date" id="dayDate" class="form-control" />
+      <h2 class="text-center mb-4">التقييم اليومي</h2>
+      <div class="date-input-container">
+        <div class="date-input-group">
+          <span class="date-input-label">تاريخ اليوم:</span>
+          <input type="date" id="dayDate" class="date-input-field" dir="ltr">
+          <i class="fas fa-calendar-alt date-icon"></i>
+        </div>
       </div>
+
       <table id="dayListTable" class="display responsive nowrap" width="100%">
         <thead>
           <tr class="text-center">
@@ -161,7 +174,7 @@
     </div>
 
     <div class="tab-pane fade" id="pills-preferences" role="tabpanel" aria-labelledby="pills-preferences-tab">
-      <h2 class="text-center">التفضيلات</h2>
+      <h2 class="text-center mb-4">التفضيلات</h2>
       <div class="accordion" id="accordionExample">
         <div class="card">
           <div class="card-header" id="headingOne">
@@ -191,20 +204,19 @@
           </div>
           <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree"
             data-bs-parent="#pills-preferences">
-            <div class="card-body">
-              <div class="files-inputs">
-                <button id="newDBbtn"></button>
-                <label for="newDBbtn">جديد</label>
-              </div>
-              <div class="files-inputs">
-                <input type="file" id="fileInput">
-                <label for="fileInput">📥 استيراد</label>
-              </div>
-              <div class="files-inputs">
-                <button id="downloadBtn"></button>
-                <label for="downloadBtn">📤 تصدير</label>
-              </div>
+            <div class="files-inputs">
+              <button id="newDBbtn"></button>
+              <label for="newDBbtn">جديد</label>
             </div>
+            <div class="files-inputs">
+              <input type="file" id="fileInput">
+              <label for="fileInput">📥 استيراد</label>
+            </div>
+            <div class="files-inputs">
+              <button id="downloadBtn"></button>
+              <label for="downloadBtn">📤 تصدير</label>
+            </div>
+
           </div>
         </div>
       </div>
