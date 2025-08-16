@@ -12,6 +12,7 @@
     integrity="sha384-Xbg45MqvDIk1e563NLpGEulpX6AvL404DP+/iCgW9eFa2BqztiwTexswJo2jLMue" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.bootstrap5.css"/>
   <link type="text/css" rel="stylesheet" href="src/style.css" />
   <link rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.css" />
   <style>
@@ -115,7 +116,7 @@
       </div>
     </div>
 
-    <div class="tab-pane fade show active" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
+    <div class="tab-pane fade" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
       <h2 class="text-center mb-4">الملخص</h2>
 
     </div>
@@ -138,7 +139,6 @@
         </thead>
         <tbody></tbody>
       </table>
-      <button id="fabBtn" class="fab" aria-label="إضافة"><i class="fa-solid fa-plus"></i></button>
     </div>
 
     <div class="tab-pane fade" id="pills-new_day" role="tabpanel" aria-labelledby="pills-new_day-tab">
@@ -226,7 +226,7 @@
 
   <div class="nav-bar" style="display: none;">
     <button onclick="showTab('pills-summary'); return false;">
-      <svg width="256px" height="256px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="256px" height="30px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
         <g id="SVGRepo_iconCarrier">
@@ -238,7 +238,7 @@
       </svg>
     </button>
     <button onclick="showTab('pills-students'); return false;">
-      <svg fill="#ffffff" width="256px" height="256px" viewBox="0 0 24.00 24.00" xmlns="http://www.w3.org/2000/svg"
+      <svg fill="#ffffff" width="256px" height="30px" viewBox="0 0 24.00 24.00" xmlns="http://www.w3.org/2000/svg"
         data-darkreader-inline-fill=""
         style="--darkreader-inline-fill: var(--darkreader-background-ffffff, #181a1b); --darkreader-inline-stroke: var(--darkreader-text-ffffff, #e8e6e3);"
         stroke="#ffffff" stroke-width="0.00024000000000000003" data-darkreader-inline-stroke="">
@@ -276,7 +276,7 @@
     </button>
 
     <button onclick="showTab('pills-preferences'); return false;">
-      <svg width="256px" height="256px" viewBox="0 0 32 32" enable-background="new 0 0 32 32" id="Stock_cut"
+      <svg width="256px" height="30px" viewBox="0 0 32 32" enable-background="new 0 0 32 32" id="Stock_cut"
         version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
         fill="#000000" data-darkreader-inline-fill=""
         style="--darkreader-inline-fill: var(--darkreader-background-000000, #000000);">
@@ -523,6 +523,8 @@
 <script src="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.js"></script>
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js" ></script>
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.bootstrap5.js" ></script>
 
 
 <script src="src/auth.js"></script>

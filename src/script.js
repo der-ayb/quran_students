@@ -158,7 +158,7 @@ function loadStudentsList() {
         data.push({
           id: row[0],
           name: row[1],
-          age: today.getFullYear() - new Date(row[2]).getFullYear(),
+          age: new Date().getFullYear() - new Date(row[2]).getFullYear(),
           parentPhone: "<a href='tel:" + row[3] + "'>" + row[3] + "</a>",
           actions: dropdownDiv,
         });
@@ -174,7 +174,7 @@ function loadStudentsList() {
         },
       ],
       searching: false,
-      scrollY: data.length * 50 + 30,
+      scrollY: (data.length || 0.5) * 50 + 30,
       scrollX: true,
       info: false,
       oLanguage: {
@@ -190,6 +190,26 @@ function loadStudentsList() {
         { data: "parentPhone" },
         { data: "actions" },
       ],
+      layout: {
+        topStart: {
+          buttons: [
+            {
+              text: "إظهار التفاصيل",
+              action: function () {
+                students_table.columns([2,3]).visible(!students_table.column(2).visible());
+              },
+            },
+            {
+              text: "إضافة +",
+              className :"btn btn-primary",
+              attr: {
+                  "data-bs-toggle": 'modal',
+                  "data-bs-target": '#newStudentInfosModal',
+              }
+            },
+          ],
+        },
+      },
     });
   } catch (e) {
     window.showToast("warning", "Error: " + e.message);
@@ -553,15 +573,18 @@ async function init() {
       `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/${file}`,
   });
 
-  loadFromIndexedDB((savedProjectData, savedQuranData) => {
+  loadFromIndexedDB(async (savedProjectData, savedQuranData) => {
     if (savedProjectData) {
       project_db = new SQL.Database(new Uint8Array(savedProjectData));
       if (savedQuranData) {
         quran_db = new SQL.Database(new Uint8Array(savedQuranData));
         initializeAyatdata(quran_db);
       } else {
-        downloadQuranDB();
+        await downloadQuranDB();
       }
+
+      showTab("pills-summary");
+      nav_bar.style.removeProperty("display");
     } else {
       showTab("pills-home");
     }
@@ -783,8 +806,8 @@ document.getElementById("newDBbtn").onclick = async function () {
     }
   );
   await downloadQuranDB();
-  nav_bar.style.removeProperty("display");
   showTab("pills-summary");
+  nav_bar.style.removeProperty("display");
 };
 
 document.getElementById("downloadBtn").onclick = exportDB;
@@ -805,6 +828,7 @@ function showTab(tabId) {
     .querySelectorAll(".tab-pane")
     .forEach((el) => el.classList.remove("show", "active"));
   document.getElementById(tabId).classList.add("show", "active");
+
   if (tabId === "pills-students") {
     loadStudentsList();
     newStudentInfosForm.reset();
@@ -818,6 +842,7 @@ function showTab(tabId) {
     newStudentDayModal.hide();
   }
 }
+
 // Initialize the application
 init();
 
