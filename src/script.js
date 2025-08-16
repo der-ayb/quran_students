@@ -1,7 +1,7 @@
 // script.js
 window._toastQueue = window._toastQueue || [];
 window._toastReady = false;
-let project_db, quran_db, SQL, currentDay, students_table, students_day_table;
+let project_db, quran_db, SQL, students_table, students_day_table;
 const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
@@ -9,6 +9,7 @@ const QURAN_DB_KEY = "quranDB";
 let loadingModalQueue = 0;
 let userIsAuth = false;
 const today = new Date();
+let currentDay = today.toISOString().slice(0, 10);
 
 const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = document.getElementById("dayDate");
@@ -196,16 +197,22 @@ function loadStudentsList() {
             {
               text: "إظهار التفاصيل",
               action: function () {
-                students_table.columns([2,3]).visible(!students_table.column(2).visible());
+                const columns = students_day_table.columns([6,7,8,9,10,11,12]);
+                const isVisible = students_day_table.column(columns[0][0]).visible();
+
+                columns.visible(!isVisible);
+                students_day_table
+                  .button(0)
+                  .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
               },
             },
             {
-              text: "إضافة +",
-              className :"btn btn-primary",
+              text: "إضافة ✚",
+              className: "btn btn-primary",
               attr: {
-                  "data-bs-toggle": 'modal',
-                  "data-bs-target": '#newStudentInfosModal',
-              }
+                "data-bs-toggle": "modal",
+                "data-bs-target": "#newStudentInfosModal",
+              },
             },
           ],
         },
@@ -288,7 +295,7 @@ document
     requirTypeInput.disabled = false;
     requirQuantityInput.disabled = false;
     requirEvaluationInput.disabled = false;
-    requirementInput.disabled = false;
+    // requirementInput.readOnly = false;
     dressCodeInput.disabled = false;
     haircutInput.disabled = false;
     behaviorInput.disabled = false;
@@ -375,7 +382,7 @@ function update_day_module_evaluation(studentId) {
         currentDay,
         requireBookInput.value,
         requirTypeInput.value,
-        requirQuantityInput.value,
+        requirEvaluationInput.value,
         requirEvaluationInput.value,
       ]
     );
@@ -504,9 +511,9 @@ function loadDayStudentsList() {
           attendance: attendanceOption ? attendanceOption.textContent : "",
           book: row[7] === 1 ? "/" : row[2] || "",
           type: row[7] === 1 ? "/" : row[3] || "",
-          quantity: row[7] === 1 ? "/" : row[4] || "",
-          evaluation: row[7] === 1 ? "/" : row[5] || "",
-          requirement: row[7] === 1 ? "/" : row[6] || "",
+          quantity: row[7] === 1 ? "/" : row[4] || "55",
+          evaluation: row[7] === 1 ? "/" : row[5] || "إعادة",
+          requirement: row[7] === 1 ? "/" : row[6] || "45",
           dressCode:
             row[7] === 1
               ? "/"
@@ -527,13 +534,6 @@ function loadDayStudentsList() {
       });
     }
     students_day_table = new DataTable("#dayListTable", {
-      columnDefs: [
-        { visible: false, targets: 0 },
-        {
-          targets: 1,
-          orderable: false,
-        },
-      ],
       searching: false,
       data: data,
       scrollX: true,
@@ -559,6 +559,31 @@ function loadDayStudentsList() {
         { data: "behavior", defaultContent: "/" },
         { data: "prayer", defaultContent: "/" },
       ],
+      columnDefs: [
+        { visible: false, targets: [...[0], ...[6,7,8,9,10,11,12]] },
+        {
+          targets: 1,
+          orderable: false,
+        },
+      ],
+      layout: {
+        topStart: {
+          buttons: [
+            {
+              text: "إظهار التفاصيل",
+              action: function () {
+                const columns = students_day_table.columns([6,7,8,9,10,11,12]);
+                const isVisible = students_day_table.column(columns[0][0]).visible();
+
+                columns.visible(!isVisible);
+                students_day_table
+                  .button(0)
+                  .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
+              },
+            },
+          ],
+        },
+      },
     });
   } catch (e) {
     window.showToast("error", "Error: " + e.message);
@@ -697,7 +722,6 @@ async function openDatabase(callback) {
 
   request.onsuccess = function () {
     const db = request.result;
-    console.log(db.objectStoreNames);
     callback(db);
   };
 
