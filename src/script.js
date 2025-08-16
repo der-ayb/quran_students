@@ -13,8 +13,6 @@ let currentDay = today.toISOString().slice(0, 10);
 
 const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = document.getElementById("dayDate");
-const newStudentInfosForm = document.getElementById("newStudentInfosForm");
-const studentDayForm = document.getElementById("studentDayForm");
 const studentIdInput = document.getElementById("studentId");
 const attendanceInput = document.getElementById("attendance");
 const requirEvaluationInput = document.getElementById("requirEvaluation");
@@ -30,6 +28,8 @@ const nameInput = document.getElementById("name");
 const birthdayInput = document.getElementById("birthday");
 const parentPhoneInput = document.getElementById("parentPhone");
 
+const newStudentInfosForm = document.getElementById("newStudentInfosForm");
+const studentDayForm = document.getElementById("studentDayForm");
 const newStudentDayModal = new bootstrap.Modal(
   document.getElementById("newStudentDayModal")
 );
@@ -382,7 +382,7 @@ function update_day_module_evaluation(studentId) {
         currentDay,
         requireBookInput.value,
         requirTypeInput.value,
-        requirEvaluationInput.value,
+        requirQuantityInput.value,
         requirEvaluationInput.value,
       ]
     );
@@ -409,6 +409,12 @@ function update_day_module_evaluation(studentId) {
   }
   saveToIndexedDB(project_db.export());
   loadDayStudentsList();
+}
+
+function setAttendance(studentId){
+  attendanceInput.value = "1";
+  attendanceInput.dispatchEvent(new Event("change"));
+  update_day_module_evaluation(studentId)  
 }
 
 function loadDayStudentsList() {
@@ -456,7 +462,9 @@ function loadDayStudentsList() {
         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
         editBtn.onclick = function () {
           newStudentDayModal.show();
+
           studentNameEl.value = row[1];
+
           requireBookInput.value = row[2] || "";
           requireBookInput.dispatchEvent(new Event("change"));
 
@@ -508,12 +516,12 @@ function loadDayStudentsList() {
           id: row[0],
           actions: editBtn,
           student: row[1],
-          attendance: attendanceOption ? attendanceOption.textContent : "",
+          attendance: attendanceOption ? attendanceOption.textContent : '<button type="button" onclick="setAttendance('+row[0]+')" class="btn btn-info">غائب</button>',
           book: row[7] === 1 ? "/" : row[2] || "",
           type: row[7] === 1 ? "/" : row[3] || "",
-          quantity: row[7] === 1 ? "/" : row[4] || "55",
+          quantity: row[7] === 1 ? "/" : row[4] || "",
           evaluation: row[7] === 1 ? "/" : row[5] || "إعادة",
-          requirement: row[7] === 1 ? "/" : row[6] || "45",
+          requirement: row[7] === 1 ? "/" : row[6] || "",
           dressCode:
             row[7] === 1
               ? "/"
