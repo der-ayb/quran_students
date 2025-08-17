@@ -8,8 +8,7 @@ const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
 let loadingModalQueue = 0;
 let userIsAuth = false;
-const today = new Date();
-let currentDay = today.toISOString().slice(0, 10);
+let currentDay = new Date().toISOString().slice(0, 10);
 
 const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = document.getElementById("dayDate");
@@ -44,6 +43,7 @@ const firstAyahSelect = document.getElementById("first-ayah");
 const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
 document.addEventListener("DOMContentLoaded", function () {
+  const today = new Date();
   birthdayInput.setAttribute(
     "max",
     new Date(today.setFullYear(today.getFullYear() - 3))
@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .toISOString()
       .split("T")[0]
   );
-  dayDateInput.setAttribute("max", today.toISOString().slice(0, 10));
+  dayDateInput.setAttribute("max", new Date().toISOString().slice(0, 10));
 });
 
 // students tab
@@ -84,27 +84,6 @@ function loadStudentsList() {
 
         const dropdownMenu = document.createElement("div");
         dropdownMenu.className = "dropdown-menu";
-
-        // Detail
-        const detailBtn = document.createElement("button");
-        detailBtn.className = "dropdown-item btn-info";
-        detailBtn.type = "button";
-        detailBtn.innerHTML =
-          '<i class="fa-regular fa-address-card"></i> تفاصيل';
-        detailBtn.onclick = function () {
-          const row = this.closest("tr");
-          const cells = row.querySelectorAll("td");
-          const studentDetails = {
-            id: cells[0].textContent,
-            name: cells[1].textContent,
-            age: cells[2].textContent,
-            parentPhone: cells[3].textContent,
-          };
-          alert(
-            `تفاصيل الطالب:\nالمعرف: ${studentDetails.id}\nالاسم: ${studentDetails.name}\nالعمر: ${studentDetails.age}\nهاتف الولي: ${studentDetails.parentPhone}`
-          );
-        };
-        dropdownMenu.appendChild(detailBtn);
 
         // Edit
         const editBtn = document.createElement("button");
@@ -197,11 +176,11 @@ function loadStudentsList() {
             {
               text: "إظهار التفاصيل",
               action: function () {
-                const columns = students_day_table.columns([6,7,8,9,10,11,12]);
-                const isVisible = students_day_table.column(columns[0][0]).visible();
+                const columns = students_table.columns([2]);
+                const isVisible = students_table.column(columns[0][0]).visible();
 
                 columns.visible(!isVisible);
-                students_day_table
+                students_table
                   .button(0)
                   .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
               },
@@ -465,29 +444,29 @@ function loadDayStudentsList() {
 
           studentNameEl.value = row[1];
 
+          attendanceInput.value = row[7] || "";
+          attendanceInput.dispatchEvent(new Event("change"));
+
           requireBookInput.value = row[2] || "";
           requireBookInput.dispatchEvent(new Event("change"));
 
           requirTypeInput.value = row[3] || "";
           requirTypeInput.dispatchEvent(new Event("change"));
 
-          requirQuantityInput.value = row[4] || "";
-          requirQuantityInput.dispatchEvent(new Event("change"));
-
           requirEvaluationInput.value = row[5] || "";
           requirEvaluationInput.dispatchEvent(new Event("change"));
 
           requirementInput.value = row[6] || "";
 
-          attendanceInput.value = row[7] || "";
-          attendanceInput.dispatchEvent(new Event("change"));
+          requirQuantityInput.value = row[4] || "";
+          requirQuantityInput.dispatchEvent(new Event("change"));
 
           dressCodeInput.value = row[8] || "";
           haircutInput.value = row[9] || "";
           behaviorInput.value = row[10] || "";
           prayerInput.value = row[11] || "";
 
-          studentDayForm.addEventListener("submit", function (e) {
+          studentDayForm.onsubmit = function (e) {
             e.preventDefault();
             if (!project_db) {
               window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
@@ -495,7 +474,7 @@ function loadDayStudentsList() {
             }
             update_day_module_evaluation(row[0]);
             newStudentDayModal.hide();
-          });
+          }
         };
         const attendanceOption = document.querySelector(
           `#attendance option[value='${row[7]}']`
@@ -868,7 +847,7 @@ function showTab(tabId) {
     nav_bar.style.display = "none";
   } else if (tabId === "pills-new_day") {
     if (!dayDateInput.value) {
-      dayDateInput.value = today.toISOString().slice(0, 10);
+      dayDateInput.value = new Date().toISOString().slice(0, 10);
     }
     loadDayStudentsList();
     newStudentDayModal.hide();
