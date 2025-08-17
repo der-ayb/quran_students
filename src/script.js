@@ -177,7 +177,9 @@ function loadStudentsList() {
               text: "إظهار التفاصيل",
               action: function () {
                 const columns = students_table.columns([2]);
-                const isVisible = students_table.column(columns[0][0]).visible();
+                const isVisible = students_table
+                  .column(columns[0][0])
+                  .visible();
 
                 columns.visible(!isVisible);
                 students_table
@@ -390,18 +392,24 @@ function update_day_module_evaluation(studentId) {
   loadDayStudentsList();
 }
 
-function setAttendance(studentId){
+function setAttendance(studentId) {
   attendanceInput.value = "1";
   attendanceInput.dispatchEvent(new Event("change"));
-  update_day_module_evaluation(studentId)  
+  update_day_module_evaluation(studentId);
 }
 
 function loadDayStudentsList() {
-  if (students_day_table) students_day_table.destroy();
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
   }
+  const resultss = project_db.exec(`SELECT id FROM education_day WHERE date = '${currentDay}'`);
+
+  alert(resultss[0].values[0].length)
+  
+  return
+
+  if (students_day_table) students_day_table.destroy();
   try {
     const results = project_db.exec(`
       SELECT 
@@ -435,7 +443,6 @@ function loadDayStudentsList() {
       const studentNameEl = document.getElementById("studentName");
 
       result.values.forEach((row) => {
-        const td = document.createElement("td");
         const editBtn = document.createElement("button");
         editBtn.className = "btn btn-sm btn-primary";
         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
@@ -474,7 +481,7 @@ function loadDayStudentsList() {
             }
             update_day_module_evaluation(row[0]);
             newStudentDayModal.hide();
-          }
+          };
         };
         const attendanceOption = document.querySelector(
           `#attendance option[value='${row[7]}']`
@@ -495,7 +502,11 @@ function loadDayStudentsList() {
           id: row[0],
           actions: editBtn,
           student: row[1],
-          attendance: attendanceOption ? attendanceOption.textContent : '<button type="button" onclick="setAttendance('+row[0]+')" class="btn btn-info">غائب</button>',
+          attendance: attendanceOption
+            ? attendanceOption.textContent
+            : '<button type="button" onclick="setAttendance(' +
+              row[0] +
+              ')" class="btn btn-info">غائب</button>',
           book: row[7] === 1 ? "/" : row[2] || "",
           type: row[7] === 1 ? "/" : row[3] || "",
           quantity: row[7] === 1 ? "/" : row[4] || "",
@@ -547,7 +558,7 @@ function loadDayStudentsList() {
         { data: "prayer", defaultContent: "/" },
       ],
       columnDefs: [
-        { visible: false, targets: [...[0], ...[6,7,8,9,10,11,12]] },
+        { visible: false, targets: [...[0], ...[6, 7, 8, 9, 10, 11, 12]] },
         {
           targets: 1,
           orderable: false,
@@ -559,8 +570,12 @@ function loadDayStudentsList() {
             {
               text: "إظهار التفاصيل",
               action: function () {
-                const columns = students_day_table.columns([6,7,8,9,10,11,12]);
-                const isVisible = students_day_table.column(columns[0][0]).visible();
+                const columns = students_day_table.columns([
+                  6, 7, 8, 9, 10, 11, 12,
+                ]);
+                const isVisible = students_day_table
+                  .column(columns[0][0])
+                  .visible();
 
                 columns.visible(!isVisible);
                 students_day_table
