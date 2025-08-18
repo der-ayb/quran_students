@@ -72,21 +72,14 @@ function loadStudentsList() {
     if (results.length) {
       const result = results[0];
       result.values.forEach((row) => {
-        const dropdownDiv = document.createElement("div");
-        dropdownDiv.className = "btn-group dropstart";
-
-        const dropdownBtn = document.createElement("button");
-        dropdownBtn.className = "btn btn-sm btn-primary dropdown-toggle";
-        dropdownBtn.type = "button";
-        dropdownBtn.setAttribute("data-bs-toggle", "dropdown");
-        dropdownBtn.setAttribute("aria-expanded", "false");
-
-        const dropdownMenu = document.createElement("div");
-        dropdownMenu.className = "dropdown-menu";
+        const button_group = document.createElement("div");
+        button_group.className = "btn-group";
+        button_group.setAttribute("role", "group");
+        button_group.setAttribute("aria-label", "Basic example");
 
         // Edit
         const editBtn = document.createElement("button");
-        editBtn.className = "dropdown-item btn-secondary";
+        editBtn.className = "btn btn-info";
         editBtn.type = "button";
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
         editBtn.onclick = function () {
@@ -103,11 +96,11 @@ function loadStudentsList() {
           birthdayInput.value = result[0].values[0][2];
           parentPhoneInput.value = result[0].values[0][3];
         };
-        dropdownMenu.appendChild(editBtn);
+        button_group.appendChild(editBtn);
 
         // Delete
         const deleteBtn = document.createElement("button");
-        deleteBtn.className = "dropdown-item btn-danger";
+        deleteBtn.className = "btn btn-danger";
         deleteBtn.type = "button";
         deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
         deleteBtn.onclick = function () {
@@ -130,16 +123,14 @@ function loadStudentsList() {
             window.showToast("warning", "Error: " + e.message);
           }
         };
-        dropdownMenu.appendChild(deleteBtn);
+        button_group.appendChild(deleteBtn);
 
-        dropdownDiv.appendChild(dropdownBtn);
-        dropdownDiv.appendChild(dropdownMenu);
         data.push({
           id: row[0],
           name: row[1],
           age: new Date().getFullYear() - new Date(row[2]).getFullYear(),
           parentPhone: "<a href='tel:" + row[3] + "'>" + row[3] + "</a>",
-          actions: dropdownDiv,
+          actions: button_group,
         });
       });
     }
@@ -147,7 +138,7 @@ function loadStudentsList() {
       destroy: true,
       data: data,
       columnDefs: [
-        { visible: false, targets: 2 },
+        { visible: false, targets: [2,4] },
         {
           targets: 4,
           orderable: false,
@@ -176,7 +167,7 @@ function loadStudentsList() {
             {
               text: "إظهار التفاصيل",
               action: function () {
-                const columns = students_table.columns([2]);
+                const columns = students_table.columns([2,4]);
                 const isVisible = students_table
                   .column(columns[0][0])
                   .visible();
@@ -357,7 +348,7 @@ function update_day_module_evaluation(studentId) {
   }
   if (attendanceInput.value !== "1") {
     project_db.run(
-      "INSERT OR REPLACE INTO day_requirements (student_id, day, book, type,quantity, evaluation) VALUES (?, ?, ?, ?,?,?);",
+      "INSERT OR REPLACE INTO day_requirements (student_id, day_id, book, type,quantity, evaluation) VALUES (?, ?, ?, ?,?,?);",
       [
         studentId,
         currentDay,
@@ -378,13 +369,13 @@ function update_day_module_evaluation(studentId) {
     ];
     modules.forEach((mod) => {
       project_db.run(
-        "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
+        "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day_id, evaluation) VALUES (?, ?, ?, ?);",
         [studentId, mod.id, currentDay, mod.selector]
       );
     });
   } else {
     project_db.run(
-      "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day, evaluation) VALUES (?, ?, ?, ?);",
+      "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day_id, evaluation) VALUES (?, ?, ?, ?);",
       [studentId, 2, currentDay, attendanceInput.value]
     );
   }
@@ -423,7 +414,7 @@ function loadDayStudentsList() {
 
   if (
     !project_db.exec(
-      `SELECT id FROM education_day WHERE date = '${currentDay}'`
+      `SELECT * FROM education_day WHERE date = '${currentDay}'`
     ).length
   ) {
     document.getElementById("addNewDayBtn").style.display = "block";
@@ -444,17 +435,17 @@ function loadDayStudentsList() {
         dr.quantity AS "المقدار",
         dr.evaluation AS "التقدير",
         dme.evaluation AS "الحفظ",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 2 AND day = '${currentDay}') AS "الحظور",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 3 AND day = '${currentDay}') AS "الهندام",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 4 AND day = '${currentDay}') AS "الحلاقة",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 5 AND day = '${currentDay}') AS "السلوك",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 6 AND day = '${currentDay}') AS "الصلاة"
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 2 AND day_id = '${currentDay}') AS "الحظور",
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 3 AND day_id = '${currentDay}') AS "الهندام",
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 4 AND day_id = '${currentDay}') AS "الحلاقة",
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 5 AND day_id = '${currentDay}') AS "السلوك",
+        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 6 AND day_id = '${currentDay}') AS "الصلاة"
       FROM 
         students s
       LEFT JOIN 
-        day_requirements dr ON s.id = dr.student_id AND dr.day = '${currentDay}'
+        day_requirements dr ON s.id = dr.student_id AND dr.day_id = '${currentDay}'
       LEFT JOIN 
-        day_module_evaluation dme ON s.id = dme.student_id AND dme.module_id = 1 AND dme.day = '${currentDay}'
+        day_module_evaluation dme ON s.id = dme.student_id AND dme.module_id = 1 AND dme.day_id = '${currentDay}'
       GROUP BY 
         s.id, s.name
       ORDER BY 
@@ -554,6 +545,8 @@ function loadDayStudentsList() {
             row[7] === 1 ? "/" : prayerOption ? prayerOption.textContent : "",
         });
       });
+    }else{
+      alert("لا توجد بيانات في الجدول.")
     }
     students_day_table = new DataTable("#dayListTable", {
       destroy: true,
