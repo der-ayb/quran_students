@@ -79,7 +79,7 @@ function loadStudentsList() {
 
         // Edit
         const editBtn = document.createElement("button");
-        editBtn.className = "btn btn-info";
+        editBtn.className = "btn btn-info btn-sm";
         editBtn.type = "button";
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
         editBtn.onclick = function () {
@@ -100,7 +100,7 @@ function loadStudentsList() {
 
         // Delete
         const deleteBtn = document.createElement("button");
-        deleteBtn.className = "btn btn-danger";
+        deleteBtn.className = "btn btn-danger btn-sm";
         deleteBtn.type = "button";
         deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
         deleteBtn.onclick = function () {
@@ -145,7 +145,6 @@ function loadStudentsList() {
         },
       ],
       searching: false,
-      scrollY: (data.length || 0.5) * 50 + 30,
       scrollX: true,
       info: false,
       oLanguage: {
