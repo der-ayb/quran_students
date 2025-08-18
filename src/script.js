@@ -417,9 +417,10 @@ function loadDayStudentsList() {
     return;
   }
   if (students_day_table) {
-      students_day_table.destroy();
-      students_day_table = null;
-    }
+    students_day_table.destroy();
+    students_day_table = null;
+  }
+
   if (
     !project_db.exec(
       `SELECT id FROM education_day WHERE date = '${currentDay}'`
@@ -429,7 +430,7 @@ function loadDayStudentsList() {
     document.getElementById("dayListTable").style.display = "none";
     return;
   }
-  
+
   document.getElementById("dayListTable").style.display = "block";
   document.getElementById("addNewDayBtn").style.display = "none";
 
