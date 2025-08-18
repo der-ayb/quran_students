@@ -61,7 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // students tab
 function loadStudentsList() {
-  if (students_table) students_table.destroy();
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
@@ -145,6 +144,7 @@ function loadStudentsList() {
       });
     }
     students_table = new DataTable("#studentsListTable", {
+      destroy: true,
       data: data,
       columnDefs: [
         { visible: false, targets: 2 },
@@ -398,18 +398,41 @@ function setAttendance(studentId) {
   update_day_module_evaluation(studentId);
 }
 
+function addNewDay() {
+  if (!project_db) {
+    indow.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
+    return;
+  }
+  project_db.run(
+    "INSERT OR REPLACE INTO education_day (date, notes) VALUES (?, ?);",
+    [currentDay, null]
+  );
+  saveToIndexedDB(project_db.export());
+  loadDayStudentsList();
+}
+
 function loadDayStudentsList() {
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
   }
-  const resultss = project_db.exec(`SELECT id FROM education_day WHERE date = '${currentDay}'`);
-
-  alert(resultss[0].values[0].length)
+  if (students_day_table) {
+      students_day_table.destroy();
+      students_day_table = null;
+    }
+  if (
+    !project_db.exec(
+      `SELECT id FROM education_day WHERE date = '${currentDay}'`
+    ).length
+  ) {
+    document.getElementById("addNewDayBtn").style.display = "block";
+    document.getElementById("dayListTable").style.display = "none";
+    return;
+  }
   
-  return
+  document.getElementById("dayListTable").style.display = "block";
+  document.getElementById("addNewDayBtn").style.display = "none";
 
-  if (students_day_table) students_day_table.destroy();
   try {
     const results = project_db.exec(`
       SELECT 
@@ -532,6 +555,7 @@ function loadDayStudentsList() {
       });
     }
     students_day_table = new DataTable("#dayListTable", {
+      destroy: true,
       searching: false,
       data: data,
       scrollX: true,
