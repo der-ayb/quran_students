@@ -4,6 +4,10 @@ body {
   font-family: "Noto Sans Arabic", sans-serif;
 }
 
+.UndoCountdown::after {
+  content: ' ' attr(data-count);
+}
+
 input {
   direction: rtl !important;
 }

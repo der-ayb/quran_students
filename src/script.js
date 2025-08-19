@@ -1,11 +1,13 @@
 // script.js
 window._toastQueue = window._toastQueue || [];
 window._toastReady = false;
-let project_db, quran_db, SQL, students_table, students_day_table;
+let project_db, quran_db, SQL;
 const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
+let students_table = null;
+let students_day_table = null;
 let loadingModalQueue = 0;
 let userIsAuth = false;
 let currentDay = new Date().toISOString().slice(0, 10);
@@ -84,9 +86,7 @@ function loadStudentsList() {
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
         editBtn.onclick = function () {
           newStudentInfosModal.show();
-          const row = this.closest("tr");
-          const cells = row.querySelectorAll("td");
-          const studentId = cells[0].textContent;
+          const studentId = row[0];
           const result = project_db.exec(
             "SELECT * FROM students WHERE id = ?;",
             [studentId]
@@ -103,10 +103,8 @@ function loadStudentsList() {
         deleteBtn.className = "btn btn-danger btn-sm";
         deleteBtn.type = "button";
         deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
-        deleteBtn.onclick = function () {
-          const row = this.closest("tr");
-          const cells = row.querySelectorAll("td");
-          const studentId = cells[0].textContent;
+        CreateOnClickUndo(deleteBtn, function () {
+          const studentId = row[0];
           if (!confirm("هل أنت متأكد أنك تريد حذف هذا الطالب؟")) {
             return;
           }
@@ -117,12 +115,12 @@ function loadStudentsList() {
           try {
             project_db.run("DELETE FROM students WHERE id = ?;", [studentId]);
             saveToIndexedDB(project_db.export());
-            loadStudentsList();
+            deleteTableRow(students_table, "id", row[0]);
             window.showToast("success", "تم حذف الطالب بنجاح.");
           } catch (e) {
             window.showToast("warning", "Error: " + e.message);
           }
-        };
+        });
         button_group.appendChild(deleteBtn);
 
         data.push({
@@ -340,7 +338,7 @@ function calculateRequirement() {
   requirementInput.value = value ? value.toFixed(2) : "";
 }
 
-function update_day_module_evaluation(studentId) {
+function update_student_day_notes(studentId) {
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
@@ -382,11 +380,7 @@ function update_day_module_evaluation(studentId) {
   loadDayStudentsList();
 }
 
-function setAttendance(studentId) {
-  attendanceInput.value = "1";
-  attendanceInput.dispatchEvent(new Event("change"));
-  update_day_module_evaluation(studentId);
-}
+function setAttendance(studentId) {}
 
 function addNewDay() {
   if (!project_db) {
@@ -492,7 +486,7 @@ function loadDayStudentsList() {
               window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
               return;
             }
-            update_day_module_evaluation(row[0]);
+            update_student_day_notes(row[0]);
             newStudentDayModal.hide();
           };
         };
@@ -511,19 +505,26 @@ function loadDayStudentsList() {
         const prayerOption = document.querySelector(
           `#prayer option[value='${row[11]}']`
         );
+        const attendanceBtn = document.createElement("button");
+        attendanceBtn.className = "btn btn-info";
+        attendanceBtn.innerHTML = "غائب";
+        CreateOnClickUndo(attendanceBtn, function () {
+          attendanceInput.value = "1";
+          attendanceInput.dispatchEvent(new Event("change"));
+          update_student_day_notes(row[0]);
+        });
         data.push({
           id: row[0],
           actions: editBtn,
           student: row[1],
           attendance: attendanceOption
             ? attendanceOption.textContent
-            : '<button type="button" onclick="setAttendance(' +
-              row[0] +
-              ')" class="btn btn-info">غائب</button>',
+            : attendanceBtn,
           book: row[7] === 1 ? "/" : row[2] || "",
           type: row[7] === 1 ? "/" : row[3] || "",
           quantity: row[7] === 1 ? "/" : row[4] || "",
-          evaluation: row[7] === 1 ? "/" : row[5] === 0 ? "إعادة" : row[5] || "",
+          evaluation:
+            row[7] === 1 ? "/" : row[5] === 0 ? "إعادة" : row[5] || "",
           requirement: row[7] === 1 ? "/" : row[6] || "",
           dressCode:
             row[7] === 1
@@ -545,7 +546,7 @@ function loadDayStudentsList() {
       });
     } else {
       window.showToast("success", "لا يوجد تلاميذ.");
-      showTab("pills-students")
+      showTab("pills-students");
       return;
     }
     students_day_table = new DataTable("#dayListTable", {
@@ -1113,6 +1114,85 @@ const generatelignCount = (ranges) => {
     WHERE ${conditions};
   `;
 };
+
+function deleteTableRow(table, columnName) {
+  table.rows().every(function () {
+    var rowData = this.data();
+    console.log(rowData);
+    if (rowData[columnName] === columnValue) {
+      this.remove();
+    }
+  });
+  table.draw();
+}
+
+function CreateOnClickUndo(button, actionFunction, removeBtn = false) {
+  button.setAttribute("data-count", "");
+  const buttonClassName = button.className;
+  const buttonText = button.innerHTML;
+
+  let countdownInterval;
+  let actionTimeout;
+  const delaySeconds = 3;
+
+  button.onclick = function handleButtonClick(e) {
+    const currentState = button.classList.contains("UndoCountdown")
+      ? "UndoCountdown"
+      : "initial";
+
+    switch (currentState) {
+      case "initial":
+        // Clear any existing timers
+        clearInterval(countdownInterval);
+        clearTimeout(actionTimeout);
+
+        // Set visual state
+        button.className = buttonClassName + " UndoCountdown";
+        button.style.backgroundColor = "#fbbc05";
+        // button.style.paddingRight = '50px';
+        button.textContent = "تراجع";
+        button.dataset.count = delaySeconds;
+
+        // Start countdown display
+        let secondsRemaining = delaySeconds;
+        countdownInterval = setInterval(() => {
+          secondsRemaining--;
+          button.dataset.count = secondsRemaining;
+
+          if (secondsRemaining <= 0) {
+            clearInterval(countdownInterval);
+            // Don't execute here - the timeout will handle it
+          }
+        }, 1000);
+
+        // Set action timer
+        actionTimeout = setTimeout(() => {
+          clearInterval(countdownInterval);
+          if (removeBtn) {
+            button.remove();
+          } else {
+            button.className = buttonClassName;
+            button.style.removeProperty("background-color");
+            button.innerHTML = buttonText;
+            button.dataset.count = "";
+          }
+          actionFunction(e);
+        }, delaySeconds * 1000);
+        break;
+      case "UndoCountdown":
+        // Clear all timers
+        clearInterval(countdownInterval);
+        clearTimeout(actionTimeout);
+
+        // Reset visual state
+        button.className = buttonClassName;
+        button.style.removeProperty("background-color");
+        button.innerHTML = buttonText;
+        button.dataset.count = "";
+        break;
+    }
+  };
+}
 
 // Function to count lines in a given text
 function countLines(text) {
