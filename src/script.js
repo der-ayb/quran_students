@@ -138,7 +138,7 @@ function loadStudentsList() {
       destroy: true,
       data: data,
       columnDefs: [
-        { visible: false, targets: [2,4] },
+        { visible: false, targets: [4] },
         {
           targets: 4,
           orderable: false,
@@ -166,7 +166,7 @@ function loadStudentsList() {
             {
               text: "إظهار التفاصيل",
               action: function () {
-                const columns = students_table.columns([2,4]);
+                const columns = students_table.columns([4]);
                 const isVisible = students_table
                   .column(columns[0][0])
                   .visible();
@@ -412,9 +412,8 @@ function loadDayStudentsList() {
   }
 
   if (
-    !project_db.exec(
-      `SELECT * FROM education_day WHERE date = '${currentDay}'`
-    ).length
+    !project_db.exec(`SELECT * FROM education_day WHERE date = '${currentDay}'`)
+      .length
   ) {
     document.getElementById("addNewDayBtn").style.display = "block";
     document.getElementById("dayListTable").style.display = "none";
@@ -524,7 +523,7 @@ function loadDayStudentsList() {
           book: row[7] === 1 ? "/" : row[2] || "",
           type: row[7] === 1 ? "/" : row[3] || "",
           quantity: row[7] === 1 ? "/" : row[4] || "",
-          evaluation: row[7] === 1 ? "/" : row[5] || "إعادة",
+          evaluation: row[7] === 1 ? "/" : row[5] === 0 ? "إعادة" : row[5] || "",
           requirement: row[7] === 1 ? "/" : row[6] || "",
           dressCode:
             row[7] === 1
@@ -544,8 +543,10 @@ function loadDayStudentsList() {
             row[7] === 1 ? "/" : prayerOption ? prayerOption.textContent : "",
         });
       });
-    }else{
-      alert("لا توجد بيانات في الجدول.")
+    } else {
+      window.showToast("success", "لا يوجد تلاميذ.");
+      showTab("pills-students")
+      return;
     }
     students_day_table = new DataTable("#dayListTable", {
       destroy: true,
@@ -815,14 +816,21 @@ async function loadDBFromFile(file) {
 
 async function exportDB() {
   const data = project_db.export();
-  const blob = new Blob([data], { type: "application/octet-stream" });
+  const blob = new Blob([data], { type: "application/x-sqlite3" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "mydb.sqlite";
+  a.download = "quran_students.sqlite3";
   a.click();
+  URL.revokeObjectURL(a.href);
 }
 
-async function fetchAndReadFile(db_key, url, callback = function () {}) {
+async function fetchAndReadFile(
+  db_key,
+  url,
+  callback = function () {
+    window.showToast("success", "تم تحميل قاعدة البيانات.");
+  }
+) {
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch file");
@@ -831,7 +839,6 @@ async function fetchAndReadFile(db_key, url, callback = function () {}) {
     const db = new SQL.Database(uInt8Array);
     await saveToIndexedDB(db.export(), db_key);
     callback(db);
-    window.showToast("success", "تم تحميل قاعدة البيانات.");
   } catch (error) {
     window.showToast("error", "Error reading file:" + error);
     hideModalLoading();
@@ -842,13 +849,14 @@ document.getElementById("newDBbtn").onclick = async function () {
   showModalLoading();
   await fetchAndReadFile(
     PROJECT_DB_KEY,
-    "https://der-ayb.github.io/quran_students/default.sqlite",
+    "https://der-ayb.github.io/quran_students/default.sqlite3",
     (db) => {
       project_db = db;
       hideModalLoading();
     }
   );
   await downloadQuranDB();
+  window.showToast("success", "تم تحميل قواعد البيانات.");
   showTab("pills-summary");
   nav_bar.style.removeProperty("display");
 };
