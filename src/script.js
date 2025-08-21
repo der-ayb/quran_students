@@ -14,17 +14,26 @@ let currentDay = new Date().toISOString().slice(0, 10);
 
 const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = document.getElementById("dayDate");
+const addQuranSelectionBtn = document.getElementById("addQuranSelectionBtn");
 const studentIdInput = document.getElementById("studentId");
 const attendanceInput = document.getElementById("attendance");
+
+const requirementsTable = document.getElementById("requirementTable");
+const secondAyahSelect = document.getElementById("second-ayah");
+const firstAyahSelect = document.getElementById("first-ayah");
+const secondSurahSelect = document.getElementById("second-surah");
+const firstSurahSelect = document.getElementById("first-surah");
 const requirEvaluationInput = document.getElementById("requirEvaluation");
 const requireBookInput = document.getElementById("requirBook");
 const requirQuantityInput = document.getElementById("requirQuantity");
-const requirementInput = document.getElementById("requirement");
 const requirTypeInput = document.getElementById("requirType");
+
+const requirementInput = document.getElementById("requirement");
 const dressCodeInput = document.getElementById("dressCode");
 const haircutInput = document.getElementById("haircut");
 const behaviorInput = document.getElementById("behavior");
 const prayerInput = document.getElementById("prayer");
+const studentNameInput = document.getElementById("studentName");
 const nameInput = document.getElementById("name");
 const birthdayInput = document.getElementById("birthday");
 const parentPhoneInput = document.getElementById("parentPhone");
@@ -40,10 +49,7 @@ const newStudentInfosModal = new bootstrap.Modal(
 const loadingModal = new bootstrap.Modal(
   document.getElementById("loadingModal")
 );
-const secondAyahSelect = document.getElementById("second-ayah");
-const firstAyahSelect = document.getElementById("first-ayah");
-const secondSurahSelect = document.getElementById("second-surah");
-const firstSurahSelect = document.getElementById("first-surah");
+
 document.addEventListener("DOMContentLoaded", function () {
   const today = new Date();
   birthdayInput.setAttribute(
@@ -259,7 +265,7 @@ document
 document
   .getElementById("newStudentDayModal")
   .addEventListener("show.bs.modal", function () {
-    document.getElementById("studentName").disabled = false;
+    studentNameInput.disabled = false;
     requireBookInput.disabled = false;
     requirTypeInput.disabled = false;
     requirQuantityInput.disabled = false;
@@ -447,7 +453,6 @@ function loadDayStudentsList() {
     const data = [];
     if (results.length) {
       const result = results[0];
-      const studentNameEl = document.getElementById("studentName");
 
       result.values.forEach((row) => {
         const editBtn = document.createElement("button");
@@ -456,7 +461,7 @@ function loadDayStudentsList() {
         editBtn.onclick = function () {
           newStudentDayModal.show();
 
-          studentNameEl.value = row[1];
+          studentNameInput.value = row[1];
 
           attendanceInput.value = row[7] || "";
           attendanceInput.dispatchEvent(new Event("change"));
@@ -508,11 +513,11 @@ function loadDayStudentsList() {
         const attendanceBtn = document.createElement("button");
         attendanceBtn.className = "btn btn-info";
         attendanceBtn.innerHTML = "غائب";
-        CreateOnClickUndo(attendanceBtn, function () {
+        attendanceBtn.onclick = function () {
           attendanceInput.value = "1";
           attendanceInput.dispatchEvent(new Event("change"));
           update_student_day_notes(row[0]);
-        });
+        };
         data.push({
           id: row[0],
           actions: editBtn,
@@ -846,6 +851,53 @@ async function fetchAndReadFile(
   }
 }
 
+function removeRequirItem(button){
+  const row = button.closest("tr");
+  if (requirementsTable.querySelector("tbody").childElementCount === 1) {
+    requirementsTable.style.display = "none";
+    studentDayForm.querySelector('button[type="submit"]').disabled = true;
+  }
+  row.remove();
+}
+
+addQuranSelectionBtn.onclick = function () {
+  requirementsTable.style.display = "block";
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td>${requireBookInput.value}</td>
+    <td>${requirTypeInput.value}</td>
+    <td>${requirQuantityInput.value}</td>
+    <td>${requirEvaluationInput.value}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">حذف</button></td>`;
+  requirementsTable.querySelector("tbody").appendChild(row);
+  requireBookInput.value = "";
+  requirTypeInput.value = "";
+  requirQuantityInput.value = "";
+  requirEvaluationInput.value = "";
+  requireBookInput.dispatchEvent(new Event("change"));
+  requirTypeInput.dispatchEvent(new Event("change"));
+  requirQuantityInput.dispatchEvent(new Event("change"));
+  requirEvaluationInput.dispatchEvent(new Event("change"));
+  studentDayForm.querySelector('button[type="submit"]').disabled = false;
+
+  const headers = Array.from(
+    requirementsTable.querySelectorAll("thead th")
+  ).map((header) => header.textContent.trim());
+  const rows = requirementsTable.querySelectorAll("tbody tr");
+  const result = [];
+  rows.forEach((row) => {
+    const cells = row.querySelectorAll("td");
+    const rowData = {};
+    cells.forEach((cell, index) => {
+      const key = headers[index] || `column${index}`;
+      rowData[key] = cell.textContent.trim();
+    });
+    result.push(rowData);
+  });
+
+  console.log(result);
+};
+
 document.getElementById("newDBbtn").onclick = async function () {
   showModalLoading();
   await fetchAndReadFile(
@@ -1115,10 +1167,9 @@ const generatelignCount = (ranges) => {
   `;
 };
 
-function deleteTableRow(table, columnName) {
+function deleteTableRow(table, columnName, columnValue) {
   table.rows().every(function () {
     var rowData = this.data();
-    console.log(rowData);
     if (rowData[columnName] === columnValue) {
       this.remove();
     }

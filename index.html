@@ -336,13 +336,13 @@
     aria-labelledby="newStudentDayModalLabel" aria-hidden="true" style="z-index: 1101;">
     <div class="modal-dialog">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="newStudentDayModalLabel">يوم التلميذ</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-          </button>
-        </div>
-        <div class="modal-body">
-          <form id="studentDayForm">
+        <form id="studentDayForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="newStudentDayModalLabel">يوم التلميذ</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+            </button>
+          </div>
+          <div class="modal-body">
             <div class="mb-3">
               <label for="studentName">اسم التلميذ:</label>
               <input type="text" class="form-control" id="studentName" readonly />
@@ -357,74 +357,93 @@
                 <option value="1">غياب</option>
               </select>
             </div>
+
             <div class="my-1 d-flex align-items-center">
               <hr class="flex-grow-1">
               <span class="mx-2 text-muted">المطلوب</span>
               <hr class="flex-grow-1">
             </div>
-
-            <div class="row">
-              <div class="col">
-                <div class="mb-3">
-                  <label for="requirBook">الكتاب:</label>
-                  <input list="requirBookOptions" class="form-control" id="requirBook"
-                    placeholder="اختر أو أدخل قيمة..." required />
-                  <datalist id="requirBookOptions">
-                    <option value="القرآن">
-                    <option value="الأربعين النووية">
-                  </datalist>
-                </div>
-              </div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="requirType">النوع:</label>
-                  <select class="form-control" id="requirType" required>
-                    <option value="حفظ">حفظ</option>
-                    <option value="مراجعة">مراجعة</option>
-                  </select>
-                </div>
-              </div>
-              <div class="w-100"></div>
-              <div class="col" id="quranSelectionSection1" style="display: none;">
-                <div class="mb-3">
-                  <label>من:</label>
-                  <div class="row mx-0">
-                    <select id="first-surah" class="col form-control surah-select">
-                    </select>
-                    <select id="first-ayah" class="col-5 form-control ayah-select" disabled>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="col" id="quranSelectionSection2" style="display: none;">
-                <div class="mb-3">
-                  <label>إلى:</label>
-                  <div class="row mx-0">
-                    <select id="second-surah" class="col form-control surah-select" disabled>
-                    </select>
-                    <select id="second-ayah" class="col-5 form-control ayah-select" disabled>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="w-100"></div>
-              <div class="card-body" id="quranSelectionSection" style="display: none;">
-
-              </div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="requirQuantity">المقدار:</label>
-                  <input type="number" id="requirQuantity" class="form-control" min="0" step="0.5" required />
-                </div>
-              </div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="requirEvaluation">التقدير:</label>
-                  <input type="number" id="requirEvaluation" class="form-control" min="0" max="10" step="0.5"
-                    required />
-                </div>
-              </div>
+            <div class="table-responsive">
+              <table class="table" id="requirementTable" style="display: none;">
+                <thead>
+                  <tr>
+                    <th scope="col">الكتاب</th>
+                    <th scope="col">النوع</th>
+                    <th scope="col">المقدار</th>
+                    <th scope="col">التقدير</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                </tbody>
+              </table>
             </div>
+            <div class="card px-2 py-2 mb-2">
+              <div class="row">
+                <div class="col">
+                  <div class="mb-3">
+                    <label for="requirBook">الكتاب:</label>
+                    <input list="requirBookOptions" class="form-control" id="requirBook"
+                      placeholder="اختر أو أدخل قيمة..." />
+                    <datalist id="requirBookOptions">
+                      <option value="القرآن">
+                      <option value="الأربعين النووية">
+                    </datalist>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="mb-3">
+                    <label for="requirType">النوع:</label>
+                    <select class="form-control" id="requirType">
+                      <option value="حفظ">حفظ</option>
+                      <option value="مراجعة">مراجعة</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="w-100"></div>
+                <div class="col" id="quranSelectionSection1" style="display: none;">
+                  <div class="mb-3">
+                    <label>من:</label>
+                    <div class="row mx-0">
+                      <select id="first-surah" class="col form-control surah-select">
+                      </select>
+                      <select id="first-ayah" class="col-5 form-control ayah-select" disabled>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="col" id="quranSelectionSection2" style="display: none;">
+                  <div class="mb-3">
+                    <label>إلى:</label>
+                    <div class="row mx-0">
+                      <select id="second-surah" class="col form-control surah-select" disabled>
+                      </select>
+                      <select id="second-ayah" class="col-5 form-control ayah-select" disabled>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="w-100"></div>
+
+                <div class="col">
+                  <div class="mb-3">
+                    <label for="requirQuantity">المقدار:</label>
+                    <input type="number" id="requirQuantity" class="form-control" min="0" step="0.5" />
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="mb-3">
+                    <label for="requirEvaluation">التقدير:</label>
+                    <input type="number" id="requirEvaluation" class="form-control" min="0" max="10" step="0.5" />
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" data-requirlength="0" class="btn btn-info mx-auto w-100"
+                id="addQuranSelectionBtn">إظافة
+                مطلوب</button>
+            </div>
+
             <div class="mb-3">
               <label for="requirement">معدل المطلوب:</label>
               <input type="number" class="form-control" id="requirement" readonly required />
@@ -479,11 +498,11 @@
                 </div>
               </div>
             </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
-          <button type="submit" class="btn btn-primary">حفظ</button>
-        </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            <button type="submit" class="btn btn-primary" disabled>حفظ</button>
+          </div>
         </form>
       </div>
     </div>
