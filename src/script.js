@@ -25,11 +25,14 @@ const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
 const requirEvaluationInput = document.getElementById("requirEvaluation");
 const requireBookInput = document.getElementById("requirBook");
+const requirQuantityDetailInput = document.getElementById(
+  "requirQuantityDetail"
+);
 const requirQuantityInput = document.getElementById("requirQuantity");
 const requirTypeInput = document.getElementById("requirType");
 
-const requirementInput = document.getElementById("requirement");
-const dressCodeInput = document.getElementById("dressCode");
+const requirMoyenneInput = document.getElementById("requirMoyenne");
+const clothingInput = document.getElementById("clothing");
 const haircutInput = document.getElementById("haircut");
 const behaviorInput = document.getElementById("behavior");
 const prayerInput = document.getElementById("prayer");
@@ -40,6 +43,9 @@ const parentPhoneInput = document.getElementById("parentPhone");
 
 const newStudentInfosForm = document.getElementById("newStudentInfosForm");
 const studentDayForm = document.getElementById("studentDayForm");
+const studentDayFormSubmitBtn = document.getElementById(
+  "studentDayFormSubmitBtn"
+);
 const newStudentDayModal = new bootstrap.Modal(
   document.getElementById("newStudentDayModal")
 );
@@ -271,31 +277,30 @@ document
     requirQuantityInput.disabled = false;
     requirEvaluationInput.disabled = false;
     // requirementInput.readOnly = false;
-    dressCodeInput.disabled = false;
+    clothingInput.disabled = false;
     haircutInput.disabled = false;
     behaviorInput.disabled = false;
     prayerInput.disabled = false;
     studentDayForm.reset();
+    studentDayFormSubmitBtn.disabled = true;
   });
 
 requireBookInput.onchange = function () {
-  const quranSelectionSection1 = document.getElementById(
-    "quranSelectionSection1"
-  );
-  const quranSelectionSection2 = document.getElementById(
-    "quranSelectionSection2"
+  const quranSelectionSection = document.getElementById(
+    "quranSelectionSection"
   );
 
   if (this.value === "القرآن") {
-    quranSelectionSection1.style.display = "block";
-    quranSelectionSection2.style.display = "block";
+    quranSelectionSection.style.removeProperty("display");
+    requirQuantityDetailInput.style.display = "none";
     requirQuantityInput.readOnly = true;
   } else {
-    quranSelectionSection1.style.display = "none";
-    quranSelectionSection2.style.display = "none";
+    requirQuantityDetailInput.style.removeProperty("display");
+    quranSelectionSection.style.display = "none";
     requirQuantityInput.readOnly = false;
-    requirQuantityInput.value = "";
   }
+  requirQuantityDetailInput.value = "";
+  requirQuantityInput.value = "";
 };
 
 attendanceInput.onchange = function () {
@@ -305,11 +310,13 @@ attendanceInput.onchange = function () {
     "requirType",
     "requirQuantity",
     "requirEvaluation",
-    "requirement",
-    "dressCode",
+    "requirMoyenne",
+    "requirQuantityDetail",
+    "clothing",
     "haircut",
     "behavior",
     "prayer",
+    "addQuranSelectionBtn",
   ].map((id) => document.getElementById(id));
   const disable = this.value === "1";
   elementsToDisable.forEach((element) => {
@@ -317,31 +324,40 @@ attendanceInput.onchange = function () {
   });
   requireBookInput.value = "";
   requireBookInput.dispatchEvent(new Event("change"));
+  if (disable == "1") {
+    studentDayFormSubmitBtn.disabled = false;
+  } else {
+    studentDayFormSubmitBtn.disabled = true;
+  }
 };
 
-["requirQuantity", "requirEvaluation", "requirType"].forEach((id) => {
-  const element = document.getElementById(id);
-  element.onchange = calculateRequirement;
-  element.oninput = calculateRequirement;
-});
-
-function calculateRequirement() {
-  const quantity = parseFloat(requirQuantityInput.value);
-  const evaluation = parseFloat(requirEvaluationInput.value);
-  const type = requirTypeInput.value;
-
-  if (!quantity || !evaluation || !type) {
-    requirementInput.value = "";
-    return;
-  }
-
+function calcRequirementMoyenne(quantity, evaluation, type) {
   let value = 0;
   if (type === "حفظ") {
     value = evaluation * quantity;
   } else if (type === "مراجعة") {
     value = evaluation * (quantity / 3);
   }
-  requirementInput.value = value ? value.toFixed(2) : "";
+  return value ? value.toFixed(2) : "";
+}
+
+function calcRequirementsMoyenne() {
+  let moyenne = 0;
+  const headers = Array.from(
+    requirementsTable.querySelectorAll("thead th")
+  ).map((header) => header.textContent.trim());
+  const rows = requirementsTable.querySelectorAll("tbody tr");
+  rows.forEach((row) => {
+    const cells = row.querySelectorAll("td");
+    const rowData = {};
+    cells.forEach((cell, index) => {
+      const key = headers[index];
+      if (key && key == "المعدل")
+        moyenne += parseFloat(cell.textContent.trim() || "0");
+    });
+  });
+  moyenne = moyenne / (rows.length || 1);
+  return moyenne ? moyenne.toFixed(2) : "";
 }
 
 function update_student_day_notes(studentId) {
@@ -350,36 +366,52 @@ function update_student_day_notes(studentId) {
     return;
   }
   if (attendanceInput.value !== "1") {
+    const headers = Array.from(
+      requirementsTable.querySelectorAll("thead th")
+    ).map((header) => header.textContent.trim());
+    const rows = requirementsTable.querySelectorAll("tbody tr");
+    const requirList = [];
+    rows.forEach((row) => {
+      const cells = row.querySelectorAll("td");
+      const rowData = {};
+      cells.forEach((cell, index) => {
+        const key = headers[index];
+        if (key) rowData[key] = cell.textContent.trim();
+      });
+      requirList.push(rowData);
+    });
+
     project_db.run(
-      "INSERT OR REPLACE INTO day_requirements (student_id, day_id, book, type,quantity, evaluation) VALUES (?, ?, ?, ?,?,?);",
+      "INSERT OR REPLACE INTO day_requirements (student_id, day_id, detail, moyenne) VALUES (?, ?, ?, ?);",
       [
         studentId,
         currentDay,
-        requireBookInput.value,
-        requirTypeInput.value,
-        requirQuantityInput.value,
-        requirEvaluationInput.value,
+        JSON.stringify(requirList),
+        requirMoyenneInput.value || "0",
       ]
     );
 
-    const modules = [
-      { id: 1, selector: requirementInput.value },
-      { id: 2, selector: attendanceInput.value },
-      { id: 3, selector: dressCodeInput.value },
-      { id: 4, selector: haircutInput.value },
-      { id: 5, selector: behaviorInput.value },
-      { id: 6, selector: prayerInput.value },
-    ];
-    modules.forEach((mod) => {
-      project_db.run(
-        "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day_id, evaluation) VALUES (?, ?, ?, ?);",
-        [studentId, mod.id, currentDay, mod.selector]
-      );
-    });
+    project_db.run(
+      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,clothing,haircut,behavior,prayer,moyenne) VALUES (?, ?, ?, ?,?,?,?,?,?);",
+      [
+        studentId,
+        currentDay,
+        attendanceInput.value,
+        clothingInput.value,
+        haircutInput.value,
+        behaviorInput.value,
+        prayerInput.value,
+        attendanceInput.value +
+          clothingInput.value +
+          haircutInput.value +
+          behaviorInput.value +
+          prayerInput.value,
+      ]
+    );
   } else {
     project_db.run(
-      "INSERT OR REPLACE INTO day_module_evaluation (student_id, module_id, day_id, evaluation) VALUES (?, ?, ?, ?);",
-      [studentId, 2, currentDay, attendanceInput.value]
+      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,clothing,haircut,behavior,prayer,moyenne) VALUES (?, ?, ?,?,?,?,?,?);",
+      [studentId, currentDay, "1", null, null, null, null, null]
     );
   }
   saveToIndexedDB(project_db.export());
@@ -426,28 +458,21 @@ function loadDayStudentsList() {
   try {
     const results = project_db.exec(`
       SELECT 
-        s.id AS student_id, 
-        s.name AS student_name,
-        dr.book AS "الكتاب",
-        dr.type AS "النوع",
-        dr.quantity AS "المقدار",
-        dr.evaluation AS "التقدير",
-        dme.evaluation AS "الحفظ",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 2 AND day_id = '${currentDay}') AS "الحظور",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 3 AND day_id = '${currentDay}') AS "الهندام",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 4 AND day_id = '${currentDay}') AS "الحلاقة",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 5 AND day_id = '${currentDay}') AS "السلوك",
-        (SELECT evaluation FROM day_module_evaluation WHERE student_id = s.id AND module_id = 6 AND day_id = '${currentDay}') AS "الصلاة"
-      FROM 
-        students s
-      LEFT JOIN 
-        day_requirements dr ON s.id = dr.student_id AND dr.day_id = '${currentDay}'
-      LEFT JOIN 
-        day_module_evaluation dme ON s.id = dme.student_id AND dme.module_id = 1 AND dme.day_id = '${currentDay}'
-      GROUP BY 
-        s.id, s.name
-      ORDER BY 
-        s.id 
+          s.id AS studentId,  
+          s.name AS studentName,
+          dr.detail AS "detail",
+          dr.moyenne AS "requirMoyenne",
+          de.attendance AS "attendance",
+          de.clothing AS "clothing", 
+          de.haircut AS "haircut",
+          de.behavior AS "behavior",
+          de.prayer AS "prayer",
+          de.moyenne AS "evalMoyenne"	
+      FROM students s
+      LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id = '${currentDay}'
+      LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id = '${currentDay}'
+      GROUP BY s.id, s.name
+      ORDER BY s.id
       LIMIT 100`);
 
     const data = [];
@@ -460,30 +485,38 @@ function loadDayStudentsList() {
         editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
         editBtn.onclick = function () {
           newStudentDayModal.show();
+          studentNameInput.value = row[result.columns.indexOf("studentName")];
 
-          studentNameInput.value = row[1];
+          JSON.parse(row[result.columns.indexOf("detail")] || "[]").forEach(
+            (item) => {
+              requirementsTable.style.display = "block";
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td>${item["الكتاب"]}</td>
+                <td>${item["النوع"]}</td>
+                <td class="d-none">${item["المقدار"]}</td>
+                <td style="white-space: normal;">${item["التفاصيل"]}</td>
+                <td>${item["التقدير"]}</td>
+                <td>${item["المعدل"]}</td>
+                <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
+              requirementsTable.querySelector("tbody").appendChild(row);
+              studentDayForm.querySelector(
+                'button[type="submit"]'
+              ).disabled = false;
+            }
+          );
 
-          attendanceInput.value = row[7] || "";
+          attendanceInput.value =
+            row[result.columns.indexOf("attendance")] || "";
           attendanceInput.dispatchEvent(new Event("change"));
 
-          requireBookInput.value = row[2] || "";
-          requireBookInput.dispatchEvent(new Event("change"));
+          requirMoyenneInput.value =
+            row[result.columns.indexOf("requirMoyenne")] || "";
 
-          requirTypeInput.value = row[3] || "";
-          requirTypeInput.dispatchEvent(new Event("change"));
-
-          requirEvaluationInput.value = row[5] || "";
-          requirEvaluationInput.dispatchEvent(new Event("change"));
-
-          requirementInput.value = row[6] || "";
-
-          requirQuantityInput.value = row[4] || "";
-          requirQuantityInput.dispatchEvent(new Event("change"));
-
-          dressCodeInput.value = row[8] || "";
-          haircutInput.value = row[9] || "";
-          behaviorInput.value = row[10] || "";
-          prayerInput.value = row[11] || "";
+          clothingInput.value = row[result.columns.indexOf("clothing")] || "";
+          haircutInput.value = row[result.columns.indexOf("haircut")] || "";
+          behaviorInput.value = row[result.columns.indexOf("behavior")] || "";
+          prayerInput.value = row[result.columns.indexOf("prayer")] || "";
 
           studentDayForm.onsubmit = function (e) {
             e.preventDefault();
@@ -491,62 +524,75 @@ function loadDayStudentsList() {
               window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
               return;
             }
-            update_student_day_notes(row[0]);
+            update_student_day_notes(row[result.columns.indexOf("studentId")]);
             newStudentDayModal.hide();
           };
         };
+        const attendance_value = row[result.columns.indexOf("attendance")];
         const attendanceOption = document.querySelector(
-          `#attendance option[value='${row[7]}']`
+          `#attendance option[value='${attendance_value}']`
         );
-        const dressCodeOption = document.querySelector(
-          `#dressCode option[value='${row[8]}']`
+        const clothingOption = document.querySelector(
+          `#clothing option[value='${row[result.columns.indexOf("clothing")]}']`
         );
         const haircutOption = document.querySelector(
-          `#haircut option[value='${row[9]}']`
+          `#haircut option[value='${row[result.columns.indexOf("haircut")]}']`
         );
         const behaviorOption = document.querySelector(
-          `#behavior option[value='${row[10]}']`
+          `#behavior option[value='${row[result.columns.indexOf("behavior")]}']`
         );
         const prayerOption = document.querySelector(
-          `#prayer option[value='${row[11]}']`
+          `#prayer option[value='${row[result.columns.indexOf("prayer")]}']`
         );
         const attendanceBtn = document.createElement("button");
-        attendanceBtn.className = "btn btn-info";
+        attendanceBtn.className = "btn btn-info btn-sm";
         attendanceBtn.innerHTML = "غائب";
         attendanceBtn.onclick = function () {
           attendanceInput.value = "1";
           attendanceInput.dispatchEvent(new Event("change"));
-          update_student_day_notes(row[0]);
+          update_student_day_notes(row[result.columns.indexOf("studentId")]);
         };
         data.push({
-          id: row[0],
+          id: row[result.columns.indexOf("studentId")],
           actions: editBtn,
-          student: row[1],
+          student: row[result.columns.indexOf("studentName")],
           attendance: attendanceOption
             ? attendanceOption.textContent
             : attendanceBtn,
-          book: row[7] === 1 ? "/" : row[2] || "",
-          type: row[7] === 1 ? "/" : row[3] || "",
-          quantity: row[7] === 1 ? "/" : row[4] || "",
+          book: attendance_value === 1 ? "/" : row[2] || "",
+          type: attendance_value === 1 ? "/" : row[3] || "",
+          quantity: attendance_value === 1 ? "/" : row[4] || "",
           evaluation:
-            row[7] === 1 ? "/" : row[5] === 0 ? "إعادة" : row[5] || "",
-          requirement: row[7] === 1 ? "/" : row[6] || "",
-          dressCode:
+            attendance_value === 1
+              ? "/"
+              : row[5] === 0
+              ? "إعادة"
+              : row[5] || "",
+          requirement: attendance_value === 1 ? "/" : row[6] || "",
+          clothing:
             row[7] === 1
               ? "/"
-              : dressCodeOption
-              ? dressCodeOption.textContent
+              : clothingOption
+              ? clothingOption.textContent
               : "",
           haircut:
-            row[7] === 1 ? "/" : haircutOption ? haircutOption.textContent : "",
+            attendance_value === 1
+              ? "/"
+              : haircutOption
+              ? haircutOption.textContent
+              : "",
           behavior:
-            row[7] === 1
+            attendance_value === 1
               ? "/"
               : behaviorOption
               ? behaviorOption.textContent
               : "",
           prayer:
-            row[7] === 1 ? "/" : prayerOption ? prayerOption.textContent : "",
+            attendance_value === 1
+              ? "/"
+              : prayerOption
+              ? prayerOption.textContent
+              : "",
         });
       });
     } else {
@@ -576,7 +622,7 @@ function loadDayStudentsList() {
         { data: "quantity", defaultContent: "/" },
         { data: "evaluation", defaultContent: "/" },
         { data: "requirement", defaultContent: "/" },
-        { data: "dressCode", defaultContent: "/" },
+        { data: "clothing", defaultContent: "/" },
         { data: "haircut", defaultContent: "/" },
         { data: "behavior", defaultContent: "/" },
         { data: "prayer", defaultContent: "/" },
@@ -605,6 +651,17 @@ function loadDayStudentsList() {
                 students_day_table
                   .button(0)
                   .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
+              },
+            },
+            {
+              text: "إظافة ملاحظة اليوم ✚",
+              action: function () {
+                let dayNote = prompt("أكتب ملاحظة:");
+                if (dayNote !== null) {
+                  console.log("Hello, " + dayNote + "!");
+                } else {
+                  console.log("User cancelled the prompt.");
+                }
               },
             },
           ],
@@ -851,25 +908,42 @@ async function fetchAndReadFile(
   }
 }
 
-function removeRequirItem(button){
+function removeRequirItem(button) {
   const row = button.closest("tr");
   if (requirementsTable.querySelector("tbody").childElementCount === 1) {
     requirementsTable.style.display = "none";
-    studentDayForm.querySelector('button[type="submit"]').disabled = true;
+    studentDayFormSubmitBtn.disabled = true;
   }
   row.remove();
+  requirMoyenneInput.value = calcRequirementsMoyenne();
 }
 
 addQuranSelectionBtn.onclick = function () {
+  if (
+    !requireBookInput.value ||
+    !requirTypeInput.value ||
+    !requirQuantityInput.value ||
+    !requirEvaluationInput.value
+  ) {
+    window.showToast("error", "الرجاء إدخال الحقول اللازمة.");
+    return;
+  }
   requirementsTable.style.display = "block";
   const row = document.createElement("tr");
   row.innerHTML = `
     <td>${requireBookInput.value}</td>
     <td>${requirTypeInput.value}</td>
-    <td>${requirQuantityInput.value}</td>
+    <td class="d-none">${requirQuantityInput.value}</td>
+    <td style="white-space: normal;">${requirQuantityDetailInput.value}</td>
     <td>${requirEvaluationInput.value}</td>
-    <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">حذف</button></td>`;
+    <td>${calcRequirementMoyenne(
+      requirQuantityInput.value,
+      requirEvaluationInput.value,
+      requirTypeInput.value
+    )}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
   requirementsTable.querySelector("tbody").appendChild(row);
+  requirMoyenneInput.value = calcRequirementsMoyenne();
   requireBookInput.value = "";
   requirTypeInput.value = "";
   requirQuantityInput.value = "";
@@ -878,24 +952,7 @@ addQuranSelectionBtn.onclick = function () {
   requirTypeInput.dispatchEvent(new Event("change"));
   requirQuantityInput.dispatchEvent(new Event("change"));
   requirEvaluationInput.dispatchEvent(new Event("change"));
-  studentDayForm.querySelector('button[type="submit"]').disabled = false;
-
-  const headers = Array.from(
-    requirementsTable.querySelectorAll("thead th")
-  ).map((header) => header.textContent.trim());
-  const rows = requirementsTable.querySelectorAll("tbody tr");
-  const result = [];
-  rows.forEach((row) => {
-    const cells = row.querySelectorAll("td");
-    const rowData = {};
-    cells.forEach((cell, index) => {
-      const key = headers[index] || `column${index}`;
-      rowData[key] = cell.textContent.trim();
-    });
-    result.push(rowData);
-  });
-
-  console.log(result);
+  studentDayFormSubmitBtn.disabled = false;
 };
 
 document.getElementById("newDBbtn").onclick = async function () {
@@ -964,8 +1021,6 @@ const initializeAyatdata = async (db) => {
 };
 
 const populateSurahDropdown = async (selectElement) => {
-  selectElement.innerHTML = "";
-  selectElement.appendChild(createOption("", "--  --"));
   surahsData.forEach((surah) => {
     selectElement.appendChild(
       createOption(surah.number, `${surah.name}`, {
@@ -1065,6 +1120,11 @@ firstSurahSelect.onchange = async function () {
 
 secondSurahSelect.onchange = async function () {
   checkSecondSurahAyahs(parseInt(this.value));
+  requirQuantityDetailInput.value = `${
+    firstSurahSelect.options[firstSurahSelect.selectedIndex].text
+  } - ${firstAyahSelect.options[firstAyahSelect.selectedIndex].value} إلى ${
+    this.options[this.selectedIndex].text
+  } - ${this.options[this.selectedIndex].dataset.ayahs}`;
 };
 
 firstAyahSelect.onchange = async function () {
