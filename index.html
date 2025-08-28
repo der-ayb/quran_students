@@ -119,6 +119,33 @@
     <div class="tab-pane fade" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
       <h2 class="text-center mb-4">الملخص</h2>
 
+      <input id="datepicker" />
+
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+      <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+      <script>
+        const events = [
+          "2025-09-02",
+          "2025-09-05",
+        ];
+
+        flatpickr("#datepicker", {
+          onDayCreate(dObj, dStr, fp, dayElem) {
+            const date = dayElem.dateObj.toISOString().split("T")[0];
+            if (events.includes(date)) {
+              const dot = document.createElement("span");
+              dot.style.cssText = `
+                  display:inline-block;
+                  width:6px; height:6px; border-radius:50%;
+                  background:#3d8eb9;
+                  margin-left:2px;
+                `;
+              dayElem.appendChild(dot);
+            }
+          }
+        });
+      </script>
 
     </div>
 
@@ -148,6 +175,7 @@
           <i class="fas fa-calendar-alt date-icon"></i>
         </div>
       </div>
+      <p id="dayNoteContainer" class="border px-2 py-2 mx-2 my-2"></p>
 
       <table id="dayListTable" style="display: none;" class="display responsive nowrap" width="100%">
         <thead>
@@ -373,6 +401,7 @@
                     <th scope="col">التفاصيل</th>
                     <th scope="col">التقدير</th>
                     <th scope="col">المعدل</th>
+                    <th scope="col">الحالة</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -407,7 +436,7 @@
                 <div class="mb-3">
                   <label for="">التفاصيل:</label>
                   <textarea type="text" id="requirQuantityDetail" class="form-control"></textarea>
-                    <div class="input-group mb-3" id="quranSelectionSection" style="display: none;">
+                  <div class="input-group mb-3" id="quranSelectionSection" style="display: none;">
                     <select id="first-surah" class="form-control surah-select">
                       <option value="" selected disabled>من</option>
                     </select>
@@ -416,7 +445,7 @@
                       <option value="" selected disabled>إلى</option>
                     </select>
                     <select id="second-ayah" class="form-control ayah-select" disabled></select>
-                    </div>
+                  </div>
                 </div>
                 <div class="w-100"></div>
                 <div class="col">
@@ -431,11 +460,23 @@
                     <input type="number" id="requirEvaluation" class="form-control" min="0" max="10" step="0.5" />
                   </div>
                 </div>
+                <div class="w-100"></div>
+                <div class="col">
+                  <div class="mb-3">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" role="switch" id="requirSwitch" checked>
+                      <label class="form-check-label" for="requirSwitch">تعيين كواجب</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="">
+                    <button type="button" data-requirlength="0" class="btn btn-info mx-auto w-100"
+                      id="addQuranSelectionBtn">إظافة +</button>
+                  </div>
+                </div>
               </div>
 
-              <button type="button" data-requirlength="0" class="btn btn-info mx-auto w-100"
-                id="addQuranSelectionBtn">إظافة
-                مطلوب</button>
             </div>
 
             <div class="mb-3">

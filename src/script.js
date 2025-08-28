@@ -426,14 +426,15 @@ function addNewDay() {
     return;
   }
   project_db.run(
-    "INSERT OR REPLACE INTO education_day (date, notes) VALUES (?, ?);",
-    [currentDay, null]
+    "INSERT OR REPLACE INTO education_day (date,time, notes) VALUES (?,?, ?);",
+    [currentDay, new Date().toISOString().slice(11, 19), null]
   );
   saveToIndexedDB(project_db.export());
   loadDayStudentsList();
 }
 
 function loadDayStudentsList() {
+  document.getElementById("dayNoteContainer").style.display = "none";
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
@@ -443,14 +444,21 @@ function loadDayStudentsList() {
     students_day_table = null;
   }
 
-  if (
-    !project_db.exec(`SELECT * FROM education_day WHERE date = '${currentDay}'`)
-      .length
-  ) {
+  const dayResult = project_db.exec(
+    `SELECT * FROM education_day WHERE date = '${currentDay}'`
+  );
+
+  if (!dayResult.length) {
     document.getElementById("addNewDayBtn").style.display = "block";
     document.getElementById("dayListTable").style.display = "none";
     return;
   }
+  const dayNote =
+    dayResult[0].values[0][dayResult[0].columns.indexOf("notes")] || "";
+  document.getElementById("dayNoteContainer").style.display = dayNote
+    ? "block"
+    : "none";
+  document.getElementById("dayNoteContainer").innerHTML = `<em>${dayNote}</em>`;
 
   document.getElementById("dayListTable").style.display = "block";
   document.getElementById("addNewDayBtn").style.display = "none";
@@ -654,13 +662,44 @@ function loadDayStudentsList() {
               },
             },
             {
-              text: "إظافة ملاحظة اليوم ✚",
+              text: "ملاحظة اليوم",
               action: function () {
-                let dayNote = prompt("أكتب ملاحظة:");
-                if (dayNote !== null) {
-                  console.log("Hello, " + dayNote + "!");
+                let note = prompt("أكتب ملاحظة:", dayNote);
+                if (note !== null) {
+                  if (!project_db) {
+                    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+                    return;
+                  }
+                  try {
+                    project_db.run(
+                      "UPDATE education_day SET notes = ? WHERE date = ?;",
+                      [note, currentDay]
+                    );
+                    saveToIndexedDB(project_db.export());
+                    window.showToast("success", "تم حفظ الملاحظة بنجاح.");
+                  } catch (e) {
+                    window.showToast("error", "Error: " + e.message);
+                  }
                 } else {
-                  console.log("User cancelled the prompt.");
+                  window.showToast("error", "لم يتم حفظ الملاحظة.");
+                }
+              },
+            },
+            {
+              text: "إلغاء اليوم",
+              action: function () {
+                if (confirm("هل تريد إلغاء هذا اليوم ؟")) {
+                  project_db.run("DELETE FROM day_evaluations WHERE day_id = ?;", [
+                    currentDay,
+                  ]);
+                  project_db.run("DELETE FROM day_requirements WHERE day_id = ?;", [
+                    currentDay,
+                  ]);
+                  project_db.run("DELETE FROM education_day WHERE date = ?;", [
+                    currentDay,
+                  ]);
+                  saveToIndexedDB(project_db.export());
+                  loadDayStudentsList();
                 }
               },
             },
@@ -941,6 +980,13 @@ addQuranSelectionBtn.onclick = function () {
       requirEvaluationInput.value,
       requirTypeInput.value
     )}</td>
+    <td>
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" ${
+          document.getElementById("requirSwitch").checked ? "checked" : ""
+        }>
+      </div>
+    </td>
     <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
   requirementsTable.querySelector("tbody").appendChild(row);
   requirMoyenneInput.value = calcRequirementsMoyenne();
