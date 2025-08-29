@@ -119,18 +119,16 @@
     <div class="tab-pane fade" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
       <h2 class="text-center mb-4">الملخص</h2>
 
-      <input id="datepicker" />
-
+      flatpickr<input id="flatpickr" /><br>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
       <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
       <script>
         const events = [
           "2025-09-02",
           "2025-09-05",
         ];
 
-        flatpickr("#datepicker", {
+        flatpickr("#flatpickr", {
           onDayCreate(dObj, dStr, fp, dayElem) {
             const date = dayElem.dateObj.toISOString().split("T")[0];
             if (events.includes(date)) {
@@ -143,6 +141,136 @@
                 `;
               dayElem.appendChild(dot);
             }
+          }
+        });
+      </script>
+
+      daterange<input type="text" id="daterange" /><br>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+      <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+      <script>
+        // Example event data
+        const eventse = {
+          "2025-09-01": { title: "Class", color: "green" },
+          "2025-09-05": { title: "Meeting", color: "blue" },
+          "2025-09-10": { title: "Deadline", color: "orange" },
+          "2025-09-15": { title: "Holiday", color: "red" }
+        };
+
+        $('#daterange').daterangepicker({
+          singleDatePicker: true,
+          showDropdowns: true,
+          autoUpdateInput: false,
+
+          // hook to customize each day cell
+          isCustomDate: function (date) {
+            const key = date.format("YYYY-MM-DD");
+            if (eventse[key]) {
+              // return a CSS class name that you define in CSS
+              return eventse[key].color;
+            }
+            return '';
+          }
+        }, function (start) {
+          $('#daterange').val(start.format('YYYY-MM-DD'));
+          const key = start.format('YYYY-MM-DD');
+          if (eventse[key]) {
+            alert(`Event: ${eventse[key].title}`);
+          }
+        });
+      </script>
+      <style>
+        /* style day cells based on returned class */
+        .calendar-table td.green {
+          background: #22c55e55 !important;
+        }
+
+        .calendar-table td.blue {
+          background: #3b82f655 !important;
+        }
+
+        .calendar-table td.orange {
+          background: #f59e0b55 !important;
+        }
+
+        .calendar-table td.red {
+          background: #ef444455 !important;
+        }
+      </style>
+
+      pikaday<input type="text" id="datepicker"><br>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
+      <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
+      <style>
+        .event-dot {
+          display: block;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          margin: 2px auto 0;
+        }
+
+        .dot-green {
+          background: #22c55e;
+        }
+
+        .dot-blue {
+          background: #3b82f6;
+        }
+
+        .dot-orange {
+          background: #f59e0b;
+        }
+
+        .dot-red {
+          background: #ef4444;
+        }
+      </style>
+      <script>
+        // Example events
+        const eventss = {
+          "2025-09-01": [{ title: "Class", color: "dot-green" }],
+          "2025-09-05": [{ title: "Meeting", color: "dot-blue" }, { title: "Deadline", color: "dot-orange" }],
+          "2025-09-10": [{ title: "Holiday", color: "dot-red" }]
+        };
+
+        const picker = new Pikaday({
+          field: document.getElementById('datepicker'),
+          format: 'YYYY-MM-DD',
+          showDaysInNextAndPreviousMonths: true,
+          onSelect: function (date) {
+            const key = moment(date).format("YYYY-MM-DD");
+            if (eventss[key]) {
+              alert("Events on " + key + ":\n" + eventss[key].map(e => e.title).join(", "));
+            }
+          },
+          onDraw: function () {
+            // Decorate cells after draw
+            const tdList = document.querySelectorAll('.pika-single td');
+            tdList.forEach(td => {
+              const date = td.getAttribute('data-pika-day');
+              const month = td.getAttribute('data-pika-month');
+              const year = td.getAttribute('data-pika-year');
+              if (!date || !month || !year) return;
+
+              const key = `${year}-${String(Number(month) + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+              if (eventss[key]) {
+                // Clear existing indicators
+                const oldDots = td.querySelectorAll('.event-dot');
+                oldDots.forEach(dot => dot.remove());
+
+                // Add dots
+                eventss[key].forEach(evt => {
+                  const dot = document.createElement('span');
+                  dot.className = `event-dot ${evt.color}`;
+                  dot.title = evt.title;
+                  td.appendChild(dot);
+                });
+              }
+            });
           }
         });
       </script>
