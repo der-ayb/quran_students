@@ -157,13 +157,3 @@ input {
   color: #666;
   font-size: 1.1rem;
 }
-
-/* Customize the date picker dropdown */
-input[type="date"]::-webkit-calendar-picker-indicator {
-  opacity: 0;
-  position: absolute;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-}

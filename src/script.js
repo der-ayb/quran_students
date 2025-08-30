@@ -13,7 +13,7 @@ let userIsAuth = false;
 let currentDay = new Date().toISOString().slice(0, 10);
 
 const nav_bar = document.querySelector(".nav-bar");
-const dayDateInput = document.getElementById("dayDate");
+const dayDateInput = $("#dayDate");
 const addQuranSelectionBtn = document.getElementById("addQuranSelectionBtn");
 const studentIdInput = document.getElementById("studentId");
 const attendanceInput = document.getElementById("attendance");
@@ -37,6 +37,7 @@ const haircutInput = document.getElementById("haircut");
 const behaviorInput = document.getElementById("behavior");
 const prayerInput = document.getElementById("prayer");
 const studentNameInput = document.getElementById("studentName");
+
 const nameInput = document.getElementById("name");
 const birthdayInput = document.getElementById("birthday");
 const parentPhoneInput = document.getElementById("parentPhone");
@@ -70,7 +71,6 @@ document.addEventListener("DOMContentLoaded", function () {
       .toISOString()
       .split("T")[0]
   );
-  dayDateInput.setAttribute("max", new Date().toISOString().slice(0, 10));
 });
 
 // students tab
@@ -430,6 +430,7 @@ function addNewDay() {
     [currentDay, new Date().toISOString().slice(11, 19), null]
   );
   saveToIndexedDB(project_db.export());
+  setIsCustomDate()
   loadDayStudentsList();
 }
 
@@ -453,6 +454,7 @@ function loadDayStudentsList() {
     document.getElementById("dayListTable").style.display = "none";
     return;
   }
+
   const dayNote =
     dayResult[0].values[0][dayResult[0].columns.indexOf("notes")] || "";
   document.getElementById("dayNoteContainer").style.display = dayNote
@@ -689,16 +691,19 @@ function loadDayStudentsList() {
               text: "إلغاء اليوم",
               action: function () {
                 if (confirm("هل تريد إلغاء هذا اليوم ؟")) {
-                  project_db.run("DELETE FROM day_evaluations WHERE day_id = ?;", [
-                    currentDay,
-                  ]);
-                  project_db.run("DELETE FROM day_requirements WHERE day_id = ?;", [
-                    currentDay,
-                  ]);
+                  project_db.run(
+                    "DELETE FROM day_evaluations WHERE day_id = ?;",
+                    [currentDay]
+                  );
+                  project_db.run(
+                    "DELETE FROM day_requirements WHERE day_id = ?;",
+                    [currentDay]
+                  );
                   project_db.run("DELETE FROM education_day WHERE date = ?;", [
                     currentDay,
                   ]);
                   saveToIndexedDB(project_db.export());
+                  setIsCustomDate()
                   loadDayStudentsList();
                 }
               },
@@ -720,12 +725,13 @@ async function init() {
       `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/${file}`,
   });
 
-  loadFromIndexedDB(async (savedProjectData, savedQuranData) => {
+  await loadFromIndexedDB(async (savedProjectData, savedQuranData) => {
     if (savedProjectData) {
       project_db = new SQL.Database(new Uint8Array(savedProjectData));
       if (savedQuranData) {
         quran_db = new SQL.Database(new Uint8Array(savedQuranData));
         initializeAyatdata(quran_db);
+        dayDatePickerInit();
       } else {
         await downloadQuranDB();
       }
@@ -746,6 +752,7 @@ async function downloadQuranDB() {
     (db) => {
       quran_db = db;
       initializeAyatdata(db);
+      dayDatePickerInit();
       hideModalLoading();
     }
   );
@@ -767,6 +774,60 @@ async function hideModalLoading() {
     loadingModal.hide();
   }
 }
+
+async function dayDatePickerInit() {
+  dayDateInput.daterangepicker(
+    {
+      singleDatePicker: true,
+      showDropdowns: true,
+      autoUpdateInput: false,
+      locale: {
+        format: "YYYY-MM-DD",
+        daysOfWeek: ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
+        monthNames: [
+          "جانفي",
+          "فيفري",
+          "مارس",
+          "أفريل",
+          "ماي",
+          "جوان",
+          "جويلية",
+          "أوت",
+          "سبتمبر",
+          "أكتوبر",
+          "نوفمبر",
+          "ديسمبر",
+        ],
+        firstDay: 7,
+        applyLabel: "تأكيد",
+        cancelLabel: "إلغاء",
+        customRangeLabel: "Custom",
+      },
+      maxDate: currentDay,
+    },
+    function (start) {
+      currentDay = start.format("YYYY-MM-DD");
+      dayDateInput.val(currentDay);
+      loadDayStudentsList();
+    }
+  );
+  
+  setIsCustomDate()
+}
+
+function setIsCustomDate() {
+  const result = project_db.exec(`SELECT date FROM education_day`);
+  const events =
+    result.length && result[0].values.length
+      ? result[0].values.map((row) => row[0])
+      : [];
+    dayDateInput.data("daterangepicker").isCustomDate = function (date) {
+      if (events.includes(date.format("YYYY-MM-DD"))) {
+        return "bg-info";
+      }
+      return "";
+    };
+  }
 
 function initializeToast() {
   window.showToast = function (type, message, delay = 4000) {
@@ -1023,12 +1084,13 @@ document.getElementById("fileInput").onchange = (e) => {
     loadDBFromFile(e.target.files[0]);
   }
 };
-dayDateInput.onchange = () => {
-  if (dayDateInput.value) {
-    currentDay = dayDateInput.value;
+
+dayDateInput.on("apply.daterangepicker", function (ev, picker) {
+  if (dayDateInput.val()) {
+    currentDay = dayDateInput.val();
     loadDayStudentsList();
   }
-};
+});
 
 function showTab(tabId) {
   document
@@ -1042,8 +1104,8 @@ function showTab(tabId) {
   } else if (tabId === "pills-home") {
     nav_bar.style.display = "none";
   } else if (tabId === "pills-new_day") {
-    if (!dayDateInput.value) {
-      dayDateInput.value = new Date().toISOString().slice(0, 10);
+    if (!dayDateInput.val()) {
+      dayDateInput.val(new Date().toISOString().slice(0, 10));
     }
     loadDayStudentsList();
     newStudentDayModal.hide();
