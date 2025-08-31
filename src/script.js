@@ -8,6 +8,7 @@ const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
 let students_table = null;
 let students_day_table = null;
+let classrooms_table = null;
 let loadingModalQueue = 0;
 let userIsAuth = false;
 let currentDay = new Date().toISOString().slice(0, 10);
@@ -15,7 +16,6 @@ let currentDay = new Date().toISOString().slice(0, 10);
 const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = $("#dayDate");
 const addQuranSelectionBtn = document.getElementById("addQuranSelectionBtn");
-const studentIdInput = document.getElementById("studentId");
 const attendanceInput = document.getElementById("attendance");
 
 const requirementsTable = document.getElementById("requirementTable");
@@ -38,11 +38,19 @@ const behaviorInput = document.getElementById("behavior");
 const prayerInput = document.getElementById("prayer");
 const studentNameInput = document.getElementById("studentName");
 
+const classroomIdInput = document.getElementById("classroomId");
+const mosqueInput = document.getElementById("mosque");
+const placeInput = document.getElementById("place");
+const sexInput = document.getElementById("sex");
+const levelInput = document.getElementById("level");
+
+const studentIdInput = document.getElementById("studentId");
 const nameInput = document.getElementById("name");
 const birthdayInput = document.getElementById("birthday");
 const parentPhoneInput = document.getElementById("parentPhone");
 
 const newStudentInfosForm = document.getElementById("newStudentInfosForm");
+const newClassroomInfosForm = document.getElementById("newClassroomInfosForm");
 const studentDayForm = document.getElementById("studentDayForm");
 const studentDayFormSubmitBtn = document.getElementById(
   "studentDayFormSubmitBtn"
@@ -53,9 +61,14 @@ const newStudentDayModal = new bootstrap.Modal(
 const newStudentInfosModal = new bootstrap.Modal(
   document.getElementById("newStudentInfosModal")
 );
+const newClassroomInfosModal = new bootstrap.Modal(
+  document.getElementById("newClassroomInfosModal")
+);
 const loadingModal = new bootstrap.Modal(
   document.getElementById("loadingModal")
 );
+
+
 
 document.addEventListener("DOMContentLoaded", function () {
   const today = new Date();
@@ -73,6 +86,176 @@ document.addEventListener("DOMContentLoaded", function () {
   );
 });
 
+// classrooms tab
+newClassroomInfosForm.onsubmit = (e) => {
+  e.preventDefault();
+  if (!project_db) {
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    return;
+  }
+  const mosque = mosqueInput.value;
+  const place = placeInput.value;
+  const sex = sexInput.value;
+  const level = levelInput.value;
+
+  if (!mosque || !place || !sex || !level) {
+    window.showToast("error", "الرجاء ملء جميع الحقول.");
+    return;
+  }
+  try {
+    if (classroomIdInput.value) {
+      project_db.run(
+        "UPDATE class_rooms SET mosque = ?, place = ?, sex = ? ,level = ? WHERE id = ?;",
+        [mosque, place, sex, level,classroomIdInput.value]
+      );
+      window.showToast("success", "تم تعديل الطالب بنجاح.");
+    } else {
+      project_db.run(
+        "INSERT INTO class_rooms (mosque, place, sex, level) VALUES (?, ?, ?,?);",
+        [mosque, place, sex, level]
+      );
+      newClassroomInfosForm.reset();
+      window.showToast("success", "تم إضافة الطالب بنجاح.");
+    }
+    saveToIndexedDB(project_db.export());
+    newClassroomInfosModal.hide();
+    loadClassRoomsList();
+  } catch (e) {
+    window.showToast("error", "Error: " + e.message);
+  }
+};
+
+function loadClassRoomsList() {
+  if (!project_db) {
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    return;
+  }
+  try {
+    const results = project_db.exec("SELECT * FROM class_rooms;");
+
+    const data = [];
+    if (results.length) {
+      const result = results[0];
+      result.values.forEach((row) => {
+        const button_group = document.createElement("div");
+        button_group.className = "btn-group";
+        button_group.setAttribute("role", "group");
+        button_group.setAttribute("aria-label", "Basic example");
+
+        // Edit
+        const editBtn = document.createElement("button");
+        editBtn.className = "btn btn-info btn-sm";
+        editBtn.type = "button";
+        editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
+        editBtn.onclick = function () {
+          newClassroomInfosModal.show();
+          const studentId = row[0];
+          const result = project_db.exec(
+            "SELECT * FROM students WHERE id = ?;",
+            [studentId]
+          );
+          studentIdInput.value = studentId;
+          nameInput.value = result[0].values[0][1];
+          birthdayInput.value = result[0].values[0][2];
+          parentPhoneInput.value = result[0].values[0][3];
+        };
+        button_group.appendChild(editBtn);
+
+        // Delete
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn btn-danger btn-sm";
+        deleteBtn.type = "button";
+        deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
+        CreateOnClickUndo(deleteBtn, function () {
+          const studentId = row[0];
+          if (!confirm("هل أنت متأكد أنك تريد حذف هذا القسم؟")) {
+            return;
+          }
+          if (!project_db) {
+            window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+            return;
+          }
+          try {
+            project_db.run("DELETE FROM class_rooms WHERE id = ?;", [studentId]);
+            saveToIndexedDB(project_db.export());
+            deleteTableRow(classrooms_table, "id", row[0]);
+            window.showToast("success", "تم حذف الطالب بنجاح.");
+          } catch (e) {
+            window.showToast("warning", "Error: " + e.message);
+          }
+        });
+        button_group.appendChild(deleteBtn);
+
+        data.push({
+          id: row[0],
+          mosque: row[1],
+          place: row[2],
+          sex: row[3],
+          level: row[4],
+          actions: button_group,
+        });
+      });
+    }
+    classrooms_table = new DataTable("#classroomsListTable", {
+      destroy: true,
+      data: data,
+      columnDefs: [
+        { visible: false, targets: [0,5] },
+        {
+          targets: 4,
+          orderable: false,
+        },
+      ],
+      searching: false,
+      scrollX: true,
+      info: false,
+      oLanguage: {
+        sSearch: "بحث",
+        emptyTable: "لا توجد بيانات في الجدول.",
+      },
+      paging: false,
+      responsive: true,
+      columns: [
+        { data: "id" },
+        { data: "mosque" },
+        { data: "place" },
+        { data: "sex" },
+        { data: "level" },
+        { data: "actions" },
+      ],
+      layout: {
+        topStart: {
+          buttons: [
+            {
+              text: "إظهار التفاصيل",
+              action: function () {
+                const columns = classrooms_table.columns([0,5]);
+                const isVisible = classrooms_table
+                  .column(columns[0][0])
+                  .visible();
+
+                columns.visible(!isVisible);
+                classrooms_table
+                  .button(0)
+                  .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
+              },
+            },
+            {
+              text: "إضافة ✚",
+              className: "btn btn-primary",
+              attr: {
+                "data-bs-toggle": "modal",
+                "data-bs-target": "#newClassroomInfosModal",
+              },
+            },
+          ],
+        },
+      },
+    });
+  } catch (e) {
+    window.showToast("warning", "Error: " + e.message);
+  }
+}
 // students tab
 function loadStudentsList() {
   if (!project_db) {
@@ -1098,7 +1281,9 @@ function showTab(tabId) {
     .forEach((el) => el.classList.remove("show", "active"));
   document.getElementById(tabId).classList.add("show", "active");
 
-  if (tabId === "pills-students") {
+  if (tabId === "pills-summary") {
+    loadClassRoomsList();
+  } else if (tabId === "pills-students") {
     loadStudentsList();
     newStudentInfosForm.reset();
   } else if (tabId === "pills-home") {

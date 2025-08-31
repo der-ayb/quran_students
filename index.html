@@ -119,8 +119,19 @@
 
     <div class="tab-pane fade" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
       <h2 class="text-center mb-4">الملخص</h2>
+      <table id="classroomsListTable" class="display responsive nowrap" width="100%">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>المسجد/المدرسة</th>
+            <th>المكان</th>
+            <th>الجنس</th>
+            <th>الفئة</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
 
-      
     </div>
 
     <div class="tab-pane fade" id="pills-students" role="tabpanel" aria-labelledby="pills-students-tab">
@@ -299,6 +310,42 @@
         </g>
       </svg>
     </button>
+  </div>
+
+  <!-- Modal for adding a new student -->
+  <div class="modal fade" id="newClassroomInfosModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="newClassroomInfosModalLabel" aria-hidden="true" style="z-index: 1101;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="newClassroomInfosModalLabel">معلومات القسم</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="newClassroomInfosForm">
+            <div>
+              <input type="hidden" id="classroomId" />
+              <label for="mosque">المسجد/المؤسسة:</label>
+              <input type="text" id="mosque" class="form-control" required />
+              <label for="place">المكان:</label>
+              <input type="text" id="place" class="form-control" required />
+              <label for="sex">الجنس:</label>
+              <select id="sex" class="form-control" required>
+                <option value="ذكور">ذكور</option>
+                <option value="إناث">إناث</option>
+              </select>
+              <label for="level">المستوى:</label>
+              <input type="text" id="level" class="form-control" required />
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+          <button type="submit" class="btn btn-primary">إظافة</button>
+        </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <!-- Modal for adding a new student -->
