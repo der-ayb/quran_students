@@ -6,6 +6,7 @@ const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
+let workingClassroomId = null;
 let students_table = null;
 let students_day_table = null;
 let classrooms_table = null;
@@ -13,6 +14,7 @@ let loadingModalQueue = 0;
 let userIsAuth = false;
 let currentDay = new Date().toISOString().slice(0, 10);
 
+const workingClassroomSelect = document.getElementById("workingClassroom");
 const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = $("#dayDate");
 const addQuranSelectionBtn = document.getElementById("addQuranSelectionBtn");
@@ -68,8 +70,6 @@ const loadingModal = new bootstrap.Modal(
   document.getElementById("loadingModal")
 );
 
-
-
 document.addEventListener("DOMContentLoaded", function () {
   const today = new Date();
   birthdayInput.setAttribute(
@@ -87,6 +87,10 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // classrooms tab
+workingClassroomSelect.onchange = function () {
+  workingClassroomId = this.value;
+  setIsCustomDate();
+};
 newClassroomInfosForm.onsubmit = (e) => {
   e.preventDefault();
   if (!project_db) {
@@ -106,7 +110,7 @@ newClassroomInfosForm.onsubmit = (e) => {
     if (classroomIdInput.value) {
       project_db.run(
         "UPDATE class_rooms SET mosque = ?, place = ?, sex = ? ,level = ? WHERE id = ?;",
-        [mosque, place, sex, level,classroomIdInput.value]
+        [mosque, place, sex, level, classroomIdInput.value]
       );
       window.showToast("success", "تم تعديل الطالب بنجاح.");
     } else {
@@ -131,6 +135,7 @@ function loadClassRoomsList() {
     return;
   }
   try {
+    workingClassroomSelect.options.length = 0;
     const results = project_db.exec("SELECT * FROM class_rooms;");
 
     const data = [];
@@ -149,15 +154,20 @@ function loadClassRoomsList() {
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
         editBtn.onclick = function () {
           newClassroomInfosModal.show();
-          const studentId = row[0];
+          const classroomId = row[0];
           const result = project_db.exec(
-            "SELECT * FROM students WHERE id = ?;",
-            [studentId]
+            "SELECT * FROM class_rooms WHERE id = ?;",
+            [classroomId]
           );
-          studentIdInput.value = studentId;
-          nameInput.value = result[0].values[0][1];
-          birthdayInput.value = result[0].values[0][2];
-          parentPhoneInput.value = result[0].values[0][3];
+          classroomIdInput.value = classroomId;
+          mosqueInput.value =
+            result[0].values[0][result[0].columns.indexOf("mosque")];
+          placeInput.value =
+            result[0].values[0][result[0].columns.indexOf("place")];
+          sexInput.value =
+            result[0].values[0][result[0].columns.indexOf("sex")];
+          levelInput.value =
+            result[0].values[0][result[0].columns.indexOf("level")];
         };
         button_group.appendChild(editBtn);
 
@@ -176,7 +186,9 @@ function loadClassRoomsList() {
             return;
           }
           try {
-            project_db.run("DELETE FROM class_rooms WHERE id = ?;", [studentId]);
+            project_db.run("DELETE FROM class_rooms WHERE id = ?;", [
+              studentId,
+            ]);
             saveToIndexedDB(project_db.export());
             deleteTableRow(classrooms_table, "id", row[0]);
             window.showToast("success", "تم حذف الطالب بنجاح.");
@@ -194,13 +206,22 @@ function loadClassRoomsList() {
           level: row[4],
           actions: button_group,
         });
+        workingClassroomSelect.append(
+          new Option(`${row[1]} - ${row[2]} - ${row[3]}`, row[0])
+        );
       });
+      if (workingClassroomId) {
+        workingClassroomSelect.value = workingClassroomId;
+      } else {
+        workingClassroomSelect.options[0].selected = true;
+        workingClassroomSelect.dispatchEvent(new Event("change"));
+      }
     }
     classrooms_table = new DataTable("#classroomsListTable", {
       destroy: true,
       data: data,
       columnDefs: [
-        { visible: false, targets: [0,5] },
+        { visible: false, targets: [0, 4, 5] },
         {
           targets: 4,
           orderable: false,
@@ -229,7 +250,7 @@ function loadClassRoomsList() {
             {
               text: "إظهار التفاصيل",
               action: function () {
-                const columns = classrooms_table.columns([0,5]);
+                const columns = classrooms_table.columns([0, 4, 5]);
                 const isVisible = classrooms_table
                   .column(columns[0][0])
                   .visible();
@@ -263,7 +284,10 @@ function loadStudentsList() {
     return;
   }
   try {
-    const results = project_db.exec("SELECT * FROM students;");
+    const results = project_db.exec(
+      "SELECT * FROM students WHERE class_room_id = ?;",
+      [workingClassroomId]
+    );
 
     const data = [];
     if (results.length) {
@@ -287,9 +311,12 @@ function loadStudentsList() {
             [studentId]
           );
           studentIdInput.value = studentId;
-          nameInput.value = result[0].values[0][1];
-          birthdayInput.value = result[0].values[0][2];
-          parentPhoneInput.value = result[0].values[0][3];
+          nameInput.value =
+            result[0].values[0][result[0].columns.indexOf("name")];
+          birthdayInput.value =
+            result[0].values[0][result[0].columns.indexOf("birthday")];
+          parentPhoneInput.value =
+            result[0].values[0][result[0].columns.indexOf("parent_phone")];
         };
         button_group.appendChild(editBtn);
 
@@ -418,8 +445,8 @@ newStudentInfosForm.addEventListener("submit", (e) => {
       window.showToast("success", "تم تعديل الطالب بنجاح.");
     } else {
       project_db.run(
-        "INSERT INTO students (name, birthday, parent_phone) VALUES (?, ?, ?);",
-        [name, birthday, parentPhone]
+        "INSERT INTO students (name, birthday, parent_phone, class_room_id) VALUES (?, ?, ?,?);",
+        [name, birthday, parentPhone, workingClassroomId]
       );
       newStudentInfosForm.reset();
       window.showToast("success", "تم إضافة الطالب بنجاح.");
@@ -609,11 +636,16 @@ function addNewDay() {
     return;
   }
   project_db.run(
-    "INSERT OR REPLACE INTO education_day (date,time, notes) VALUES (?,?, ?);",
-    [currentDay, new Date().toISOString().slice(11, 19), null]
+    "INSERT OR REPLACE INTO education_day (date,time, notes,class_room_id) VALUES (?,?, ?,?);",
+    [
+      currentDay,
+      new Date().toISOString().slice(11, 19),
+      null,
+      workingClassroomId,
+    ]
   );
   saveToIndexedDB(project_db.export());
-  setIsCustomDate()
+  setIsCustomDate();
   loadDayStudentsList();
 }
 
@@ -629,7 +661,8 @@ function loadDayStudentsList() {
   }
 
   const dayResult = project_db.exec(
-    `SELECT * FROM education_day WHERE date = '${currentDay}'`
+    `SELECT * FROM education_day WHERE class_room_id = ? AND date = ?`,
+    [workingClassroomId, currentDay]
   );
 
   if (!dayResult.length) {
@@ -664,6 +697,7 @@ function loadDayStudentsList() {
       FROM students s
       LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id = '${currentDay}'
       LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id = '${currentDay}'
+      WHERE s.class_room_id = ${workingClassroomId}
       GROUP BY s.id, s.name
       ORDER BY s.id
       LIMIT 100`);
@@ -857,8 +891,8 @@ function loadDayStudentsList() {
                   }
                   try {
                     project_db.run(
-                      "UPDATE education_day SET notes = ? WHERE date = ?;",
-                      [note, currentDay]
+                      "UPDATE education_day SET notes = ? WHERE class_room_id = ? AND date = ?;",
+                      [note, workingClassroomId, currentDay]
                     );
                     saveToIndexedDB(project_db.export());
                     window.showToast("success", "تم حفظ الملاحظة بنجاح.");
@@ -882,11 +916,12 @@ function loadDayStudentsList() {
                     "DELETE FROM day_requirements WHERE day_id = ?;",
                     [currentDay]
                   );
-                  project_db.run("DELETE FROM education_day WHERE date = ?;", [
-                    currentDay,
-                  ]);
+                  project_db.run(
+                    "DELETE FROM education_day WHERE class_room_id = ? AND date = ?;",
+                    [workingClassroomId, currentDay]
+                  );
                   saveToIndexedDB(project_db.export());
-                  setIsCustomDate()
+                  setIsCustomDate();
                   loadDayStudentsList();
                 }
               },
@@ -994,23 +1029,24 @@ async function dayDatePickerInit() {
       loadDayStudentsList();
     }
   );
-  
-  setIsCustomDate()
+  setIsCustomDate();
 }
 
 function setIsCustomDate() {
-  const result = project_db.exec(`SELECT date FROM education_day`);
+  const result = project_db.exec(
+    `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`
+  );
   const events =
     result.length && result[0].values.length
       ? result[0].values.map((row) => row[0])
       : [];
-    dayDateInput.data("daterangepicker").isCustomDate = function (date) {
-      if (events.includes(date.format("YYYY-MM-DD"))) {
-        return "bg-info";
-      }
-      return "";
-    };
-  }
+  dayDateInput.data("daterangepicker").isCustomDate = function (date) {
+    if (events.includes(date.format("YYYY-MM-DD"))) {
+      return "text-decoration-underline";
+    }
+    return "";
+  };
+}
 
 function initializeToast() {
   window.showToast = function (type, message, delay = 4000) {
@@ -1281,19 +1317,26 @@ function showTab(tabId) {
     .forEach((el) => el.classList.remove("show", "active"));
   document.getElementById(tabId).classList.add("show", "active");
 
-  if (tabId === "pills-summary") {
-    loadClassRoomsList();
-  } else if (tabId === "pills-students") {
-    loadStudentsList();
-    newStudentInfosForm.reset();
-  } else if (tabId === "pills-home") {
+  if (tabId === "pills-home") {
     nav_bar.style.display = "none";
-  } else if (tabId === "pills-new_day") {
-    if (!dayDateInput.val()) {
-      dayDateInput.val(new Date().toISOString().slice(0, 10));
+  } else if (tabId === "pills-summary") {
+    loadClassRoomsList();
+  } else if (tabId === "pills-preferences") {
+    "pass"
+  } else if (workingClassroomId) {
+    if (tabId === "pills-students") {
+      loadStudentsList();
+      newStudentInfosForm.reset();
+    } else if (tabId === "pills-new_day") {
+      if (!dayDateInput.val()) {
+        dayDateInput.val(new Date().toISOString().slice(0, 10));
+      }
+      loadDayStudentsList();
+      newStudentDayModal.hide();
     }
-    loadDayStudentsList();
-    newStudentDayModal.hide();
+  }else {
+    showTab("pills-summary");
+    window.showToast("warning", "الرجاء إختيار قسم.");
   }
 }
 

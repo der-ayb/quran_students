@@ -119,6 +119,13 @@
 
     <div class="tab-pane fade" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
       <h2 class="text-center mb-4">الملخص</h2>
+      
+      <div class="date-input-container">
+        <div class="date-input-group">
+          <span class="date-input-label">القسم الحالي:</span>
+          <select id="workingClassroom" class="date-input-field" dir="ltr"></select>
+        </div>
+      </div>
       <table id="classroomsListTable" class="display responsive nowrap" width="100%">
         <thead>
           <tr>
@@ -324,7 +331,6 @@
         </div>
         <div class="modal-body">
           <form id="newClassroomInfosForm">
-            <div>
               <input type="hidden" id="classroomId" />
               <label for="mosque">المسجد/المؤسسة:</label>
               <input type="text" id="mosque" class="form-control" required />
@@ -337,7 +343,6 @@
               </select>
               <label for="level">المستوى:</label>
               <input type="text" id="level" class="form-control" required />
-            </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
@@ -360,7 +365,6 @@
         </div>
         <div class="modal-body">
           <form id="newStudentInfosForm">
-            <div>
               <input type="hidden" id="studentId" />
               <label for="name">الاسم:</label>
               <input type="text" id="name" class="form-control" required />
@@ -369,7 +373,6 @@
               <label for="parentPhone">هاتف الولي:</label>
               <input type="text" id="parentPhone" class="form-control"
                 title="رقم هاتف جزائري يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام" required />
-            </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
