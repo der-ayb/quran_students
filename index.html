@@ -119,7 +119,7 @@
 
     <div class="tab-pane fade" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
       <h2 class="text-center mb-4">الملخص</h2>
-      
+
       <div class="date-input-container">
         <div class="date-input-group">
           <span class="date-input-label">القسم الحالي:</span>
@@ -191,6 +191,11 @@
       </table>
       <button id="addNewDayBtn" onclick="addNewDay()" class="btn btn-info mx-auto px-5 my-5"
         style="display: none;">إظافة يوم ✚</button>
+    </div>
+
+    <div class="tab-pane fade" id="pills-statistics" role="tabpanel" aria-labelledby="pills-statistics-tab">
+      <h2 class="text-center mb-4">الإحصائيات</h2>
+
     </div>
 
     <div class="tab-pane fade" id="pills-preferences" role="tabpanel" aria-labelledby="pills-preferences-tab">
@@ -294,7 +299,18 @@
         </g>
       </svg>
     </button>
-
+    <button onclick="showTab('pills-statistics'); return false;">
+      <svg fill="#ffffff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" data-darkreader-inline-fill=""
+        style="--darkreader-inline-fill: var(--darkreader-background-000000, #000000);">
+        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+        <g id="SVGRepo_iconCarrier">
+          <path
+            d="M4,23a1,1,0,0,1-1-1V19a1,1,0,0,1,2,0v3A1,1,0,0,1,4,23Zm9-1V15a1,1,0,0,0-2,0v7a1,1,0,0,0,2,0Zm7-11a1,1,0,0,0-1,1V22a1,1,0,0,0,2,0V12A1,1,0,0,0,20,11Zm.382-9.923A.991.991,0,0,0,20,1H16a1,1,0,0,0,0,2h1.586L12,8.586,8.707,5.293a1,1,0,0,0-1.414,0l-4,4a1,1,0,0,0,1.414,1.414L8,7.414l3.293,3.293a1,1,0,0,0,1.414,0L19,4.414V6a1,1,0,0,0,2,0V2a1,1,0,0,0-.618-.923Z">
+          </path>
+        </g>
+      </svg>
+    </button>
     <button onclick="showTab('pills-preferences'); return false;">
       <svg width="256px" height="30px" viewBox="0 0 32 32" enable-background="new 0 0 32 32" id="Stock_cut"
         version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -331,18 +347,18 @@
         </div>
         <div class="modal-body">
           <form id="newClassroomInfosForm">
-              <input type="hidden" id="classroomId" />
-              <label for="mosque">المسجد/المؤسسة:</label>
-              <input type="text" id="mosque" class="form-control" required />
-              <label for="place">المكان:</label>
-              <input type="text" id="place" class="form-control" required />
-              <label for="sex">الجنس:</label>
-              <select id="sex" class="form-control" required>
-                <option value="ذكور">ذكور</option>
-                <option value="إناث">إناث</option>
-              </select>
-              <label for="level">المستوى:</label>
-              <input type="text" id="level" class="form-control" required />
+            <input type="hidden" id="classroomId" />
+            <label for="mosque">المسجد/المؤسسة:</label>
+            <input type="text" id="mosque" class="form-control" required />
+            <label for="place">المكان:</label>
+            <input type="text" id="place" class="form-control" required />
+            <label for="sex">الجنس:</label>
+            <select id="sex" class="form-control" required>
+              <option value="ذكور">ذكور</option>
+              <option value="إناث">إناث</option>
+            </select>
+            <label for="level">المستوى:</label>
+            <input type="text" id="level" class="form-control" required />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
@@ -365,14 +381,14 @@
         </div>
         <div class="modal-body">
           <form id="newStudentInfosForm">
-              <input type="hidden" id="studentId" />
-              <label for="name">الاسم:</label>
-              <input type="text" id="name" class="form-control" required />
-              <label for="birthday">تاريخ الميلاد:</label>
-              <input type="date" id="birthday" class="form-control" required />
-              <label for="parentPhone">هاتف الولي:</label>
-              <input type="text" id="parentPhone" class="form-control"
-                title="رقم هاتف جزائري يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام" required />
+            <input type="hidden" id="studentId" />
+            <label for="name">الاسم:</label>
+            <input type="text" id="name" class="form-control" required />
+            <label for="birthday">تاريخ الميلاد:</label>
+            <input type="date" id="birthday" class="form-control" required />
+            <label for="parentPhone">هاتف الولي:</label>
+            <input type="text" id="parentPhone" class="form-control"
+              title="رقم هاتف جزائري يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام" required />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
@@ -603,6 +619,9 @@
 <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.bootstrap5.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js"></script>
+
 
 <script src="src/auth.js"></script>
 <script src="src/script.js"></script>
