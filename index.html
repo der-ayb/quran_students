@@ -195,6 +195,15 @@
 
     <div class="tab-pane fade" id="pills-statistics" role="tabpanel" aria-labelledby="pills-statistics-tab">
       <h2 class="text-center mb-4">الإحصائيات</h2>
+      
+      <div class="date-input-container">
+        <div class="date-input-group">
+          <span class="date-input-label">الفترة:</span>
+          <input type="text" id="statisticsrange" class="date-input-field" dir="ltr" readonly>
+          <i class="fas fa-calendar-alt date-icon"></i>
+        </div>
+      </div>
+      <button onclick="createPdf()" class="btn btn-primary mb-4">إنشاء تقرير PDF</button>
 
     </div>
 
@@ -621,22 +630,9 @@
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
 
 <script src="src/auth.js"></script>
 <script src="src/script.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('//service-worker.js').then(function (registration) {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-      }, function (err) {
-        console.log('ServiceWorker registration failed: ', err);
-      });
-    });
-  } else {
-    alert('Service Worker is not supported in your browser. Some features may not work offline.');
-  }
-</script>
 
 </html>
