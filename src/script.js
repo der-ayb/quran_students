@@ -1405,185 +1405,152 @@ function showTab(tabId) {
 // Initialize the application
 init();
 
+const { jsPDF } = window.jspdf;
+
+// Arabic sample student data
 const students = [
-  { id: 1, name: "أيوب" },
-  { id: 2, name: "Jane Smith" },
-  { id: 3, name: "Mike Johnson" },
-  { id: 4, name: "Sarah Wilson" },
-  { id: 5, name: "Tom Brown" },
-  { id: 6, name: "Emily Davis" },
-  { id: 7, name: "Chris Miller" },
+  { id: 1, name: "محمد أحمد", grade: "الصف العاشر" },
+  { id: 2, name: "فاطمة حسن", grade: "الصف العاشر" },
+  { id: 3, name: "علي محمود", grade: "الصف التاسع" },
+  { id: 4, name: "سارة خالد", grade: "الصف العاشر" },
+  { id: 5, name: "يوسف إبراهيم", grade: "الصف التاسع" },
+  { id: 6, name: "لينا مصطفى", grade: "الصف العاشر" },
+  { id: 7, name: "أحمد سعيد", grade: "الصف التاسع" },
 ];
+
+// Arabic month names
+const arabicMonths = [
+  "جانفي",
+  "فيفري",
+  "مارس",
+  "أفريل",
+  "ماي",
+  "جوان",
+  "جويلية",
+  "أوت",
+  "سبتمبر",
+  "أكتوبر",
+  "نوفمبر",
+  "ديسمبر",
+];
+
+// Arabic days of the week
+const arabicDays = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+
+// Get current month dates
+function getMonthDates() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const dates = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    dates.push(new Date(year, month, day));
+  }
+  return dates;
+}
 
 async function createPdf() {
   try {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dates = getMonthDates();
+    const currentDate = new Date();
+    const monthName = arabicMonths[currentDate.getMonth()];
+    const year = currentDate.getFullYear();
 
-    const dates = [];
-    for (let day = 1; day <= daysInMonth; day++) {
-      dates.push(new Date(year, month, day));
-    }
-    const { PDFDocument } = PDFLib;
-    const pdfDoc = await PDFDocument.create();
-    pdfDoc.registerFontkit(fontkit);
-
-
-    // Use landscape orientation for wider table
-    const page = pdfDoc.addPage([595,842 ]); // A4 landscape
-    // Embed an Arabic font (e.g., Amiri or any TTF/OTF Arabic font)
-    // You need to provide the font file as ArrayBuffer or fetch it from a URL
-    const arabicFontBytes = await fetch('src/Amiri-Regular.ttf').then(res => res.arrayBuffer());
-    const arabicFontBoldBytes = await fetch('src/Amiri-Bold.ttf').then(res => res.arrayBuffer());
-    const font = await pdfDoc.embedFont(arabicFontBytes,);
-    const fontBold = await pdfDoc.embedFont(arabicFontBoldBytes,);
-
-    // Title
-    const monthName = new Date().toLocaleString("default", {
-      month: "long",
-      year: "numeric",
-    });
-    page.drawText(`قائمة الحضور`, {
-      x: 50,
-      y: 200,
-      size: 16,
-      font: fontBold,
+    const doc = new jsPDF({
+      unit: "mm",
+      format: "a4",
     });
 
-    // Table parameters
-    const startX = 50;
-    const startY = 520;
-    const rowHeight = 20;
-    const studentColWidth = 120;
-    const dateColWidth = 20;
-    const maxDatesPerPage = 30; // Adjust based on page width
+    // Fonts & Title
+    doc.addFont("src/Amiri-Regular.ttf", "Amiri", "normal");
+    doc.addFont("src/Amiri-Bold.ttf", "Amiri", "bold");
+    doc.setFontSize(18);
+    doc.setFont("Amiri", "bold");
+    doc.text("جدول الحضور الشهري للطلاب", 148, 15, { align: "center" });
+    doc.setFontSize(14);
+    doc.text(`${monthName} ${year}`, 148, 25, { align: "center" });
 
-    // Calculate pages needed
-    const totalPages = Math.ceil(dates.length / maxDatesPerPage);
+    // Table headers (اسم الطالب على اليمين)
+    const tableHeaders = ["اسم الطالب"];
+    dates.forEach((date) => {
+      const dayName = arabicDays[date.getDay()];
+      tableHeaders.unshift(`${date.getDate()} ${dayName}`);
+    });
 
-    for (let pageNum = 0; pageNum < totalPages; pageNum++) {
-      if (pageNum > 0) {
-        // Add new page for additional dates
-        pdfDoc.addPage([842, 595]);
-      }
+    // Table body
+    const tableData = [];
+    students.forEach((student) => {
+      const row = [student.name];
+      dates.forEach(() => row.unshift("")); // empty attendance cells
+      tableData.push(row);
+    });
 
-      const currentPage = pdfDoc.getPage(pageNum);
-      const startDateIndex = pageNum * maxDatesPerPage;
-      const endDateIndex = Math.min(
-        startDateIndex + maxDatesPerPage,
-        dates.length
-      );
-      const currentDates = dates.slice(startDateIndex, endDateIndex);
+    // Generate table
+    doc.autoTable({
+      head: [tableHeaders],
+      body: tableData,
+      startY: 40,
+      theme: "grid",
+      styles: {
+        font: "Amiri",
+        fontStyle: "normal",
+        fontSize: 9,
+        cellPadding: 1.5,
+        halign: "center",
+        valign: "bottom",
+      },
+      headStyles: {
+        fillColor: [44, 62, 80],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center",
+        valign: "middle",
+      },
+      columnStyles: {
+        30: {
+          halign: "right",
+          fontStyle: "bold",
+          cellWidth: 45,
+        },
+      },
+      rtl: true,
 
-      // Draw table headers
-      let x = startX;
+      didDrawCell: function (data) {
+        if (data.section === "head" && data.column.index > 0) {
+          const text = tableHeaders[data.column.index];
+          const ctx = data.doc;
 
-      // Student name header
-      currentPage.drawText("Student Name", {
-        x: x + 5,
-        y: startY,
-        size: 10,
-        font: fontBold,
-      });
-      x += studentColWidth;
+          ctx.saveGraphicsState();
+          ctx.setFont("Amiri", "bold");
+          ctx.setFontSize(7);
 
-      // Date headers
-      currentDates.forEach((date, index) => {
-        currentPage.drawText(date.getDate().toString(), {
-          x: x + 5,
-          y: startY,
-          size: 9,
-          font: fontBold,
+          ctx.text(
+            text,
+            data.cell.x + data.cell.width / 2,
+            data.cell.y + data.cell.height - 1,
+            null,-90
+          );
+
+          ctx.restoreGraphicsState();
+          data.cell.text = []; // امسح النص الافتراضي
+        }
+      },
+
+      didDrawPage: function (data) {
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(10);
+        doc.text(`الصفحة ${data.pageNumber} من ${pageCount}`, 280, 200, {
+          align: "left",
         });
-        x += dateColWidth;
-      });
+      },
+    });
 
-      // Draw student rows
-      students.forEach((student, rowIndex) => {
-        let x = startX;
-        const y = startY - (rowIndex + 1) * rowHeight;
-
-        // Student name
-        currentPage.drawText(student.name, {
-          x: x + 5,
-          y: y - 5,
-          size: 9,
-          font: font,
-        });
-        x += studentColWidth;
-
-        // Date cells
-        currentDates.forEach(() => {
-          // Draw empty cell (can be modified for attendance data)
-          currentPage.drawRectangle({
-            x: x,
-            y: y - rowHeight,
-            width: dateColWidth,
-            height: rowHeight,
-            borderColor: PDFLib.rgb(0.8, 0.8, 0.8),
-            borderWidth: 0.5,
-          });
-          x += dateColWidth;
-        });
-      });
-
-      // Draw grid lines
-      let sx = startX;
-
-      // Student column line
-      sx += studentColWidth;
-      currentPage.drawLine({
-        start: { x: sx, y: startY + 10 },
-        end: { x: sx, y: startY - (students.length + 1) * rowHeight },
-        thickness: 1,
-        color: PDFLib.rgb(0, 0, 0),
-      });
-
-      // Date columns lines
-      for (let i = 0; i <= currentDates.length; i++) {
-        currentPage.drawLine({
-          start: { x: sx, y: startY + 10 },
-          end: { x: sx, y: startY - (students.length + 1) * rowHeight },
-          thickness: 0.5,
-          color: PDFLib.rgb(0.6, 0.6, 0.6),
-        });
-        sx += dateColWidth;
-      }
-
-      // Draw horizontal lines
-      for (let i = 0; i <= students.length + 1; i++) {
-        const y = startY - i * rowHeight + 10;
-        currentPage.drawLine({
-          start: { x: startX, y: y },
-          end: {
-            x: startX + studentColWidth + currentDates.length * dateColWidth,
-            y: y,
-          },
-          thickness: i === 0 ? 1 : 0.5,
-          color: i === 0 ? PDFLib.rgb(0, 0, 0) : PDFLib.rgb(0.6, 0.6, 0.6),
-        });
-      }
-
-      // Page number
-      currentPage.drawText(`Page ${pageNum + 1} of ${totalPages}`, {
-        x: 700,
-        y: 30,
-        size: 10,
-        font: font,
-      });
-    }
-
-    // Save and download
-    const pdfBytes = await pdfDoc.save();
-    // download(pdfBytes,`attendance_${monthName.replace(" ", "_")}.pdf`, "application/pdf");
-    const blob = new Blob([pdfBytes], { type: "application/pdf" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    window.open(doc.output("bloburl"), "_blank");
   } catch (error) {
-    console.error("Error generating PDF:", error);
-    alert("Error generating PDF: " + error.message);
+    console.error("خطأ في إنشاء PDF:", error);
+    alert("خطأ في إنشاء PDF: " + error.message);
   }
 }
 
