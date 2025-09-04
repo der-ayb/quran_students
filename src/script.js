@@ -6,6 +6,21 @@ const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "projectDB";
 const QURAN_DB_KEY = "quranDB";
+const arabicMonths = [
+  "جانفي",
+  "فيفري",
+  "مارس",
+  "أفريل",
+  "ماي",
+  "جوان",
+  "جويلية",
+  "أوت",
+  "سبتمبر",
+  "أكتوبر",
+  "نوفمبر",
+  "ديسمبر",
+];
+const arabicDays = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 let workingClassroomId = null;
 let students_table = null;
 let students_day_table = null;
@@ -1018,21 +1033,8 @@ async function dayDatePickerInit() {
       autoUpdateInput: false,
       locale: {
         format: "YYYY-MM-DD",
-        daysOfWeek: ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
-        monthNames: [
-          "جانفي",
-          "فيفري",
-          "مارس",
-          "أفريل",
-          "ماي",
-          "جوان",
-          "جويلية",
-          "أوت",
-          "سبتمبر",
-          "أكتوبر",
-          "نوفمبر",
-          "ديسمبر",
-        ],
+        daysOfWeek: arabicDays,
+        monthNames: arabicMonths,
         firstDay: 7,
         applyLabel: "تأكيد",
         cancelLabel: "إلغاء",
@@ -1052,21 +1054,8 @@ async function dayDatePickerInit() {
     showDropdowns: true,
     locale: {
       format: "YYYY-MM-DD",
-      daysOfWeek: ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
-      monthNames: [
-        "جانفي",
-        "فيفري",
-        "مارس",
-        "أفريل",
-        "ماي",
-        "جوان",
-        "جويلية",
-        "أوت",
-        "سبتمبر",
-        "أكتوبر",
-        "نوفمبر",
-        "ديسمبر",
-      ],
+      daysOfWeek: arabicDays,
+      monthNames: arabicMonths,
       firstDay: 7,
       applyLabel: "تأكيد",
       cancelLabel: "إلغاء",
@@ -1100,12 +1089,14 @@ function setIsCustomDate() {
     result.length && result[0].values.length
       ? result[0].values.map((row) => row[0])
       : [];
+
   dayDateInput.data("daterangepicker").isCustomDate = function (date) {
     if (events.includes(date.format("YYYY-MM-DD"))) {
       return "text-decoration-underline";
     }
     return "";
   };
+
   statisticsDateInput.data("daterangepicker").isCustomDate = function (date) {
     if (events.includes(date.format("YYYY-MM-DD"))) {
       return "text-decoration-underline";
@@ -1405,148 +1396,198 @@ function showTab(tabId) {
 // Initialize the application
 init();
 
-const { jsPDF } = window.jspdf;
-
-    // بيانات الطلاب
-    const students = [
-      { id: 1, name: "محمد أحمد" },
-      { id: 2, name: "فاطمة حسن" },
-      { id: 3, name: "علي محمود" },
-      { id: 4, name: "سارة خالد" },
-      { id: 5, name: "يوسف إبراهيم" },
-      { id: 6, name: "لينا مصطفى" },
-      { id: 7, name: "أحمد سعيد" },
-    ];
-
-    // الأشهر والأيام بالعربية
-    const arabicMonths = [
-      "جانفي","فيفري","مارس","أفريل","ماي","جوان",
-      "جويلية","أوت","سبتمبر","أكتوبر","نوفمبر","ديسمبر"
-    ];
-    const arabicDays = ["أحد","إثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];
-
-    // تواريخ الشهر الحالي
-    function getMonthDates() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const dates = [];
-      for (let day = 1; day <= daysInMonth-10; day++) {
-        dates.push(new Date(year, month, day));
-      }
-      return dates;
-    }
-
-    async function createPdf() {
-      const dates = getMonthDates();
-      const currentDate = new Date();
-      const monthName = arabicMonths[currentDate.getMonth()];
-      const year = currentDate.getFullYear();
-
-      const doc = new jsPDF({
-        unit: "mm",
-        format: "a4",
-        orientation: "landscape" // عرضي أفضل للجداول
+function getDatesInRange() {
+  const result = project_db.exec(
+    `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`
+  );
+  let dateArray = [];
+  if (result.length && result[0].values.length) {
+    const [startDateStr, endDateStr] = statisticsDateInput
+      .val()
+      .split(" - ")
+      .map((str) => str.trim());
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    
+    dateArray = result[0].values
+      .map((row) => row[0])
+      .filter((dateStr) => {
+        const currentDate = new Date(dateStr);
+        return currentDate >= startDate && currentDate <= endDate;
       });
+  }
+  return dateArray
+}
 
-      // خطوط عربية
-      doc.addFont("src/Amiri-Regular.ttf", "Amiri", "normal");
-      doc.addFont("src/Amiri-Bold.ttf", "Amiri", "bold");
-      doc.setFont("Amiri", "bold");
-      doc.setFontSize(18);
-      doc.text("جدول الحضور الشهري للطلاب", 148, 15, { align: "center" });
-      doc.setFontSize(14);
-      doc.text(`${monthName} ${year}`, 148, 22, { align: "center" });
+async function createPdf() {
+  const dates = getDatesInRange();
+  if (!dates.length) {
+    window.showToast("warning", "لا توجد أيام في هذا النطاق.");
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  let datesHeader = "";
+  for (d of dates) {
+    datesHeader += `MAX(CASE WHEN de.day_id = '${d}' THEN CASE WHEN de.attendance = 1 THEN '' ELSE '' END
+    ELSE NULL END) as "${d}",`;
+  }
 
-      // إعدادات الجدول
-      const rowHeight = 8;
-      const studentColWidth = 40;
-      const dateColWidth = 8;
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const startX = pageWidth - 10; // من اليمين
-      const startY = 30;
+  const result = project_db.exec(
+    `SELECT 
+        s.id as "student id", s.name as "student name",
+        ${datesHeader.slice(0, -1)}
+    FROM students s
+    LEFT JOIN day_evaluations de ON s.id = de.student_id
+    LEFT JOIN education_day ed ON de.day_id = ed.id
+    WHERE s.class_room_id = ${workingClassroomId}
+    GROUP BY s.id, s.name
+    ORDER BY s.id;`
+  );
+  // بيانات الطلاب
+  const students = result[0].values.map((row) => ({
+    id: row[0],
+    name: row[1],
+  }));
 
-      // ---- رؤوس الأعمدة ----
-      doc.setFontSize(10);
-      doc.setFont("Amiri", "bold");
-      doc.text("اسم الطالب", startX - 2, startY - 2, { align: "right" });
+  // إنشاء مستند PDF
+  const doc = new jsPDF({
+    unit: "mm",
+    format: "a4",
+  });
+  const pageWidth = doc.internal.pageSize.getWidth();
 
-      // رؤوس التواريخ (تمشي لليسار)
-      let x = startX - studentColWidth;
-      dates.forEach((date) => {
-        if (x - dateColWidth < 10) return; // الهامش الأيسر
+  // خطوط عربية
+  doc.addFont("src/Al-Jazeera-Arabic-Regular.ttf", "Amiri", "normal");
+  doc.addFont("src/Al-Jazeera-Arabic-Bold.ttf", "Amiri", "bold");
+  doc.addFont("src/MaterialIcons-Regular.ttf", "MaterialIcons", "normal");
+  doc.setFont("Amiri", "bold");
+  doc.setFontSize(18);
+  doc.text("جدول الحضور الشهري للطلاب", pageWidth / 2, 15, { align: "center" });
+  doc.setFontSize(14);
+  doc.text(`${statisticsDateInput.val()}`, pageWidth / 2, 22, {
+    align: "center",
+  });
 
-        const dayText = `${date.getDate()}\n${arabicDays[date.getDay()]}`;
-        const lines = dayText.split("\n");
+  // إعدادات الجدول
+  const rowHeight = 8;
+  const studentColWidth = 40;
+  const dateColWidth = 8;
+  const startX = pageWidth - 10; // من اليمين
+  const startY = 60;
 
-        doc.text(lines[0], x - dateColWidth/2, startY - 4, null, 90);
-        doc.setFontSize(8);
-        doc.text(lines[1], x - dateColWidth/2, startY + 1, null, 90);
-        doc.setFontSize(10);
+  // ---- رؤوس الأعمدة ----
+  doc.setFontSize(10);
+  doc.setFont("Amiri", "bold");
+  doc.text("اسم الطالب", startX - 2, startY - 2, { align: "right" });
 
-        x -= dateColWidth;
-      });
+  // رؤوس التواريخ
+  let x = startX - studentColWidth;
+  dates.forEach((date) => {
+    if (x - dateColWidth < 10) return; // الهامش الأيسر
 
-      // ---- بيانات الطلاب ----
-      doc.setFont("Amiri", "normal");
-      students.forEach((student, rowIndex) => {
-        let y = startY + (rowIndex + 1) * rowHeight;
+    const dayText = `${date} ${arabicDays[date.split("-")[2] % 7]}`;
 
-        // اسم الطالب (يمين)
-        doc.text(student.name, startX - 2, y - 2, { align: "right" });
+    doc.text(dayText, x - dateColWidth / 2, startY - 5, {
+      align: "left",
+      angle: 90,
+    });
+    doc.setFontSize(10);
 
-        // خلايا الحضور (فارغة)
-        let xCell = startX - studentColWidth;
-        dates.forEach(() => {
-          if (xCell - dateColWidth >= 10) {
-            xCell -= dateColWidth;
+    x -= dateColWidth;
+  });
+
+  // ---- بيانات الطلاب ----
+  doc.setFont("Amiri", "normal");
+  students.forEach((student, rowIndex) => {
+    let y = startY + (rowIndex + 1) * rowHeight;
+
+    // اسم الطالب (يمين)
+    doc.text(student.name, startX - 2, y - 2, { align: "right" });
+
+    // خلايا الحضور (فارغة)
+    let xCell = startX - studentColWidth;
+    doc.setFont("MaterialIcons", "normal");
+    doc.setFontSize(15);
+    dates.forEach((date) => {
+      if (xCell - dateColWidth >= 10) {
+        xCell -= dateColWidth;
+        doc.text(
+          result[0].values[rowIndex][
+            result[0].columns.indexOf(date)
+          ],
+          xCell + dateColWidth / 2,
+          y - 2,
+          {
+            align: "center",
           }
-        });
-      });
+        );
+      }
+    });
+    doc.setFont("Amiri", "normal");
+    doc.setFontSize(10);
+  });
 
-      // ---- الشبكة ----
-      drawRTLGrid(doc, startX, startY, rowHeight, studentColWidth, dateColWidth, dates.length, students.length);
+  // ---- الشبكة ----
+  drawRTLGrid(
+    doc,
+    startX,
+    startY,
+    rowHeight,
+    studentColWidth,
+    dateColWidth,
+    dates.length,
+    students.length
+  );
 
-      // رقم الصفحة
-      doc.setFontSize(10);
-      doc.text(`الصفحة 1 من 1`, pageWidth - 10, 200, { align: "left" });
+  // رقم الصفحة
+  doc.setFontSize(10);
+  doc.text(`تمت الطباعة بتاريخ ${currentDay}`, 10, 200, { align: "left" });
 
-      window.open(doc.output("bloburl"), "_blank");
-    }
+  window.open(doc.output("bloburl"), "_blank");
+}
 
-    function drawRTLGrid(doc, startX, startY, rowHeight, studentColWidth, dateColWidth, dateCount, studentCount) {
-      let x = startX;
+function drawRTLGrid(
+  doc,
+  startX,
+  startY,
+  rowHeight,
+  studentColWidth,
+  dateColWidth,
+  dateCount,
+  studentCount
+) {
+  let x = startX;
 
-      // خط عمودي يفصل عمود الأسماء
+  doc.line(x, startY - 20, x, startY + studentCount * rowHeight);
+  // خط عمودي يفصل عمود الأسماء
+  doc.line(
+    x - studentColWidth,
+    startY - 20,
+    x - studentColWidth,
+    startY + studentCount * rowHeight
+  );
+  x -= studentColWidth;
+
+  // أعمدة الأيام
+  for (let i = 0; i < dateCount; i++) {
+    if (x - dateColWidth >= 10) {
       doc.line(
-        x - studentColWidth,
-        startY,
-        x - studentColWidth,
-        startY + (studentCount + 1) * rowHeight
+        x - dateColWidth,
+        startY - 20,
+        x - dateColWidth,
+        startY + studentCount * rowHeight
       );
-      x -= studentColWidth;
-
-      // أعمدة الأيام
-      for (let i = 0; i < dateCount; i++) {
-        if (x - dateColWidth >= 10) {
-          doc.line(
-            x - dateColWidth,
-            startY,
-            x - dateColWidth,
-            startY + (studentCount + 1) * rowHeight
-          );
-          x -= dateColWidth;
-        }
-      }
-
-      // الخطوط الأفقية
-      for (let i = 0; i <= studentCount + 1; i++) {
-        const y = startY + i * rowHeight;
-        doc.line(x, y, startX, y);
-      }
+      x -= dateColWidth;
     }
+  }
 
+  // الخطوط الأفقية
+  for (let i = 0; i <= studentCount; i++) {
+    const y = startY + i * rowHeight;
+    doc.line(x, y, startX, y);
+  }
+  doc.line(x, startY - 20, startX, startY - 20);
+}
 
 const initializeAyatdata = async (db) => {
   const results = db.exec("SELECT * FROM quran_index");
