@@ -195,7 +195,7 @@
 
     <div class="tab-pane fade" id="pills-statistics" role="tabpanel" aria-labelledby="pills-statistics-tab">
       <h2 class="text-center mb-4">الإحصائيات</h2>
-      
+
       <div class="date-input-container">
         <div class="date-input-group">
           <span class="date-input-label">الفترة:</span>
@@ -203,7 +203,7 @@
           <i class="fas fa-calendar-alt date-icon"></i>
         </div>
       </div>
-      <button onclick="createPdf()" class="btn-primary my-4">إنشاء قائمةالغياب PDF</button>
+      <button onclick="createPdf()" class="btn btn-primary my-4">إنشاء قائمة الغياب PDF</button>
 
     </div>
 
@@ -260,22 +260,24 @@
 
   <div class="nav-bar" style="display: none;">
     <button onclick="showTab('pills-summary'); return false;">
-      <svg width="256px" height="30px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg fill="#ffffff" width="256px" height="30px" viewBox="0 0 24.00 24.00" xmlns="http://www.w3.org/2000/svg"
+        stroke="#ffffff" stroke-width="0.5">
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
         <g id="SVGRepo_iconCarrier">
-          <path fill-rule="evenodd" clip-rule="evenodd"
-            d="M4.18753 11.3788C4.03002 11.759 4 11.9533 4 12V20.0018C4 20.5529 4.44652 21 5 21H8V15C8 13.8954 8.89543 13 10 13H14C15.1046 13 16 13.8954 16 15V21H19C19.5535 21 20 20.5529 20 20.0018V12C20 11.9533 19.97 11.759 19.8125 11.3788C19.6662 11.0256 19.4443 10.5926 19.1547 10.1025C18.5764 9.1238 17.765 7.97999 16.8568 6.89018C15.9465 5.79788 14.9639 4.78969 14.0502 4.06454C13.5935 3.70204 13.1736 3.42608 12.8055 3.2444C12.429 3.05862 12.1641 3 12 3C11.8359 3 11.571 3.05862 11.1945 3.2444C10.8264 3.42608 10.4065 3.70204 9.94978 4.06454C9.03609 4.78969 8.05348 5.79788 7.14322 6.89018C6.23505 7.97999 5.42361 9.1238 4.8453 10.1025C4.55568 10.5926 4.33385 11.0256 4.18753 11.3788ZM10.3094 1.45091C10.8353 1.19138 11.4141 1 12 1C12.5859 1 13.1647 1.19138 13.6906 1.45091C14.2248 1.71454 14.7659 2.07921 15.2935 2.49796C16.3486 3.33531 17.4285 4.45212 18.3932 5.60982C19.3601 6.77001 20.2361 8.0012 20.8766 9.08502C21.1963 9.62614 21.4667 10.1462 21.6602 10.6134C21.8425 11.0535 22 11.5467 22 12V20.0018C22 21.6599 20.6557 23 19 23H16C14.8954 23 14 22.1046 14 21V15H10V21C10 22.1046 9.10457 23 8 23H5C3.34434 23 2 21.6599 2 20.0018V12C2 11.5467 2.15748 11.0535 2.33982 10.6134C2.53334 10.1462 2.80369 9.62614 3.12345 9.08502C3.76389 8.0012 4.63995 6.77001 5.60678 5.60982C6.57152 4.45212 7.65141 3.33531 8.70647 2.49796C9.2341 2.07921 9.77521 1.71454 10.3094 1.45091Z"
-            fill="#0F0F0F" data-darkreader-inline-fill=""
-            style="--darkreader-inline-fill: var(--darkreader-background-0f0f0f, #0b0c0d);"></path>
+          <path
+            d="M9 17.25C8.58579 17.25 8.25 17.5858 8.25 18C8.25 18.4142 8.58579 18.75 9 18.75H15C15.4142 18.75 15.75 18.4142 15.75 18C15.75 17.5858 15.4142 17.25 15 17.25H9Z">
+          </path>
+          </path>
+          <path
+            d="M12 1.25C11.2919 1.25 10.6485 1.45282 9.95055 1.79224C9.27585 2.12035 8.49642 2.60409 7.52286 3.20832L5.45628 4.4909C4.53509 5.06261 3.79744 5.5204 3.2289 5.95581C2.64015 6.40669 2.18795 6.86589 1.86131 7.46263C1.53535 8.05812 1.38857 8.69174 1.31819 9.4407C1.24999 10.1665 1.24999 11.0541 1.25 12.1672V13.7799C1.24999 15.6837 1.24998 17.1866 1.4027 18.3616C1.55937 19.567 1.88856 20.5401 2.63236 21.3094C3.37958 22.0824 4.33046 22.4277 5.50761 22.5914C6.64849 22.75 8.10556 22.75 9.94185 22.75H14.0581C15.8944 22.75 17.3515 22.75 18.4924 22.5914C19.6695 22.4277 20.6204 22.0824 21.3676 21.3094C22.1114 20.5401 22.4406 19.567 22.5973 18.3616C22.75 17.1866 22.75 15.6838 22.75 13.7799V12.1672C22.75 11.0541 22.75 10.1665 22.6818 9.4407C22.6114 8.69174 22.4646 8.05812 22.1387 7.46263C21.8121 6.86589 21.3599 6.40669 20.7711 5.95581C20.2026 5.5204 19.4649 5.06262 18.5437 4.49091L16.4771 3.20831C15.5036 2.60409 14.7241 2.12034 14.0494 1.79224C13.3515 1.45282 12.7081 1.25 12 1.25ZM8.27953 4.50412C9.29529 3.87371 10.0095 3.43153 10.6065 3.1412C11.1882 2.85833 11.6002 2.75 12 2.75C12.3998 2.75 12.8118 2.85833 13.3935 3.14119C13.9905 3.43153 14.7047 3.87371 15.7205 4.50412L17.7205 5.74537C18.6813 6.34169 19.3559 6.76135 19.8591 7.1467C20.3487 7.52164 20.6303 7.83106 20.8229 8.18285C21.0162 8.53589 21.129 8.94865 21.1884 9.58104C21.2492 10.2286 21.25 11.0458 21.25 12.2039V13.725C21.25 15.6959 21.2485 17.1012 21.1098 18.1683C20.9736 19.2163 20.717 19.8244 20.2892 20.2669C19.8649 20.7058 19.2871 20.9664 18.2858 21.1057C17.2602 21.2483 15.9075 21.25 14 21.25H10C8.09247 21.25 6.73983 21.2483 5.71422 21.1057C4.71286 20.9664 4.13514 20.7058 3.71079 20.2669C3.28301 19.8244 3.02642 19.2163 2.89019 18.1683C2.75149 17.1012 2.75 15.6959 2.75 13.725V12.2039C2.75 11.0458 2.75076 10.2286 2.81161 9.58104C2.87103 8.94865 2.98385 8.53589 3.17709 8.18285C3.36965 7.83106 3.65133 7.52164 4.14092 7.1467C4.6441 6.76135 5.31869 6.34169 6.27953 5.74537L8.27953 4.50412Z">
+          </path>
         </g>
       </svg>
     </button>
     <button onclick="showTab('pills-students'); return false;">
       <svg fill="#ffffff" width="256px" height="30px" viewBox="0 0 24.00 24.00" xmlns="http://www.w3.org/2000/svg"
-        data-darkreader-inline-fill=""
-        style="--darkreader-inline-fill: var(--darkreader-background-ffffff, #181a1b); --darkreader-inline-stroke: var(--darkreader-text-ffffff, #e8e6e3);"
-        stroke="#ffffff" stroke-width="0.00024000000000000003" data-darkreader-inline-stroke="">
+        stroke="#ffffff" stroke-width="0.0024000000000000003">
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
         <g id="SVGRepo_iconCarrier">
@@ -286,31 +288,19 @@
       </svg>
     </button>
     <button onclick="showTab('pills-new_day'); return false;">
-      <svg viewBox="0 -1.5 20.412 20.412" xmlns="http://www.w3.org/2000/svg" fill="#000000"
-        data-darkreader-inline-fill="" style="--darkreader-inline-fill: var(--darkreader-background-000000, #000000);">
+      <svg fill="#ffffff" width="256px" height="30px" viewBox="0 0 24.00 24.00" xmlns="http://www.w3.org/2000/svg"
+        stroke="#ffffff" stroke-width="0.0024000000000000003">
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
         <g id="SVGRepo_iconCarrier">
-          <g id="check-lists" transform="translate(-1.588 -2.588)">
-            <path id="primary" d="M7,4,4.33,7,3,5.5" fill="none" stroke="#000000" stroke-linecap="round"
-              stroke-linejoin="round" stroke-width="2" data-darkreader-inline-stroke=""
-              style="--darkreader-inline-stroke: var(--darkreader-text-000000, #e8e6e3);"></path>
-            <path id="primary-2" data-name="primary" d="M3,11.5,4.33,13,7,10" fill="none" stroke="#000000"
-              stroke-linecap="round" stroke-linejoin="round" stroke-width="2" data-darkreader-inline-stroke=""
-              style="--darkreader-inline-stroke: var(--darkreader-text-000000, #e8e6e3);"></path>
-            <path id="primary-3" data-name="primary" d="M3,17.5,4.33,19,7,16" fill="none" stroke="#000000"
-              stroke-linecap="round" stroke-linejoin="round" stroke-width="2" data-darkreader-inline-stroke=""
-              style="--darkreader-inline-stroke: var(--darkreader-text-000000, #e8e6e3);"></path>
-            <path id="primary-4" data-name="primary" d="M11,6H21M11,12H21M11,18H21" fill="none" stroke="#000000"
-              stroke-linecap="round" stroke-linejoin="round" stroke-width="2" data-darkreader-inline-stroke=""
-              style="--darkreader-inline-stroke: var(--darkreader-text-000000, #e8e6e3);"></path>
-          </g>
+          <path
+            d="M11 6L21 6.00072M11 12L21 12.0007M11 18L21 18.0007M3 11.9444L4.53846 13.5L8 10M3 5.94444L4.53846 7.5L8 4M4.5 18H4.51M5 18C5 18.2761 4.77614 18.5 4.5 18.5C4.22386 18.5 4 18.2761 4 18C4 17.7239 4.22386 17.5 4.5 17.5C4.77614 17.5 5 17.7239 5 18Z"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
         </g>
       </svg>
     </button>
     <button onclick="showTab('pills-statistics'); return false;">
-      <svg fill="#ffffff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" data-darkreader-inline-fill=""
-        style="--darkreader-inline-fill: var(--darkreader-background-000000, #000000);">
+      <svg fill="#ffffff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
         <g id="SVGRepo_iconCarrier">
@@ -321,24 +311,22 @@
       </svg>
     </button>
     <button onclick="showTab('pills-preferences'); return false;">
-      <svg width="256px" height="30px" viewBox="0 0 32 32" enable-background="new 0 0 32 32" id="Stock_cut"
-        version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-        fill="#000000" data-darkreader-inline-fill=""
-        style="--darkreader-inline-fill: var(--darkreader-background-000000, #000000);">
+      <svg width="256px" height="256px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
         <g id="SVGRepo_iconCarrier">
-          <desc></desc>
-          <g>
-            <path
-              d="M31,19v-6h-4.425 c-0.252-0.888-0.611-1.729-1.065-2.51L29,7l-4-4l-3.49,3.49C21.028,6.21,20.525,5.967,20,5.761V1h-8v4.761 c-0.525,0.205-1.028,0.449-1.51,0.728L7,3L3,7l3.49,3.49C6.036,11.271,5.676,12.112,5.425,13H1v6h4.425 c0.252,0.888,0.611,1.729,1.065,2.51L3,25l4,4l3.49-3.49c0.482,0.28,0.986,0.523,1.51,0.728V31h8v-4.761 c0.525-0.205,1.028-0.449,1.51-0.728L25,29l4-4l-3.49-3.49c0.454-0.781,0.813-1.622,1.065-2.51H31z"
-              fill="none" stroke="#000000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2"
-              data-darkreader-inline-stroke=""
-              style="--darkreader-inline-stroke: var(--darkreader-text-000000, #e8e6e3);"></path>
-            <circle cx="16" cy="16" fill="none" r="5" stroke="#000000" stroke-linejoin="round" stroke-miterlimit="10"
-              stroke-width="2" data-darkreader-inline-stroke=""
-              style="--darkreader-inline-stroke: var(--darkreader-text-000000, #e8e6e3);"></circle>
-          </g>
+          <path d="M6 5V20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+          <path d="M12 5V20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+          <path d="M18 5V20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path>
+          <path
+            d="M8.5 16C8.5 17.3807 7.38071 18.5 6 18.5C4.61929 18.5 3.5 17.3807 3.5 16C3.5 14.6193 4.61929 13.5 6 13.5C7.38071 13.5 8.5 14.6193 8.5 16Z"
+            fill="#ffffff"></path>
+          <path
+            d="M14.5 9C14.5 10.3807 13.3807 11.5 12 11.5C10.6193 11.5 9.5 10.3807 9.5 9C9.5 7.61929 10.6193 6.5 12 6.5C13.3807 6.5 14.5 7.61929 14.5 9Z"
+            fill="#ffffff"></path>
+          <path
+            d="M20.5 16C20.5 17.3807 19.3807 18.5 18 18.5C16.6193 18.5 15.5 17.3807 15.5 16C15.5 14.6193 16.6193 13.5 18 13.5C19.3807 13.5 20.5 14.6193 20.5 16Z"
+            fill="#ffffff"></path>
         </g>
       </svg>
     </button>
