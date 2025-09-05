@@ -203,8 +203,9 @@
           <i class="fas fa-calendar-alt date-icon"></i>
         </div>
       </div>
-      <button onclick="createPdf()" class="btn btn-primary my-4">إنشاء قائمة الغياب PDF</button>
+      <button onclick="showAttendanceTable()" class="btn btn-primary my-4">إنشاء قائمة الغياب PDF</button>
 
+      <table id="attendanceTable" class="display" style="width:100%"></table>
     </div>
 
     <div class="tab-pane fade" id="pills-preferences" role="tabpanel" aria-labelledby="pills-preferences-tab">
@@ -614,6 +615,10 @@
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.bootstrap5.js"></script>
+<script src="src/pdfmake.js"></script>
+<script src="src/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.js"></script>
+<!-- <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.print.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js"></script>

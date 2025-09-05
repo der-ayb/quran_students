@@ -1400,7 +1400,6 @@ function getDatesInRange() {
   const result = project_db.exec(
     `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`
   );
-  let dateArray = [];
   if (result.length && result[0].values.length) {
     const [startDateStr, endDateStr] = statisticsDateInput
       .val()
@@ -1408,33 +1407,33 @@ function getDatesInRange() {
       .map((str) => str.trim());
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
-    
-    dateArray = result[0].values
+
+    return result[0].values
       .map((row) => row[0])
       .filter((dateStr) => {
         const currentDate = new Date(dateStr);
         return currentDate >= startDate && currentDate <= endDate;
       });
   }
-  return dateArray
+  return [];
 }
 
-async function createPdf() {
+async function showAttendanceTable() {
   const dates = getDatesInRange();
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
     return;
   }
-  const { jsPDF } = window.jspdf;
+
   let datesHeader = "";
   for (d of dates) {
-    datesHeader += `MAX(CASE WHEN de.day_id = '${d}' THEN CASE WHEN de.attendance = 1 THEN '' ELSE '' END
+    datesHeader += `MAX(CASE WHEN de.day_id = '${d}' THEN CASE WHEN de.attendance = 1 THEN 'غ' ELSE 'ح' END
     ELSE NULL END) as "${d}",`;
   }
 
   const result = project_db.exec(
     `SELECT 
-        s.id as "student id", s.name as "student name",
+        s.id as "#", s.name as "اسم الطالب",
         ${datesHeader.slice(0, -1)}
     FROM students s
     LEFT JOIN day_evaluations de ON s.id = de.student_id
@@ -1443,6 +1442,80 @@ async function createPdf() {
     GROUP BY s.id, s.name
     ORDER BY s.id;`
   );
+  try {
+    if (result.length > 0) {
+      const data = result[0];
+      const columns = data.columns;
+      const values = data.values;
+
+      // Prepare data for DataTables
+      const tableData = values.map((row) => {
+        const rowData = {};
+        columns.forEach((column, index) => {
+          rowData[column] = row[index];
+        });
+        return rowData;
+      });
+
+      // Initialize or reload DataTable
+      if ($.fn.DataTable.isDataTable("#attendanceTable")) {
+        dataTable.clear();
+        dataTable.rows.add(tableData);
+        dataTable.draw();
+      } else {
+        dataTable = $("#attendanceTable").DataTable({
+          searching: false,
+          data: tableData,
+          scrollX: true,
+          info: false,
+          oLanguage: {
+            sSearch: "بحث",
+            emptyTable: "لا توجد بيانات في الجدول.",
+          },
+          paging: false,
+          responsive: true,
+          columns: columns.map((col) => ({
+            data: col,
+            title: col,
+          })),
+          layout: {
+            topStart: {
+              buttons: [
+                {
+                  extend: "pdf",
+                  text: "انشاء PDF",
+                  className: "btn btn-primary",
+                  customize: function (doc) {
+                    doc.content[1].table.widths = Array(
+                      doc.content[1].table.body[0].length + 1
+                    ).join("*").split("");
+                    doc.content[1].table.body.forEach((b) => {
+                      b.reverse();
+                      b.forEach((cell) => {
+                        cell.alignment = "center";
+                      })
+                    });
+                    doc.styles.tableHeader.alignment = "center";
+                    doc.content[0].text = "جدول الحضور الشهري للطلاب";
+                    doc.content[0].alignment = "center";
+                    doc.content[0].fontSize = 16;
+                    doc.content[0].margin = [0, 0, 0, 20];
+                  },
+                },
+              ],
+            },
+          },
+        });
+      }
+    } else {
+      console.log("No data found");
+    }
+  } catch (error) {
+    console.error("Error executing query:", error);
+  }
+}
+async function createPdf() {
+  const { jsPDF } = window.jspdf;
   // بيانات الطلاب
   const students = result[0].values.map((row) => ({
     id: row[0],
@@ -1512,9 +1585,7 @@ async function createPdf() {
       if (xCell - dateColWidth >= 10) {
         xCell -= dateColWidth;
         doc.text(
-          result[0].values[rowIndex][
-            result[0].columns.indexOf(date)
-          ],
+          result[0].values[rowIndex][result[0].columns.indexOf(date)],
           xCell + dateColWidth / 2,
           y - 2,
           {
