@@ -22,8 +22,6 @@ const arabicMonths = [
 ];
 const arabicDays = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 let workingClassroomId = null;
-let students_table = null;
-let students_day_table = null;
 let classrooms_table = null;
 let loadingModalQueue = 0;
 let userIsAuth = false;
@@ -673,9 +671,8 @@ function loadDayStudentsList() {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
   }
-  if (students_day_table) {
+  if ($.fn.DataTable.isDataTable("#dayListTable")) {
     students_day_table.destroy();
-    students_day_table = null;
   }
 
   const dayResult = project_db.exec(
@@ -1419,7 +1416,7 @@ function getDatesInRange() {
 }
 
 async function showAttendanceTable() {
-  const dates = getDatesInRange();
+  const dates = [...getDatesInRange()].sort((a, b) => new Date(a) - new Date(b));
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
     return;
@@ -1459,54 +1456,131 @@ async function showAttendanceTable() {
 
       // Initialize or reload DataTable
       if ($.fn.DataTable.isDataTable("#attendanceTable")) {
-        dataTable.clear();
-        dataTable.rows.add(tableData);
-        dataTable.draw();
-      } else {
-        dataTable = $("#attendanceTable").DataTable({
-          searching: false,
-          data: tableData,
-          scrollX: true,
-          info: false,
-          oLanguage: {
-            sSearch: "بحث",
-            emptyTable: "لا توجد بيانات في الجدول.",
-          },
-          paging: false,
-          responsive: true,
-          columns: columns.map((col) => ({
-            data: col,
-            title: col,
-          })),
-          layout: {
-            topStart: {
-              buttons: [
-                {
-                  extend: "pdf",
-                  text: "انشاء PDF",
-                  className: "btn btn-primary",
-                  customize: function (doc) {
-                    doc.content[1].table.widths = Array(
-                      doc.content[1].table.body[0].length + 1
-                    ).join("*").split("");
-                    doc.content[1].table.body.forEach((b) => {
-                      b.reverse();
-                      b.forEach((cell) => {
-                        cell.alignment = "center";
-                      })
-                    });
-                    doc.styles.tableHeader.alignment = "center";
-                    doc.content[0].text = "جدول الحضور الشهري للطلاب";
-                    doc.content[0].alignment = "center";
-                    doc.content[0].fontSize = 16;
-                    doc.content[0].margin = [0, 0, 0, 20];
-                  },
-                },
-              ],
-            },
-          },
-        });
+        dataTable.destroy();
+        $("#attendanceTable").empty();
       }
+      dataTable = new DataTable("#attendanceTable", {
+        searching: false,
+        data: tableData,
+        scrollX: true,
+        info: false,
+        oLanguage: {
+          sSearch: "بحث",
+          emptyTable: "لا توجد بيانات في الجدول.",
+        },
+        paging: false,
+        responsive: true,
+        columns: columns.map((col) => ({
+          data: col,
+          title: col,
+          className: [0, 1].includes(columns.indexOf(col))
+            ? "text-center"
+            : "text-center header-rotated",
+        })),
+        layout: {
+          topStart: {
+            buttons: [
+              {
+                extend: "pdf",
+                text: "انشاء PDF",
+                className: "btn btn-primary",
+                customize: function (doc) {
+                  doc.content[0].text = "جدول الحضور الشهري للطلاب";
+                  doc.content[0].alignment = "center";
+                  doc.content[0].fontSize = 16;
+                  doc.content[0].margin = [0, 0, 0, 20];
+
+                  doc.styles.tableHeader.alignment = "center";
+                  doc.styles.tableHeader.rotate = 90;
+                  doc.content[1].table.widths = Array(
+                    doc.content[1].table.body[0].length + 1
+                  )
+                    .join("*")
+                    .split("");
+                  
+                  doc.content[1].table.widths[doc.content[1].table.body[0].length-1] = 25
+                  doc.content[1].table.widths[doc.content[1].table.body[0].length-2] = 110
+                  doc.content[1].table.body.forEach((b) => {
+                    b.reverse();
+                    b.forEach((cell) => {
+                      cell.alignment = "center";
+                    });
+                  });
+                  // Group table headers (dates) by month and add a header row for each month with colspan
+                  const tableBody = doc.content[1].table.body;
+                  const headerRow = tableBody[0];
+                  const monthMap = {};
+                  const monthOrder = [];
+                  headerRow.forEach((cell, idx) => {
+                    if (typeof cell.text === "string" && /^\d{4}-\d{2}-\d{2}$/.test(cell.text)) {
+                      const [year, month] = cell.text.split("-").slice(0, 2);
+                      const key = `${year}-${arabicMonths[Number(month)]}`;
+                      if (!monthMap[key]) {
+                        monthMap[key] = { start: idx, count: 1 };
+                        monthOrder.push(key);
+                      } else {
+                        monthMap[key].count++;
+                      }
+                      cell.text = cell.text.split("-")[2]
+                    }
+                  });
+                  doc.content[1].table.body[0] = headerRow
+
+                  // Build the month header row
+                  const monthHeaderRow = [];
+                  let colIdx = 0;
+                  monthOrder.forEach((key) => {
+                    const { start, count } = monthMap[key];
+                    // Fill empty cells before this month
+                    while (colIdx < start) {
+                      monthHeaderRow.push({});
+                      colIdx++;
+                    }
+                    // Add the month header cell
+                    monthHeaderRow.push({
+                      text: key,
+                      style: "tableHeader",
+                      colSpan: count,
+                      alignment: "center",
+                    });
+                    colIdx++;
+                    // Fill the rest of the colspan with empty cells
+                    for (let i = 1; i < count; i++) {
+                      monthHeaderRow.push({});
+                      colIdx++;
+                    }
+                  });
+                  // Fill any remaining columns
+                  while (monthHeaderRow.length < headerRow.length) {
+                    monthHeaderRow.push({});
+                  }
+
+                  // Insert the month header row above the date header
+                  tableBody.unshift(monthHeaderRow);
+                  doc.content[1].layout = {
+                    hLineWidth: function (i, node) {
+                      return i === 0 || i === node.table.body.length ? 2 : 1;
+                    },
+                    vLineWidth: function (i, node) {
+                      return i === 0 || i === node.table.widths.length ? 2 : 1;
+                    },
+                    hLineColor: function (i, node) {
+                      return i === 0 || i === node.table.body.length
+                        ? "black"
+                        : "gray";
+                    },
+                    vLineColor: function (i, node) {
+                      return i === 0 || i === node.table.widths.length
+                        ? "black"
+                        : "gray";
+                    },
+                  };
+                },
+              },
+            ],
+          },
+        },
+      });
     } else {
       console.log("No data found");
     }

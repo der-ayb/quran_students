@@ -157,3 +157,24 @@ input {
   color: #666;
   font-size: 1.1rem;
 }
+
+th.header-rotated {
+  position: relative;
+  height: 140px;
+  white-space: nowrap;
+  padding: 0 !important;
+}
+
+th.header-rotated>div {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: rotate(-90deg) translateY(-50%);
+  transform-origin: 0 0;
+}
+
+th.header-rotated>div>span {
+  display: inline-block;
+  padding: 0px 15px;
+  padding-left: 5px;
+}
