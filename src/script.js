@@ -307,15 +307,14 @@ function loadStudentsList() {
     if (results.length) {
       const result = results[0];
       result.values.forEach((row) => {
-        const button_group = document.createElement("div");
-        button_group.className = "btn-group";
-        button_group.setAttribute("role", "group");
-        button_group.setAttribute("aria-label", "Basic example");
-
+        // action buttons
+        const action_button_group = document.createElement("div");
+        action_button_group.className = "btn-group";
+        action_button_group.setAttribute("role", "group");
+        action_button_group.setAttribute("aria-label", "Basic example");
         // Edit
         const editBtn = document.createElement("button");
         editBtn.className = "btn btn-info btn-sm";
-        editBtn.type = "button";
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
         editBtn.onclick = function () {
           newStudentInfosModal.show();
@@ -332,12 +331,10 @@ function loadStudentsList() {
           parentPhoneInput.value =
             result[0].values[0][result[0].columns.indexOf("parent_phone")];
         };
-        button_group.appendChild(editBtn);
-
+        action_button_group.appendChild(editBtn);
         // Delete
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "btn btn-danger btn-sm";
-        deleteBtn.type = "button";
         deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
         CreateOnClickUndo(deleteBtn, function () {
           const studentId = row[0];
@@ -357,14 +354,32 @@ function loadStudentsList() {
             window.showToast("warning", "Error: " + e.message);
           }
         });
-        button_group.appendChild(deleteBtn);
+        action_button_group.appendChild(deleteBtn);
+
+        // action buttons
+        const phone_button_group = document.createElement("div");
+        phone_button_group.className = "btn-group";
+        phone_button_group.setAttribute("role", "group");
+        phone_button_group.setAttribute("aria-label", "Basic example");
+        // Edit
+        const callBtn = document.createElement("a");
+        callBtn.href = "tel:" + row[3]
+        callBtn.className = "btn btn-success btn-sm";
+        callBtn.innerHTML = '<i class="fa-solid fa-phone-flip"></i>';
+        phone_button_group.appendChild(callBtn);
+        // Delete
+        const smsBtn = document.createElement("a");
+        smsBtn.href = "sms:" + row[3]
+        smsBtn.className = "btn btn-info btn-sm";
+        smsBtn.innerHTML = '<i class="fa-solid fa-comment-sms"></i>';
+        phone_button_group.appendChild(smsBtn);
 
         data.push({
           id: row[0],
           name: row[1],
           age: new Date().getFullYear() - new Date(row[2]).getFullYear(),
-          parentPhone: "<a href='tel:" + row[3] + "'>" + row[3] + "</a>",
-          actions: button_group,
+          parentPhone: phone_button_group,
+          actions: action_button_group,
         });
       });
     }
@@ -374,7 +389,7 @@ function loadStudentsList() {
       columnDefs: [
         { visible: false, targets: [4] },
         {
-          targets: 4,
+          targets: [4,3],
           orderable: false,
         },
       ],
@@ -439,11 +454,11 @@ newStudentInfosForm.addEventListener("submit", (e) => {
   const birthday = birthdayInput.value;
   const parentPhone = parentPhoneInput.value;
 
-  if (!name || !birthday || !parentPhone) {
+  if (!name || !birthday) {
     window.showToast("error", "الرجاء ملء جميع الحقول.");
     return;
   }
-  if (!/^(05|06|07)\d{8}$/.test(parentPhone)) {
+  if (parentPhone && !/^(05|06|07)\d{8}$/.test(parentPhone)) {
     window.showToast(
       "error",
       "رقم الهاتف غير صالح. يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام."
@@ -482,6 +497,7 @@ document
 document
   .getElementById("newStudentInfosModal")
   .addEventListener("shown.bs.modal", function () {
+    nameInput.focus()
     const submitButton = document.querySelector(
       "#newStudentInfosModal [type='submit']"
     );
