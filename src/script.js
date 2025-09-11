@@ -24,7 +24,9 @@ const arabicMonths = [
 const arabicDays = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 let workingClassroomId = null;
 let loadingModalQueue = 0;
-let studentsTableShowDetail = false
+let studentsTableDetailIsShow = false;
+let studentsDayTableDetailIsShow = false;
+let classroomsTableDetailIsShow = false;
 let userIsAuth = false;
 let currentDay = new Date().toISOString().slice(0, 10);
 
@@ -75,7 +77,7 @@ const studentDayFormSubmitBtn = document.getElementById(
 const newStudentDayModal = new bootstrap.Modal(
   document.getElementById("newStudentDayModal")
 );
-const newStudentInfosModal = new bootstrap.Modal(
+const studentInfosModal = new bootstrap.Modal(
   document.getElementById("newStudentInfosModal")
 );
 const newClassroomInfosModal = new bootstrap.Modal(
@@ -232,6 +234,7 @@ function loadClassRoomsList() {
         workingClassroomSelect.dispatchEvent(new Event("change"));
       }
     }
+
     classrooms_table = new DataTable("#classroomsListTable", {
       destroy: true,
       data: data,
@@ -271,6 +274,7 @@ function loadClassRoomsList() {
                   .visible();
 
                 columns.visible(!isVisible);
+                classroomsTableDetailIsShow = !isVisible;
                 classrooms_table
                   .button(0)
                   .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
@@ -288,6 +292,9 @@ function loadClassRoomsList() {
         },
       },
     });
+    if (classroomsTableDetailIsShow) {
+      classrooms_table.buttons(0).trigger();
+    }
   } catch (e) {
     window.showToast("warning", "Error: " + e.message);
   }
@@ -318,7 +325,7 @@ function loadStudentsList() {
         editBtn.className = "btn btn-info btn-sm";
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
         editBtn.onclick = function () {
-          newStudentInfosModal.show();
+          studentInfosModal.show();
           const studentId = row[0];
           const result = project_db.exec(
             "SELECT * FROM students WHERE id = ?;",
@@ -357,40 +364,48 @@ function loadStudentsList() {
         });
         action_button_group.appendChild(deleteBtn);
 
-        // action buttons
-        const phone_button_group = document.createElement("div");
-        phone_button_group.className = "btn-group";
-        phone_button_group.setAttribute("role", "group");
-        phone_button_group.setAttribute("aria-label", "Basic example");
-        // Edit
-        const callBtn = document.createElement("a");
-        callBtn.href = "tel:" + row[3]
-        callBtn.className = "btn btn-success btn-sm";
-        callBtn.innerHTML = '<i class="fa-solid fa-phone-flip"></i>';
-        phone_button_group.appendChild(callBtn);
-        // Delete
-        const smsBtn = document.createElement("a");
-        smsBtn.href = "sms:" + row[3]
-        smsBtn.className = "btn btn-info btn-sm";
-        smsBtn.innerHTML = '<i class="fa-solid fa-comment-sms"></i>';
-        phone_button_group.appendChild(smsBtn);
+        // phone buttons
+        if (row[result.columns.indexOf("parent_phone")]) {
+          const phone_button_group = document.createElement("div");
+          phone_button_group.className = "btn-group";
+          phone_button_group.setAttribute("role", "group");
+          phone_button_group.setAttribute("aria-label", "Basic example");
+          // Edit
+          const callBtn = document.createElement("a");
+          callBtn.href = "tel:" + row[result.columns.indexOf("parent_phone")];
+          console.log(result.columns);
+          callBtn.className = "btn btn-success btn-sm";
+          callBtn.innerHTML = '<i class="fa-solid fa-phone-flip"></i>';
+          phone_button_group.appendChild(callBtn);
+          // Delete
+          const smsBtn = document.createElement("a");
+          smsBtn.href = "sms:" + row[result.columns.indexOf("parent_phone")];
+          smsBtn.className = "btn btn-info btn-sm";
+          smsBtn.innerHTML = '<i class="fa-solid fa-comment-sms"></i>';
+          phone_button_group.appendChild(smsBtn);
+        }
 
         data.push({
           id: row[0],
-          name: row[1],
-          age: new Date().getFullYear() - new Date(row[2]).getFullYear(),
-          parentPhone: phone_button_group,
+          name: row[result.columns.indexOf("name")],
+          age:
+            new Date().getFullYear() -
+            new Date(row[result.columns.indexOf("birthday")]).getFullYear(),
+          parentPhone: row[result.columns.indexOf("parent_phone")]
+            ? phone_button_group
+            : "غير متوفر",
           actions: action_button_group,
         });
       });
     }
+
     students_table = new DataTable("#studentsListTable", {
       destroy: true,
       data: data,
       columnDefs: [
         { visible: false, targets: [4] },
         {
-          targets: [4,3],
+          targets: [4, 3],
           orderable: false,
         },
       ],
@@ -422,7 +437,7 @@ function loadStudentsList() {
                   .visible();
 
                 columns.visible(!isVisible);
-                studentsTableShowDetail = !isVisible
+                studentsTableDetailIsShow = !isVisible;
                 students_table
                   .button(0)
                   .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
@@ -440,8 +455,8 @@ function loadStudentsList() {
         },
       },
     });
-    if(studentsTableShowDetail){
-      students_table.buttons(0).trigger()
+    if (studentsTableDetailIsShow) {
+      students_table.buttons(0).trigger();
     }
   } catch (e) {
     window.showToast("warning", "Error: " + e.message);
@@ -486,7 +501,7 @@ newStudentInfosForm.addEventListener("submit", (e) => {
       window.showToast("success", "تم إضافة الطالب بنجاح.");
     }
     saveToIndexedDB(project_db.export());
-    newStudentInfosModal.hide();
+    studentInfosModal.hide();
     loadStudentsList();
   } catch (e) {
     window.showToast("error", "Error: " + e.message);
@@ -502,7 +517,7 @@ document
 document
   .getElementById("newStudentInfosModal")
   .addEventListener("shown.bs.modal", function () {
-    nameInput.focus()
+    nameInput.focus();
     const submitButton = document.querySelector(
       "#newStudentInfosModal [type='submit']"
     );
@@ -924,6 +939,7 @@ function loadDayStudentsList() {
                   .visible();
 
                 columns.visible(!isVisible);
+                studentsDayTableDetailIsShow = !isVisible;
                 students_day_table
                   .button(0)
                   .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
@@ -979,6 +995,9 @@ function loadDayStudentsList() {
         },
       },
     });
+    if (studentsDayTableDetailIsShow) {
+      students_day_table.buttons(0).trigger();
+    }
   } catch (e) {
     window.showToast("error", "Error: " + e.message);
   }
@@ -1437,7 +1456,9 @@ function getDatesInRange() {
 }
 
 async function showAttendanceTable() {
-  const dates = [...getDatesInRange()].sort((a, b) => new Date(a) - new Date(b));
+  const dates = [...getDatesInRange()].sort(
+    (a, b) => new Date(a) - new Date(b)
+  );
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
     return;
@@ -1518,9 +1539,13 @@ async function showAttendanceTable() {
                   )
                     .join("*")
                     .split("");
-                  
-                  doc.content[1].table.widths[doc.content[1].table.body[0].length-1] = 25
-                  doc.content[1].table.widths[doc.content[1].table.body[0].length-2] = 110
+
+                  doc.content[1].table.widths[
+                    doc.content[1].table.body[0].length - 1
+                  ] = 25;
+                  doc.content[1].table.widths[
+                    doc.content[1].table.body[0].length - 2
+                  ] = 110;
                   doc.content[1].table.body.forEach((b) => {
                     b.reverse();
                     b.forEach((cell) => {
@@ -1533,7 +1558,10 @@ async function showAttendanceTable() {
                   const monthMap = {};
                   const monthOrder = [];
                   headerRow.forEach((cell, idx) => {
-                    if (typeof cell.text === "string" && /^\d{4}-\d{2}-\d{2}$/.test(cell.text)) {
+                    if (
+                      typeof cell.text === "string" &&
+                      /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
+                    ) {
                       const [year, month] = cell.text.split("-").slice(0, 2);
                       const key = `${year}-${arabicMonths[Number(month)]}`;
                       if (!monthMap[key]) {
@@ -1542,10 +1570,10 @@ async function showAttendanceTable() {
                       } else {
                         monthMap[key].count++;
                       }
-                      cell.text = cell.text.split("-")[2]
+                      cell.text = cell.text.split("-")[2];
                     }
                   });
-                  doc.content[1].table.body[0] = headerRow
+                  doc.content[1].table.body[0] = headerRow;
 
                   // Build the month header row
                   const monthHeaderRow = [];
