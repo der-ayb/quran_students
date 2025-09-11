@@ -1,6 +1,7 @@
 // script.js
 window._toastQueue = window._toastQueue || [];
 window._toastReady = false;
+
 let project_db, quran_db, SQL;
 const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
@@ -22,8 +23,8 @@ const arabicMonths = [
 ];
 const arabicDays = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 let workingClassroomId = null;
-let classrooms_table = null;
 let loadingModalQueue = 0;
+let studentsTableShowDetail = false
 let userIsAuth = false;
 let currentDay = new Date().toISOString().slice(0, 10);
 
@@ -421,6 +422,7 @@ function loadStudentsList() {
                   .visible();
 
                 columns.visible(!isVisible);
+                studentsTableShowDetail = !isVisible
                 students_table
                   .button(0)
                   .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
@@ -438,6 +440,9 @@ function loadStudentsList() {
         },
       },
     });
+    if(studentsTableShowDetail){
+      students_table.buttons(0).trigger()
+    }
   } catch (e) {
     window.showToast("warning", "Error: " + e.message);
   }
