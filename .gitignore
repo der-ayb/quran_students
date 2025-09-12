@@ -24,5 +24,6 @@ Thumbs.db
 *.exe
 
 django/
+utils/
 android/
 node_modules/

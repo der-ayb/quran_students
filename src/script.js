@@ -33,6 +33,7 @@ let currentDay = new Date().toISOString().slice(0, 10);
 const workingClassroomSelect = document.getElementById("workingClassroom");
 const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = $("#dayDate");
+const dayNoteContainer = document.getElementById("dayNoteContainer")
 const statisticsDateInput = $("#statisticsrange");
 const addQuranSelectionBtn = document.getElementById("addQuranSelectionBtn");
 const attendanceInput = document.getElementById("attendance");
@@ -498,6 +499,7 @@ newStudentInfosForm.addEventListener("submit", (e) => {
         [name, birthday, parentPhone, workingClassroomId]
       );
       newStudentInfosForm.reset();
+      studentIdInput.value = ""
       window.showToast("success", "تم إضافة الطالب بنجاح.");
     }
     saveToIndexedDB(project_db.export());
@@ -512,18 +514,19 @@ document
   .getElementById("newStudentInfosModal")
   .addEventListener("show.bs.modal", function () {
     newStudentInfosForm.reset();
+    studentIdInput.value = ""
   });
 
 document
   .getElementById("newStudentInfosModal")
   .addEventListener("shown.bs.modal", function () {
-    nameInput.focus();
     const submitButton = document.querySelector(
       "#newStudentInfosModal [type='submit']"
     );
     if (studentIdInput.value) {
       submitButton.textContent = "تحديث";
     } else {
+      nameInput.focus(); 
       submitButton.textContent = "إظافة";
     }
   });
@@ -702,7 +705,7 @@ function addNewDay() {
 }
 
 function loadDayStudentsList() {
-  document.getElementById("dayNoteContainer").style.display = "none";
+  dayNoteContainer.style.display = "none";
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
@@ -724,10 +727,10 @@ function loadDayStudentsList() {
 
   const dayNote =
     dayResult[0].values[0][dayResult[0].columns.indexOf("notes")] || "";
-  document.getElementById("dayNoteContainer").style.display = dayNote
+  dayNoteContainer.style.display = dayNote
     ? "block"
     : "none";
-  document.getElementById("dayNoteContainer").innerHTML = `<em>${dayNote}</em>`;
+  dayNoteContainer.innerHTML = `<em>${dayNote}</em>`;
 
   document.getElementById("dayListTable").style.display = "block";
   document.getElementById("addNewDayBtn").style.display = "none";
@@ -960,7 +963,8 @@ function loadDayStudentsList() {
                       [note, workingClassroomId, currentDay]
                     );
                     saveToIndexedDB(project_db.export());
-                    window.showToast("success", "تم حفظ الملاحظة بنجاح.");
+                    dayNoteContainer.style.display ="block";
+                    dayNoteContainer.innerHTML = `<em>${note}</em>`;
                   } catch (e) {
                     window.showToast("error", "Error: " + e.message);
                   }
@@ -1416,6 +1420,7 @@ function showTab(tabId) {
     if (tabId === "pills-students") {
       loadStudentsList();
       newStudentInfosForm.reset();
+      studentIdInput.value = ""
     } else if (tabId === "pills-new_day") {
       if (!dayDateInput.val()) {
         dayDateInput.val(new Date().toISOString().slice(0, 10));
@@ -1542,7 +1547,7 @@ async function showAttendanceTable() {
 
                   doc.content[1].table.widths[
                     doc.content[1].table.body[0].length - 1
-                  ] = 25;
+                  ] = 15;
                   doc.content[1].table.widths[
                     doc.content[1].table.body[0].length - 2
                   ] = 110;
@@ -1603,9 +1608,10 @@ async function showAttendanceTable() {
                   while (monthHeaderRow.length < headerRow.length) {
                     monthHeaderRow.push({});
                   }
-
                   // Insert the month header row above the date header
                   tableBody.unshift(monthHeaderRow);
+                  
+                  // set layout
                   doc.content[1].layout = {
                     hLineWidth: function (i, node) {
                       return i === 0 || i === node.table.body.length ? 2 : 1;
