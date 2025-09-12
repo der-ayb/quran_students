@@ -1,3 +1,279 @@
+// --- IndexedDB Promisified ---
+function openDatabaseAsync() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(PROJECT_DB_KEY, 1);
+    request.onupgradeneeded = function (event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(DB_STORE_NAME)) {
+        db.createObjectStore(DB_STORE_NAME);
+      }
+    };
+    request.onsuccess = function () {
+      resolve(request.result);
+    };
+    request.onerror = function (e) {
+      reject(e.target.error);
+    };
+  });
+}
+
+const loadingModal = new bootstrap.Modal(
+  document.getElementById("loadingModal")
+);
+
+async function saveToIndexedDB(data, db_key = PROJECT_DB_KEY) {
+  const idb = await openDatabaseAsync();
+  return new Promise((resolve, reject) => {
+    const tx = idb.transaction(DB_STORE_NAME, "readwrite");
+    const store = tx.objectStore(DB_STORE_NAME);
+    store.put(data, db_key);
+    tx.oncomplete = () => {
+      idb.close();
+      resolve();
+    };
+    tx.onerror = (e) => {
+      idb.close();
+      reject(e.target.error);
+    };
+  });
+}
+
+async function loadFromIndexedDB(callback) {
+  const idb = await openDatabaseAsync();
+  return new Promise((resolve) => {
+    const tx = idb.transaction(DB_STORE_NAME, "readonly");
+    const store = tx.objectStore(DB_STORE_NAME);
+    const getProjectRequest = store.get(PROJECT_DB_KEY);
+    const getQuranRequest = store.get(QURAN_DB_KEY);
+
+    let projectResult, quranResult;
+    let projectDone = false,
+      quranDone = false;
+
+    function maybeCallback() {
+      if (projectDone && quranDone) {
+        callback(projectResult, quranResult);
+        resolve();
+        idb.close();
+      }
+    }
+
+    getProjectRequest.onsuccess = () => {
+      projectResult = getProjectRequest.result || null;
+      projectDone = true;
+      maybeCallback();
+    };
+    getQuranRequest.onsuccess = () => {
+      quranResult = getQuranRequest.result || null;
+      quranDone = true;
+      maybeCallback();
+    };
+
+    getProjectRequest.onerror = () => {
+      projectResult = null;
+      projectDone = true;
+      maybeCallback();
+    };
+    getQuranRequest.onerror = () => {
+      quranResult = null;
+      quranDone = true;
+      maybeCallback();
+    };
+  });
+}
+
+// --- File Reading Async ---
+async function loadDBFromFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  project_db = new SQL.Database(new Uint8Array(arrayBuffer));
+  await saveToIndexedDB(project_db.export());
+  window.showToast("success", "تم تحميل قاعدة البيانات.");
+}
+
+// --- Fetch and Read File Async ---
+async function fetchAndReadFile(
+  db_key,
+  url,
+  callback = function () {
+    window.showToast("success", "تم تحميل قاعدة البيانات.");
+  }
+) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch file");
+    const blob = await response.blob();
+    const uInt8Array = new Uint8Array(await blob.arrayBuffer());
+    const db = new SQL.Database(uInt8Array);
+    await saveToIndexedDB(db.export(), db_key);
+    callback(db);
+  } catch (error) {
+    window.showToast("error", "Error reading file:" + error);
+  }
+}
+
+// --- Export DB Async ---
+async function exportDB() {
+  const data = project_db.export();
+  download(data, "quran_students.sqlite3", "application/x-sqlite3");
+}
+
+// --- Initialization Async ---
+async function init() {
+  initializeToast();
+  SQL = await initSqlJs({
+    locateFile: (file) =>
+      `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/${file}`,
+  });
+
+  await loadFromIndexedDB(async (savedProjectData, savedQuranData) => {
+    if (savedProjectData) {
+      project_db = new SQL.Database(new Uint8Array(savedProjectData));
+      if (savedQuranData) {
+        quran_db = new SQL.Database(new Uint8Array(savedQuranData));
+        await initializeAyatdata(quran_db);
+        await dayDatePickerInit();
+      } else {
+        await downloadQuranDB();
+      }
+      showTab("pills-summary");
+      nav_bar.style.removeProperty("display");
+    } else {
+      showTab("pills-home");
+    }
+  });
+}
+
+// --- Download Quran DB Async ---
+async function downloadQuranDB() {
+  await fetchAndReadFile(
+    QURAN_DB_KEY,
+    "https://der-ayb.github.io/quran_students/quran.sqlite",
+    async (db) => {
+      quran_db = db;
+      await initializeAyatdata(db);
+      await dayDatePickerInit();
+    }
+  );
+}
+
+// --- Event Handlers Async ---
+document.getElementById("newDBbtn").onclick = async function () {
+  await fetchAndReadFile(
+    PROJECT_DB_KEY,
+    "https://der-ayb.github.io/quran_students/default.sqlite3",
+    (db) => {
+      project_db = db;
+    }
+  );
+  await downloadQuranDB();
+  window.showToast("success", "تم تحميل قواعد البيانات.");
+  showTab("pills-summary");
+  nav_bar.style.removeProperty("display");
+};
+
+document.getElementById("downloadBtn").onclick = exportDB;
+document.getElementById("fileInput").onchange = async (e) => {
+  if (e.target.files.length) {
+    await loadDBFromFile(e.target.files[0]);
+  }
+};
+
+// --- Async Utility for DataTable Reload ---
+async function reloadDataTable(selector, data, columns, options = {}) {
+  if ($.fn.DataTable.isDataTable(selector)) {
+    $(selector).DataTable().clear().rows.add(data).draw();
+  } else {
+    new DataTable(selector, {
+      data,
+      columns,
+      ...options,
+    });
+  }
+}
+
+// --- Example: loadClassRoomsList as Async ---
+async function loadClassRoomsList() {
+  if (!project_db) {
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    return;
+  }
+  try {
+    workingClassroomSelect.options.length = 0;
+    const results = project_db.exec("SELECT * FROM class_rooms;");
+    const data = [];
+    if (results.length) {
+      const result = results[0];
+      result.values.forEach((row) => {
+        // ...existing code for button_group...
+        // ...existing code for data.push...
+        workingClassroomSelect.append(
+          new Option(`${row[1]} - ${row[2]} - ${row[3]}`, row[0])
+        );
+      });
+      if (workingClassroomId) {
+        workingClassroomSelect.value = workingClassroomId;
+      } else {
+        workingClassroomSelect.options[0].selected = true;
+        workingClassroomSelect.dispatchEvent(new Event("change"));
+      }
+    }
+    // ...existing DataTable code...
+  } catch (e) {
+    window.showToast("warning", "Error: " + e.message);
+  }
+}
+
+// --- Example: loadStudentsList as Async ---
+async function loadStudentsList() {
+  if (!project_db) {
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    return;
+  }
+  try {
+    const results = project_db.exec(
+      "SELECT * FROM students WHERE class_room_id = ?;",
+      [workingClassroomId]
+    );
+    const data = [];
+    if (results.length) {
+      const result = results[0];
+      result.values.forEach((row) => {
+        // ...existing code for action_button_group...
+        // ...existing code for data.push...
+      });
+    }
+    // ...existing DataTable code...
+  } catch (e) {
+    window.showToast("warning", "Error: " + e.message);
+  }
+}
+
+// --- Example: loadDayStudentsList as Async ---
+async function loadDayStudentsList() {
+  dayNoteContainer.style.display = "none";
+  if (!project_db) {
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
+    return;
+  }
+  if ($.fn.DataTable.isDataTable("#dayListTable")) {
+    students_day_table.destroy();
+  }
+  const dayResult = project_db.exec(
+    `SELECT * FROM education_day WHERE class_room_id = ? AND date = ?`,
+    [workingClassroomId, currentDay]
+  );
+  if (!dayResult.length) {
+    document.getElementById("addNewDayBtn").style.display = "block";
+    document.getElementById("dayListTable").style.display = "none";
+    return;
+  }
+  // ...existing code for dayNote, DataTable, etc...
+}
+
+// --- Initialize the application (async) ---
+init();
+
+// ...existing code...
 // script.js
 window._toastQueue = window._toastQueue || [];
 window._toastReady = false;
@@ -23,7 +299,6 @@ const arabicMonths = [
 ];
 const arabicDays = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 let workingClassroomId = null;
-let loadingModalQueue = 0;
 let studentsTableDetailIsShow = false;
 let studentsDayTableDetailIsShow = false;
 let classroomsTableDetailIsShow = false;
@@ -33,7 +308,7 @@ let currentDay = new Date().toISOString().slice(0, 10);
 const workingClassroomSelect = document.getElementById("workingClassroom");
 const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = $("#dayDate");
-const dayNoteContainer = document.getElementById("dayNoteContainer")
+const dayNoteContainer = document.getElementById("dayNoteContainer");
 const statisticsDateInput = $("#statisticsrange");
 const addQuranSelectionBtn = document.getElementById("addQuranSelectionBtn");
 const attendanceInput = document.getElementById("attendance");
@@ -83,9 +358,6 @@ const studentInfosModal = new bootstrap.Modal(
 );
 const newClassroomInfosModal = new bootstrap.Modal(
   document.getElementById("newClassroomInfosModal")
-);
-const loadingModal = new bootstrap.Modal(
-  document.getElementById("loadingModal")
 );
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -499,7 +771,7 @@ newStudentInfosForm.addEventListener("submit", (e) => {
         [name, birthday, parentPhone, workingClassroomId]
       );
       newStudentInfosForm.reset();
-      studentIdInput.value = ""
+      studentIdInput.value = "";
       window.showToast("success", "تم إضافة الطالب بنجاح.");
     }
     saveToIndexedDB(project_db.export());
@@ -514,7 +786,14 @@ document
   .getElementById("newStudentInfosModal")
   .addEventListener("show.bs.modal", function () {
     newStudentInfosForm.reset();
-    studentIdInput.value = ""
+    studentIdInput.value = "";
+  });
+
+document
+  .getElementById("newClassroomInfosModal")
+  .addEventListener("show.bs.modal", function () {
+    newClassroomInfosForm.reset();
+    classroomIdInput.value = "";
   });
 
 document
@@ -526,7 +805,19 @@ document
     if (studentIdInput.value) {
       submitButton.textContent = "تحديث";
     } else {
-      nameInput.focus(); 
+      submitButton.textContent = "إظافة";
+    }
+  });
+
+document
+  .getElementById("newClassroomInfosModal")
+  .addEventListener("shown.bs.modal", function () {
+    const submitButton = document.querySelector(
+      "#newClassroomInfosModal [type='submit']"
+    );
+    if (classroomIdInput.value) {
+      submitButton.textContent = "تحديث";
+    } else {
       submitButton.textContent = "إظافة";
     }
   });
@@ -727,9 +1018,7 @@ function loadDayStudentsList() {
 
   const dayNote =
     dayResult[0].values[0][dayResult[0].columns.indexOf("notes")] || "";
-  dayNoteContainer.style.display = dayNote
-    ? "block"
-    : "none";
+  dayNoteContainer.style.display = dayNote ? "block" : "none";
   dayNoteContainer.innerHTML = `<em>${dayNote}</em>`;
 
   document.getElementById("dayListTable").style.display = "block";
@@ -963,7 +1252,7 @@ function loadDayStudentsList() {
                       [note, workingClassroomId, currentDay]
                     );
                     saveToIndexedDB(project_db.export());
-                    dayNoteContainer.style.display ="block";
+                    dayNoteContainer.style.display = note ? "block" : "none";
                     dayNoteContainer.innerHTML = `<em>${note}</em>`;
                   } catch (e) {
                     window.showToast("error", "Error: " + e.message);
@@ -1035,7 +1324,6 @@ async function init() {
 }
 
 async function downloadQuranDB() {
-  showModalLoading();
   fetchAndReadFile(
     QURAN_DB_KEY,
     "https://der-ayb.github.io/quran_students/quran.sqlite",
@@ -1043,26 +1331,8 @@ async function downloadQuranDB() {
       quran_db = db;
       initializeAyatdata(db);
       dayDatePickerInit();
-      hideModalLoading();
     }
   );
-}
-
-async function showModalLoading() {
-  loadingModalQueue += 1;
-  loadingModal.show();
-  setTimeout(() => {
-    if (loadingModalQueue == 0) {
-      loadingModal.hide();
-    }
-  }, 1000);
-}
-
-async function hideModalLoading() {
-  loadingModalQueue -= 1;
-  if (loadingModalQueue == 0) {
-    loadingModal.hide();
-  }
 }
 
 async function dayDatePickerInit() {
@@ -1316,7 +1586,6 @@ async function fetchAndReadFile(
     callback(db);
   } catch (error) {
     window.showToast("error", "Error reading file:" + error);
-    hideModalLoading();
   }
 }
 
@@ -1375,13 +1644,11 @@ addQuranSelectionBtn.onclick = function () {
 };
 
 document.getElementById("newDBbtn").onclick = async function () {
-  showModalLoading();
   await fetchAndReadFile(
     PROJECT_DB_KEY,
     "https://der-ayb.github.io/quran_students/default.sqlite3",
     (db) => {
       project_db = db;
-      hideModalLoading();
     }
   );
   await downloadQuranDB();
@@ -1404,7 +1671,7 @@ dayDateInput.on("apply.daterangepicker", function (ev, picker) {
   }
 });
 
-function showTab(tabId) {
+async function showTab(tabId) {
   document
     .querySelectorAll(".tab-pane")
     .forEach((el) => el.classList.remove("show", "active"));
@@ -1413,21 +1680,22 @@ function showTab(tabId) {
   if (tabId === "pills-home") {
     nav_bar.style.display = "none";
   } else if (tabId === "pills-summary") {
-    loadClassRoomsList();
+    await loadClassRoomsList();
   } else if (tabId === "pills-preferences") {
-    ("pass");
+    // pass
   } else if (workingClassroomId) {
     if (tabId === "pills-students") {
-      loadStudentsList();
+      await loadStudentsList();
       newStudentInfosForm.reset();
-      studentIdInput.value = ""
+      studentIdInput.value = "";
     } else if (tabId === "pills-new_day") {
       if (!dayDateInput.val()) {
         dayDateInput.val(new Date().toISOString().slice(0, 10));
       }
-      loadDayStudentsList();
+      await loadDayStudentsList();
       newStudentDayModal.hide();
     } else if (tabId === "pills-statistics") {
+      // Optionally load statistics
     }
   } else {
     showTab("pills-summary");
@@ -1610,7 +1878,7 @@ async function showAttendanceTable() {
                   }
                   // Insert the month header row above the date header
                   tableBody.unshift(monthHeaderRow);
-                  
+
                   // set layout
                   doc.content[1].layout = {
                     hLineWidth: function (i, node) {
