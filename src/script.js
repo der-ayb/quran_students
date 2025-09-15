@@ -179,16 +179,26 @@ document.getElementById("fileInput").onchange = async (e) => {
 };
 
 // --- Async Utility for DataTable Reload ---
-async function reloadDataTable(selector, data, columns, options = {}) {
+async function initOrReloadDataTable(
+  selector,
+  data,
+  columns,
+  options = {},
+  TableDetailIsShow
+) {
   if ($.fn.DataTable.isDataTable(selector)) {
-    $(selector).DataTable().clear().rows.add(data).draw();
+    return $(selector).DataTable().clear().rows.add(data).draw();
   } else {
-    new DataTable(selector, {
+    table = new DataTable(selector, {
       data,
       columns,
       ...options,
     });
   }
+  if (TableDetailIsShow) {
+    table.buttons(0).trigger();
+  }
+  return table;
 }
 
 // --- Example: loadClassRoomsList as Async ---
@@ -507,27 +517,10 @@ function loadClassRoomsList() {
         workingClassroomSelect.dispatchEvent(new Event("change"));
       }
     }
-
-    classrooms_table = new DataTable("#classroomsListTable", {
-      destroy: true,
-      data: data,
-      columnDefs: [
-        { visible: false, targets: [0, 4, 5] },
-        {
-          targets: 4,
-          orderable: false,
-        },
-      ],
-      searching: false,
-      scrollX: true,
-      info: false,
-      oLanguage: {
-        sSearch: "بحث",
-        emptyTable: "لا توجد بيانات في الجدول.",
-      },
-      paging: false,
-      responsive: true,
-      columns: [
+    classrooms_table = initOrReloadDataTable(
+      "#classroomsListTable",
+      data,
+      [
         { data: "id" },
         { data: "mosque" },
         { data: "place" },
@@ -535,39 +528,55 @@ function loadClassRoomsList() {
         { data: "level" },
         { data: "actions" },
       ],
-      layout: {
-        topStart: {
-          buttons: [
-            {
-              text: "إظهار التفاصيل",
-              action: function () {
-                const columns = classrooms_table.columns([0, 4, 5]);
-                const isVisible = classrooms_table
-                  .column(columns[0][0])
-                  .visible();
+      {
+        destroy: true,
+        columnDefs: [
+          { visible: false, targets: [0, 4, 5] },
+          {
+            targets: 4,
+            orderable: false,
+          },
+        ],
+        searching: false,
+        scrollX: true,
+        info: false,
+        oLanguage: {
+          sSearch: "بحث",
+          emptyTable: "لا توجد بيانات في الجدول.",
+        },
+        paging: false,
+        responsive: true,
 
-                columns.visible(!isVisible);
-                classroomsTableDetailIsShow = !isVisible;
-                classrooms_table
-                  .button(0)
-                  .text(isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل");
+        layout: {
+          topStart: {
+            buttons: [
+              {
+                text: "إظهار التفاصيل",
+                action: function (e, dt, button, config) {
+                  const columns = dt.columns([0, 4, 5]);
+                  const isVisible = dt.column(columns[0][0]).visible();
+
+                  columns.visible(!isVisible);
+                  classroomsTableDetailIsShow = !isVisible;
+                  dt.button(0).text(
+                    isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل"
+                  );
+                },
               },
-            },
-            {
-              text: "إضافة ✚",
-              className: "btn btn-primary",
-              attr: {
-                "data-bs-toggle": "modal",
-                "data-bs-target": "#newClassroomInfosModal",
+              {
+                text: "إضافة ✚",
+                className: "btn btn-primary",
+                attr: {
+                  "data-bs-toggle": "modal",
+                  "data-bs-target": "#newClassroomInfosModal",
+                },
               },
-            },
-          ],
+            ],
+          },
         },
       },
-    });
-    if (classroomsTableDetailIsShow) {
-      classrooms_table.buttons(0).trigger();
-    }
+      classroomsTableDetailIsShow
+    );
   } catch (e) {
     window.showToast("warning", "Error: " + e.message);
   }
@@ -822,24 +831,24 @@ document
     }
   });
 
-document
-  .getElementById("newStudentDayModal")
-  .addEventListener("show.bs.modal", function () {
-    studentNameInput.disabled = false;
-    requireBookInput.disabled = false;
-    requirTypeInput.disabled = false;
-    requirQuantityInput.disabled = false;
-    requirEvaluationInput.disabled = false;
-    // requirementInput.readOnly = false;
-    clothingInput.disabled = false;
-    haircutInput.disabled = false;
-    behaviorInput.disabled = false;
-    prayerInput.disabled = false;
-    studentDayForm.reset();
-    studentDayFormSubmitBtn.disabled = true;
-    requirementsTable.style.display = "none";
-    requirementsTable.querySelector("tbody").innerHTML = "";
-  });
+// document
+//   .getElementById("newStudentDayModal")
+//   .addEventListener("show.bs.modal", function () {
+//     studentNameInput.disabled = false;
+//     requireBookInput.disabled = false;
+//     requirTypeInput.disabled = false;
+//     requirQuantityInput.disabled = false;
+//     requirEvaluationInput.disabled = false;
+//     // requirementInput.readOnly = false;
+//     clothingInput.disabled = false;
+//     haircutInput.disabled = false;
+//     behaviorInput.disabled = false;
+//     prayerInput.disabled = false;
+//     studentDayForm.reset();
+//     studentDayFormSubmitBtn.disabled = true;
+//     requirementsTable.style.display = "none";
+//     requirementsTable.querySelector("tbody").innerHTML = "";
+//   });
 
 requireBookInput.onchange = function () {
   const quranSelectionSection = document.getElementById(
@@ -882,8 +891,12 @@ attendanceInput.onchange = function () {
   requireBookInput.dispatchEvent(new Event("change"));
   if (disable == "1") {
     studentDayFormSubmitBtn.disabled = false;
+    document.getElementById("requirSwitch").disabled = true;
+    requirementsTable.style.display = "none";
   } else {
     studentDayFormSubmitBtn.disabled = true;
+    document.getElementById("requirSwitch").disabled = false;
+    requirementsTable.style.display = "block";
   }
 };
 
@@ -966,8 +979,8 @@ function update_student_day_notes(studentId) {
     );
   } else {
     project_db.run(
-      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,clothing,haircut,behavior,prayer,moyenne) VALUES (?, ?, ?,?,?,?,?,?);",
-      [studentId, currentDay, "1", null, null, null, null, null]
+      "DELETE FROM day_evaluations WHERE student_id = ? AND day_id = ?;",
+      [studentId, currentDay]
     );
   }
   saveToIndexedDB(project_db.export());
@@ -1078,7 +1091,7 @@ function loadDayStudentsList() {
           );
 
           attendanceInput.value =
-            row[result.columns.indexOf("attendance")] || "";
+            row[result.columns.indexOf("attendance")] || "1";
           attendanceInput.dispatchEvent(new Event("change"));
 
           requirMoyenneInput.value =
@@ -1115,42 +1128,31 @@ function loadDayStudentsList() {
         const prayerOption = document.querySelector(
           `#prayer option[value='${row[result.columns.indexOf("prayer")]}']`
         );
-        const attendanceBtn = document.createElement("button");
-        attendanceBtn.className = "btn btn-info btn-sm";
-        attendanceBtn.innerHTML = "غائب";
-        attendanceBtn.onclick = function () {
-          attendanceInput.value = "1";
-          attendanceInput.dispatchEvent(new Event("change"));
-          update_student_day_notes(row[result.columns.indexOf("studentId")]);
-        };
+
         data.push({
           id: row[result.columns.indexOf("studentId")],
           actions: editBtn,
           student: row[result.columns.indexOf("studentName")],
           attendance: attendanceOption
-            ? attendanceOption.textContent == "غائب"
-              ? attendanceOption.textContent +
-                `<input type="checkbox" id="sms_btn${
-                  row[result.columns.indexOf("studentId")]
-                }" onclick="window.location.href='sms:${
-                  row[result.columns.indexOf("parentPhone")]
-                }?body=ليكن في علمكم أن إبنكم ${
-                  row[result.columns.indexOf("studentName")]
-                } غائب اليوم'" class="btn-check" autocomplete="off">
+            ? attendanceOption.textContent
+            : `<input type="checkbox" id="sms_btn${
+                row[result.columns.indexOf("studentId")]
+              }" onclick="window.location.href='sms:${
+                row[result.columns.indexOf("parentPhone")]
+              }?body=ليكن في علمكم أن إبنكم ${
+                row[result.columns.indexOf("studentName")]
+              } غائب اليوم'" class="btn-check" autocomplete="off">
               <label class="btn fa-solid fa-comment-sms px-2" for="sms_btn${
                 row[result.columns.indexOf("studentId")]
-              }"></label>`
-              : attendanceOption.textContent
-            : attendanceBtn,
-          book: attendance_value === 1 ? "/" : row[2] || "",
-          type: attendance_value === 1 ? "/" : row[3] || "",
-          quantity: attendance_value === 1 ? "/" : row[4] || "",
-          evaluation:
-            attendance_value === 1
-              ? "/"
-              : row[5] === 0
-              ? "إعادة"
-              : row[5] || "",
+              }"></label>`,
+          book: attendanceOption ? row[2] || "" : "/",
+          type: attendanceOption ? row[3] || "" : "/",
+          quantity: attendanceOption ? row[4] || "" : "/",
+          evaluation: attendanceOption
+            ? "/"
+            : row[5] === 0
+            ? "إعادة"
+            : row[5] || "",
           requirement: attendance_value === 1 ? "/" : row[6] || "",
           clothing:
             row[7] === 1
