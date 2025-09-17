@@ -208,11 +208,9 @@ async function initOrReloadDataTable(
 }
 
 // --- Initialize the application (async) ---
-init();
-
-// script.js
 window._toastQueue = window._toastQueue || [];
 window._toastReady = false;
+init();
 
 let project_db, quran_db, SQL;
 const surahsData = [];
@@ -755,25 +753,6 @@ document
     }
   });
 
-// document
-//   .getElementById("newStudentDayModal")
-//   .addEventListener("show.bs.modal", function () {
-//     studentNameInput.disabled = false;
-//     requireBookInput.disabled = false;
-//     requirTypeInput.disabled = false;
-//     requirQuantityInput.disabled = false;
-//     requirEvaluationInput.disabled = false;
-//     // requirementInput.readOnly = false;
-//     clothingInput.disabled = false;
-//     haircutInput.disabled = false;
-//     behaviorInput.disabled = false;
-//     prayerInput.disabled = false;
-//     studentDayForm.reset();
-//     studentDayFormSubmitBtn.disabled = true;
-//     requirementsTable.style.display = "none";
-//     requirementsTable.querySelector("tbody").innerHTML = "";
-//   });
-
 requireBookInput.onchange = function () {
   const quranSelectionSection = document.getElementById(
     "quranSelectionSection"
@@ -1278,8 +1257,7 @@ async function dayDatePickerInit() {
     },
     async function (start) {
       statisticType.value = "0";
-      statisticType
-        .dispatchEvent(new Event("change"));
+      statisticType.dispatchEvent(new Event("change"));
     }
   );
   setIsCustomDate();
@@ -1372,7 +1350,6 @@ function initializeToast() {
     window._toastQueue.length = 0;
   }
 }
-
 
 function removeRequirItem(button) {
   const row = button.closest("tr");
@@ -1555,20 +1532,20 @@ async function showAttendanceStatistics() {
         });
         return rowData;
       });
+      const tableColumns = columns.map((col) => ({
+        data: col,
+        title: col,
+        className: [0, 1].includes(columns.indexOf(col))
+          ? "text-center"
+          : "text-center header-rotated",
+      }));
 
       await initOrReloadDataTable(
         "#statisticsTable",
         tableData,
-        columns.map((col) => ({
-          data: col,
-          title: col,
-          className: [0, 1].includes(columns.indexOf(col))
-            ? "text-center"
-            : "text-center header-rotated",
-        })),
+        tableColumns,
         {
           searching: false,
-          data: tableData,
           scrollX: true,
           info: false,
           oLanguage: {
@@ -1586,13 +1563,18 @@ async function showAttendanceStatistics() {
                   text: "انشاء PDF",
                   className: "btn btn-primary",
                   customize: function (doc) {
+                    if (tableColumns.length > 20) {
+                      window.showToast(
+                        "warning",
+                        "عدد الأعمدة كبير وقد يسبب مشكلة عند الهامش"
+                      );
+                    }
                     doc.content[0].text = "جدول الحضور الشهري للطلاب";
                     doc.content[0].alignment = "center";
                     doc.content[0].fontSize = 16;
                     doc.content[0].margin = [0, 0, 0, 20];
 
-                    doc.styles.tableHeader.alignment = "center";
-                    doc.styles.tableHeader.rotate = 90;
+                    doc.styles.tableHeader.alignment = "left";
                     doc.content[1].table.widths = Array(
                       doc.content[1].table.body[0].length + 1
                     )
@@ -1604,7 +1586,7 @@ async function showAttendanceStatistics() {
                     ] = 15;
                     doc.content[1].table.widths[
                       doc.content[1].table.body[0].length - 2
-                    ] = 110;
+                    ] = 100;
                     doc.content[1].table.body.forEach((b) => {
                       b.reverse();
                       b.forEach((cell) => {
@@ -1696,7 +1678,7 @@ async function showAttendanceStatistics() {
         true
       );
     } else {
-      console.log("No data found");
+      console.log("لاتوجد معلومات");
     }
   } catch (error) {
     console.error("Error executing query:", error);
