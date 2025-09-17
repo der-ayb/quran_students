@@ -210,7 +210,6 @@ async function initOrReloadDataTable(
 // --- Initialize the application (async) ---
 init();
 
-// ...existing code...
 // script.js
 window._toastQueue = window._toastQueue || [];
 window._toastReady = false;
@@ -287,6 +286,8 @@ const studentDayForm = document.getElementById("studentDayForm");
 const studentDayFormSubmitBtn = document.getElementById(
   "studentDayFormSubmitBtn"
 );
+
+const statisticType = document.getElementById("statisticType");
 const newStudentDayModal = new bootstrap.Modal(
   document.getElementById("newStudentDayModal")
 );
@@ -297,7 +298,7 @@ const newClassroomInfosModal = new bootstrap.Modal(
   document.getElementById("newClassroomInfosModal")
 );
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   const today = new Date();
   birthdayInput.setAttribute(
     "max",
@@ -314,7 +315,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // classrooms tab
-workingClassroomSelect.onchange = function () {
+workingClassroomSelect.onchange = async function () {
   workingClassroomId = this.value;
   setIsCustomDate();
 };
@@ -443,7 +444,7 @@ async function loadClassRoomsList() {
         workingClassroomSelect.dispatchEvent(new Event("change"));
       }
     }
-    initOrReloadDataTable(
+    await initOrReloadDataTable(
       "#classroomsListTable",
       data,
       [
@@ -572,15 +573,15 @@ async function loadStudentsList() {
         action_button_group.appendChild(deleteBtn);
 
         // phone buttons
+        let phone_button_group = "غير متوفر";
         if (row[result.columns.indexOf("parent_phone")]) {
-          const phone_button_group = document.createElement("div");
+          phone_button_group = document.createElement("div");
           phone_button_group.className = "btn-group";
           phone_button_group.setAttribute("role", "group");
           phone_button_group.setAttribute("aria-label", "Basic example");
           // Edit
           const callBtn = document.createElement("a");
           callBtn.href = "tel:" + row[result.columns.indexOf("parent_phone")];
-          console.log(result.columns);
           callBtn.className = "btn btn-success btn-sm";
           callBtn.innerHTML = '<i class="fa-solid fa-phone-flip"></i>';
           phone_button_group.appendChild(callBtn);
@@ -598,15 +599,13 @@ async function loadStudentsList() {
           age:
             new Date().getFullYear() -
             new Date(row[result.columns.indexOf("birthday")]).getFullYear(),
-          parentPhone: row[result.columns.indexOf("parent_phone")]
-            ? phone_button_group
-            : "غير متوفر",
+          parentPhone: phone_button_group,
           actions: action_button_group,
         });
       });
     }
 
-    initOrReloadDataTable(
+    await initOrReloadDataTable(
       "#studentsListTable",
       data,
       [
@@ -914,7 +913,7 @@ function update_student_day_notes(studentId) {
 
 function setAttendance(studentId) {}
 
-function addNewDay() {
+async function addNewDay() {
   if (!project_db) {
     indow.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
@@ -930,7 +929,7 @@ function addNewDay() {
   );
   saveToIndexedDB(project_db.export());
   setIsCustomDate();
-  loadDayStudentsList();
+  await loadDayStudentsList();
 }
 
 async function loadDayStudentsList() {
@@ -1059,16 +1058,19 @@ async function loadDayStudentsList() {
           student: row[result.columns.indexOf("studentName")],
           attendance: attendanceOption
             ? attendanceOption.textContent
-            : `<input type="checkbox" id="sms_btn${
-                row[result.columns.indexOf("studentId")]
-              }" onclick="window.location.href='sms:${
-                row[result.columns.indexOf("parentPhone")]
-              }?body=ليكن في علمكم أن إبنكم ${
-                row[result.columns.indexOf("studentName")]
-              } غائب اليوم'" class="btn-check" autocomplete="off">
+            : "غائب" +
+              (row[result.columns.indexOf("parentPhone")]
+                ? `<input type="checkbox" id="sms_btn${
+                    row[result.columns.indexOf("studentId")]
+                  }" onclick="window.location.href='sms:${
+                    row[result.columns.indexOf("parentPhone")]
+                  }?body=ليكن في علمكم أن إبنكم ${
+                    row[result.columns.indexOf("studentName")]
+                  } غائب اليوم'" class="btn-check" autocomplete="off">
               <label class="btn fa-solid fa-comment-sms px-2" for="sms_btn${
                 row[result.columns.indexOf("studentId")]
-              }"></label>`,
+              }"></label>`
+                : ""),
           book: attendanceOption ? row[2] || "" : "/",
           type: attendanceOption ? row[3] || "" : "/",
           quantity: attendanceOption ? row[4] || "" : "/",
@@ -1109,7 +1111,7 @@ async function loadDayStudentsList() {
       showTab("pills-students");
       return;
     }
-    initOrReloadDataTable(
+    await initOrReloadDataTable(
       "#dayListTable",
       data,
       [
@@ -1213,7 +1215,7 @@ async function loadDayStudentsList() {
           },
         },
       },
-      studentsDayTableDetailIsShow,
+      studentsDayTableDetailIsShow
     );
   } catch (e) {
     window.showToast("error", "Error: " + e.message);
@@ -1238,42 +1240,48 @@ async function dayDatePickerInit() {
       },
       maxDate: currentDay,
     },
-    function (start) {
+    async function (start) {
       currentDay = start.format("YYYY-MM-DD");
       dayDateInput.val(currentDay);
-      loadDayStudentsList();
+      await loadDayStudentsList();
     }
   );
 
   // statistics date picker
-  statisticsDateInput.daterangepicker({
-    showDropdowns: true,
-    locale: {
-      format: "YYYY-MM-DD",
-      daysOfWeek: arabicDays,
-      monthNames: arabicMonths,
-      firstDay: 7,
-      applyLabel: "تأكيد",
-      cancelLabel: "إلغاء",
-      customRangeLabel: "تخصيص",
+  statisticsDateInput.daterangepicker(
+    {
+      showDropdowns: true,
+      locale: {
+        format: "YYYY-MM-DD",
+        daysOfWeek: arabicDays,
+        monthNames: arabicMonths,
+        firstDay: 7,
+        applyLabel: "تأكيد",
+        cancelLabel: "إلغاء",
+        customRangeLabel: "تخصيص",
+      },
+      maxDate: currentDay,
+      ranges: {
+        اليوم: [moment(), moment()],
+        أمس: [moment().subtract(1, "days"), moment().subtract(1, "days")],
+        "هذا الأسبوع": [moment().startOf("week"), moment().endOf("week")],
+        "الأسبوع الماضي": [
+          moment().subtract(1, "week").startOf("week"),
+          moment().subtract(1, "week").endOf("week"),
+        ],
+        "هذا الشهر": [moment().startOf("month"), moment().endOf("month")],
+        "الشهر الماضي": [
+          moment().subtract(1, "month").startOf("month"),
+          moment().subtract(1, "month").endOf("month"),
+        ],
+      },
     },
-    maxDate: currentDay,
-    ranges: {
-      اليوم: [moment(), moment()],
-      أمس: [moment().subtract(1, "days"), moment().subtract(1, "days")],
-      "هذا الأسبوع": [moment().startOf("week"), moment().endOf("week")],
-      "الأسبوع الماضي": [
-        moment().subtract(1, "week").startOf("week"),
-        moment().subtract(1, "week").endOf("week"),
-      ],
-      "هذا الشهر": [moment().startOf("month"), moment().endOf("month")],
-      "الشهر الماضي": [
-        moment().subtract(1, "month").startOf("month"),
-        moment().subtract(1, "month").endOf("month"),
-      ],
-    },
-  });
-
+    async function (start) {
+      statisticType.value = "0";
+      statisticType
+        .dispatchEvent(new Event("change"));
+    }
+  );
   setIsCustomDate();
 }
 
@@ -1365,25 +1373,6 @@ function initializeToast() {
   }
 }
 
-async function openDatabase(callback) {
-  const request = indexedDB.open(PROJECT_DB_KEY, 1);
-
-  request.onupgradeneeded = function (event) {
-    const db = event.target.result;
-    if (!db.objectStoreNames.contains(DB_STORE_NAME)) {
-      db.createObjectStore(DB_STORE_NAME);
-    }
-  };
-
-  request.onsuccess = function () {
-    const db = request.result;
-    callback(db);
-  };
-
-  request.onerror = function (e) {
-    console.error("IndexedDB open error:", e.target.error);
-  };
-}
 
 function removeRequirItem(button) {
   const row = button.closest("tr");
@@ -1454,18 +1443,11 @@ document.getElementById("newDBbtn").onclick = async function () {
 };
 
 document.getElementById("downloadBtn").onclick = exportDB;
-document.getElementById("fileInput").onchange = (e) => {
+document.getElementById("fileInput").onchange = async (e) => {
   if (e.target.files.length) {
-    loadDBFromFile(e.target.files[0]);
+    await loadDBFromFile(e.target.files[0]);
   }
 };
-
-dayDateInput.on("apply.daterangepicker", function (ev, picker) {
-  if (dayDateInput.val()) {
-    currentDay = dayDateInput.val();
-    loadDayStudentsList();
-  }
-});
 
 async function showTab(tabId) {
   document
@@ -1499,9 +1481,6 @@ async function showTab(tabId) {
   }
 }
 
-// Initialize the application
-init();
-
 function getDatesInRange() {
   const result = project_db.exec(
     `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`
@@ -1524,7 +1503,19 @@ function getDatesInRange() {
   return [];
 }
 
-async function showAttendanceTable() {
+statisticType.onchange = function () {
+  switch (this.value) {
+    case "attendance":
+      showAttendanceStatistics();
+      break;
+    default:
+      if ($.fn.DataTable.isDataTable("#statisticsTable")) {
+        $("#statisticsTable").DataTable().destroy();
+        $("#statisticsTable").empty();
+      }
+  }
+};
+async function showAttendanceStatistics() {
   const dates = [...getDatesInRange()].sort(
     (a, b) => new Date(a) - new Date(b)
   );
@@ -1565,8 +1556,8 @@ async function showAttendanceTable() {
         return rowData;
       });
 
-      initOrReloadDataTable(
-        "#attendanceTable",
+      await initOrReloadDataTable(
+        "#statisticsTable",
         tableData,
         columns.map((col) => ({
           data: col,
@@ -1710,151 +1701,6 @@ async function showAttendanceTable() {
   } catch (error) {
     console.error("Error executing query:", error);
   }
-}
-async function createPdf() {
-  const { jsPDF } = window.jspdf;
-  // بيانات الطلاب
-  const students = result[0].values.map((row) => ({
-    id: row[0],
-    name: row[1],
-  }));
-
-  // إنشاء مستند PDF
-  const doc = new jsPDF({
-    unit: "mm",
-    format: "a4",
-  });
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  // خطوط عربية
-  doc.addFont("src/Al-Jazeera-Arabic-Regular.ttf", "Amiri", "normal");
-  doc.addFont("src/Al-Jazeera-Arabic-Bold.ttf", "Amiri", "bold");
-  doc.addFont("src/MaterialIcons-Regular.ttf", "MaterialIcons", "normal");
-  doc.setFont("Amiri", "bold");
-  doc.setFontSize(18);
-  doc.text("جدول الحضور الشهري للطلاب", pageWidth / 2, 15, { align: "center" });
-  doc.setFontSize(14);
-  doc.text(`${statisticsDateInput.val()}`, pageWidth / 2, 22, {
-    align: "center",
-  });
-
-  // إعدادات الجدول
-  const rowHeight = 8;
-  const studentColWidth = 40;
-  const dateColWidth = 8;
-  const startX = pageWidth - 10; // من اليمين
-  const startY = 60;
-
-  // ---- رؤوس الأعمدة ----
-  doc.setFontSize(10);
-  doc.setFont("Amiri", "bold");
-  doc.text("اسم الطالب", startX - 2, startY - 2, { align: "right" });
-
-  // رؤوس التواريخ
-  let x = startX - studentColWidth;
-  dates.forEach((date) => {
-    if (x - dateColWidth < 10) return; // الهامش الأيسر
-
-    const dayText = `${date} ${arabicDays[date.split("-")[2] % 7]}`;
-
-    doc.text(dayText, x - dateColWidth / 2, startY - 5, {
-      align: "left",
-      angle: 90,
-    });
-    doc.setFontSize(10);
-
-    x -= dateColWidth;
-  });
-
-  // ---- بيانات الطلاب ----
-  doc.setFont("Amiri", "normal");
-  students.forEach((student, rowIndex) => {
-    let y = startY + (rowIndex + 1) * rowHeight;
-
-    // اسم الطالب (يمين)
-    doc.text(student.name, startX - 2, y - 2, { align: "right" });
-
-    // خلايا الحضور (فارغة)
-    let xCell = startX - studentColWidth;
-    doc.setFont("MaterialIcons", "normal");
-    doc.setFontSize(15);
-    dates.forEach((date) => {
-      if (xCell - dateColWidth >= 10) {
-        xCell -= dateColWidth;
-        doc.text(
-          result[0].values[rowIndex][result[0].columns.indexOf(date)],
-          xCell + dateColWidth / 2,
-          y - 2,
-          {
-            align: "center",
-          }
-        );
-      }
-    });
-    doc.setFont("Amiri", "normal");
-    doc.setFontSize(10);
-  });
-
-  // ---- الشبكة ----
-  drawRTLGrid(
-    doc,
-    startX,
-    startY,
-    rowHeight,
-    studentColWidth,
-    dateColWidth,
-    dates.length,
-    students.length
-  );
-
-  // رقم الصفحة
-  doc.setFontSize(10);
-  doc.text(`تمت الطباعة بتاريخ ${currentDay}`, 10, 200, { align: "left" });
-
-  window.open(doc.output("bloburl"), "_blank");
-}
-
-function drawRTLGrid(
-  doc,
-  startX,
-  startY,
-  rowHeight,
-  studentColWidth,
-  dateColWidth,
-  dateCount,
-  studentCount
-) {
-  let x = startX;
-
-  doc.line(x, startY - 20, x, startY + studentCount * rowHeight);
-  // خط عمودي يفصل عمود الأسماء
-  doc.line(
-    x - studentColWidth,
-    startY - 20,
-    x - studentColWidth,
-    startY + studentCount * rowHeight
-  );
-  x -= studentColWidth;
-
-  // أعمدة الأيام
-  for (let i = 0; i < dateCount; i++) {
-    if (x - dateColWidth >= 10) {
-      doc.line(
-        x - dateColWidth,
-        startY - 20,
-        x - dateColWidth,
-        startY + studentCount * rowHeight
-      );
-      x -= dateColWidth;
-    }
-  }
-
-  // الخطوط الأفقية
-  for (let i = 0; i <= studentCount; i++) {
-    const y = startY + i * rowHeight;
-    doc.line(x, y, startX, y);
-  }
-  doc.line(x, startY - 20, startX, startY - 20);
 }
 
 const initializeAyatdata = async (db) => {

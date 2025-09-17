@@ -203,9 +203,13 @@
           <i class="fas fa-calendar-alt date-icon"></i>
         </div>
       </div>
-      <button onclick="showAttendanceTable()" class="btn btn-primary my-4">إنشاء قائمة الغياب PDF</button>
+      
+      <select id="statisticType" onchange="handleStatisticsSelection(this.value)" class="form-select my-2 text-center" aria-label="Default select example">
+        <option value="0">-- اختر نوع الإحصاء --</option>
+        <option value="attendance">قائمة الغياب</option>
+      </select>
 
-      <table id="attendanceTable" class="display" style="width:100%"></table>
+      <table id="statisticsTable" class="display" style="width:100%"></table>
     </div>
 
     <div class="tab-pane fade" id="pills-preferences" role="tabpanel" aria-labelledby="pills-preferences-tab">
@@ -381,7 +385,7 @@
           <form id="newStudentInfosForm">
             <input type="hidden" id="studentId" />
             <label for="name">الاسم:</label>
-            <input type="text" id="name" class="form-control" required/>
+            <input type="text" id="name" class="form-control" required />
             <label for="birthday">تاريخ الميلاد:</label>
             <input type="date" id="birthday" class="form-control" required />
             <label for="parentPhone">هاتف الولي:</label>
@@ -622,7 +626,6 @@
 <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script src="src/auth.js"></script>
 <script src="src/script.js"></script>
