@@ -226,7 +226,41 @@
           <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
             data-bs-parent="#pills-preferences">
             <div class="card-body">
-              اعدادات عامة
+              <label for="themeSelector" class="form-label">Choose Theme:</label>
+      <select id="themeSelector" class="form-select">
+        <option value="litera" selected>Litera</option>
+        <option value="cerulean">Cerulean</option>
+        <option value="cosmo">Cosmo</option>
+        <option value="cyborg">Cyborg</option>
+        <option value="flatly">Flatly</option>
+        <option value="journal">Journal</option>
+        <option value="lux">Lux</option>
+        <option value="materia">Materia</option>
+        <option value="minty">Minty</option>
+        <option value="pulse">Pulse</option>
+        <option value="sandstone">Sandstone</option>
+        <option value="simplex">Simplex</option>
+        <option value="slate">Slate</option>
+        <option value="solar">Solar</option>
+        <option value="spacelab">Spacelab</option>
+        <option value="superhero">Superhero</option>
+        <option value="united">United</option>
+        <option value="yeti">Yeti</option>
+      </select>
+    
+
+    <button class="btn btn-primary">Test Button</button>
+  
+
+  <script>
+    const selector = document.getElementById('themeSelector');
+    const themeLink = document.getElementById('themeStylesheet');
+
+    selector.addEventListener('change', function () {
+      const theme = this.value;
+      themeLink.href = `https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/${theme}/bootstrap.min.css`;
+    });
+  </script>
             </div>
           </div>
         </div>
