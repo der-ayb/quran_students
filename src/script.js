@@ -286,6 +286,10 @@ const studentDayFormSubmitBtn = document.getElementById(
 );
 
 const statisticType = document.getElementById("statisticType");
+
+const themeSelector = document.getElementById("themeSelector");
+const themeTag = document.getElementById("themeStylesheet");
+
 const newStudentDayModal = new bootstrap.Modal(
   document.getElementById("newStudentDayModal")
 );
@@ -297,6 +301,19 @@ const newClassroomInfosModal = new bootstrap.Modal(
 );
 
 document.addEventListener("DOMContentLoaded", async function () {
+  // theme selector
+  const savedTheme = localStorage.getItem("selectedTheme");
+  if (savedTheme) {
+    themeTag.href = `https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/${savedTheme}/bootstrap.rtl.min.css`;
+    themeSelector.value = savedTheme;
+  }
+  themeSelector.onchange = function () {
+    const theme = this.value;
+    themeTag.href = `https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/${theme}/bootstrap.rtl.min.css`;
+    localStorage.setItem("selectedTheme", theme);    
+  };
+
+  // set birthday input limits
   const today = new Date();
   birthdayInput.setAttribute(
     "max",
@@ -432,7 +449,7 @@ async function loadClassRoomsList() {
           actions: button_group,
         });
         workingClassroomSelect.append(
-          new Option(`${row[1]} - ${row[2]} - ${row[3]}`, row[0])
+          new Option(`${row[2]} - ${row[1]} - ${row[3]} - ${row[4]}`,row[0])
         );
       });
       if (workingClassroomId) {
@@ -972,7 +989,7 @@ async function loadDayStudentsList() {
         editBtn.onclick = function () {
           newStudentDayModal.show();
           studentNameInput.value = row[result.columns.indexOf("studentName")];
-
+          requirementsTable.querySelector("tbody").innerHTML = "";
           JSON.parse(row[result.columns.indexOf("detail")] || "[]").forEach(
             (item) => {
               requirementsTable.style.display = "block";
