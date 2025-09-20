@@ -147,7 +147,7 @@ async function init() {
 async function downloadQuranDB() {
   await fetchAndReadFile(
     QURAN_DB_KEY,
-    "https://der-ayb.github.io/quran_students/quran.sqlite",
+    "https://der-ayb.github.io/quran_students/assets/quran.sqlite",
     async (db) => {
       quran_db = db;
       await initializeAyatdata(db);
@@ -215,7 +215,7 @@ init();
 let project_db, quran_db, SQL;
 const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
-const PROJECT_DB_KEY = "projectDB";
+const PROJECT_DB_KEY = "quranstudentsDB";
 const QURAN_DB_KEY = "quranDB";
 const arabicMonths = [
   "جانفي",
@@ -440,16 +440,26 @@ async function loadClassRoomsList() {
         });
         button_group.appendChild(deleteBtn);
 
+        // Prepare classroom display string
+        const displayText = [
+          row[result.columns.indexOf("place")],
+          row[result.columns.indexOf("mosque")],
+          row[result.columns.indexOf("sex")],
+          row[result.columns.indexOf("level")]
+        ];
+
         data.push({
           id: row[0],
-          mosque: row[1],
-          place: row[2],
-          sex: row[3],
-          level: row[4],
+          mosque: displayText[1],
+          place: displayText[0],
+          sex: displayText[2],
+          level: displayText[3],
           actions: button_group,
         });
-        workingClassroomSelect.append(
-          new Option(`${row[2]} - ${row[1]} - ${row[3]} - ${row[4]}`,row[0])
+
+        // Add option to select efficiently
+        workingClassroomSelect.add(
+          new Option(displayText.join(" - "), row[0])
         );
       });
       if (workingClassroomId) {
@@ -1425,7 +1435,7 @@ addQuranSelectionBtn.onclick = function () {
 document.getElementById("newDBbtn").onclick = async function () {
   await fetchAndReadFile(
     PROJECT_DB_KEY,
-    "https://der-ayb.github.io/quran_students/default.sqlite3",
+    "https://der-ayb.github.io/quran_students/assets/default.sqlite3",
     (db) => {
       project_db = db;
     }
