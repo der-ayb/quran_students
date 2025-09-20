@@ -254,6 +254,7 @@ const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
 const requirEvaluationInput = document.getElementById("requirEvaluation");
 const requireBookInput = document.getElementById("requirBook");
+const requirSwitch = document.getElementById("requirSwitch");
 const requirQuantityDetailInput = document.getElementById(
   "requirQuantityDetail"
 );
@@ -302,16 +303,36 @@ const newClassroomInfosModal = new bootstrap.Modal(
 
 document.addEventListener("DOMContentLoaded", async function () {
   // theme selector
-  const savedTheme = localStorage.getItem("selectedTheme");
-  if (savedTheme) {
-    themeTag.href = `https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/${savedTheme}/bootstrap.rtl.min.css`;
-    themeSelector.value = savedTheme;
-  }
-  themeSelector.onchange = function () {
+  themeSelector.onchange = async function () {
     const theme = this.value;
     themeTag.href = `https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/${theme}/bootstrap.rtl.min.css`;
-    localStorage.setItem("selectedTheme", theme);    
+    localStorage.setItem("selectedTheme", theme);
+
+    // Optimize theme-specific style injection/removal
+    const styleId = "slateThemeStyle";
+    let styleNode = document.getElementById(styleId);
+
+    if (theme === "slate") {
+      if (!styleNode) {
+        styleNode = document.createElement("style");
+        styleNode.id = styleId;
+        styleNode.textContent = `
+        .btn, .form-select,.form-control, .input-group-text {
+          padding-bottom: 4px !important;
+          padding-top: 4px !important;
+        }
+      `;
+        document.head.appendChild(styleNode);
+      }
+    } else if (styleNode) {
+      styleNode.remove();
+    }
   };
+  const savedTheme = localStorage.getItem("selectedTheme");
+  if (savedTheme) {
+    themeSelector.value = savedTheme;
+    themeSelector.dispatchEvent(new Event("change"));
+  }
 
   // set birthday input limits
   const today = new Date();
@@ -445,7 +466,7 @@ async function loadClassRoomsList() {
           row[result.columns.indexOf("place")],
           row[result.columns.indexOf("mosque")],
           row[result.columns.indexOf("sex")],
-          row[result.columns.indexOf("level")]
+          row[result.columns.indexOf("level")],
         ];
 
         data.push({
@@ -458,9 +479,7 @@ async function loadClassRoomsList() {
         });
 
         // Add option to select efficiently
-        workingClassroomSelect.add(
-          new Option(displayText.join(" - "), row[0])
-        );
+        workingClassroomSelect.add(new Option(displayText.join(" - "), row[0]));
       });
       if (workingClassroomId) {
         workingClassroomSelect.value = workingClassroomId;
@@ -820,12 +839,12 @@ attendanceInput.onchange = function () {
   requireBookInput.value = "";
   requireBookInput.dispatchEvent(new Event("change"));
   if (disable == "1") {
-    studentDayFormSubmitBtn.disabled = false;
-    document.getElementById("requirSwitch").disabled = true;
+    studentDayFormSubmitBtn.disabled = true;
+    requirSwitch.disabled = true;
     requirementsTable.style.display = "none";
   } else {
-    studentDayFormSubmitBtn.disabled = true;
-    document.getElementById("requirSwitch").disabled = false;
+    studentDayFormSubmitBtn.disabled = false;
+    requirSwitch.disabled = false;
     requirementsTable.style.display = "block";
   }
 };
@@ -857,6 +876,22 @@ function calcRequirementsMoyenne() {
   });
   moyenne = moyenne / (rows.length || 1);
   return moyenne ? moyenne.toFixed(2) : "";
+}
+
+function calcEvaluationMoyenne(
+  attendance,
+  clothing,
+  haircut,
+  behavior,
+  prayer
+) {
+  let moyenne = 0;
+  moyenne += parseFloat(attendance) || 0;
+  moyenne += parseFloat(clothing) || 0;
+  moyenne += parseFloat(haircut) || 0;
+  moyenne += parseFloat(behavior) || 0;
+  moyenne += parseFloat(prayer) || 0;
+  return moyenne ? (moyenne / 5).toFixed(2) : "";
 }
 
 function update_student_day_notes(studentId) {
@@ -900,11 +935,13 @@ function update_student_day_notes(studentId) {
         haircutInput.value,
         behaviorInput.value,
         prayerInput.value,
-        attendanceInput.value +
-          clothingInput.value +
-          haircutInput.value +
-          behaviorInput.value +
-          prayerInput.value,
+        calcEvaluationMoyenne(
+          attendanceInput.value,
+          clothingInput.value,
+          haircutInput.value,
+          behaviorInput.value,
+          prayerInput.value
+        ),
       ]
     );
   } else {
@@ -973,7 +1010,7 @@ async function loadDayStudentsList() {
           s.name AS studentName,
           s.parent_phone AS parentPhone,
           dr.detail AS "detail",
-          dr.moyenne AS "requirMoyenne",
+          dr.moyenne AS "requirsMoyenne",
           de.attendance AS "attendance",
           de.clothing AS "clothing", 
           de.haircut AS "haircut",
@@ -1011,11 +1048,10 @@ async function loadDayStudentsList() {
                 <td style="white-space: normal;">${item["التفاصيل"]}</td>
                 <td>${item["التقدير"]}</td>
                 <td>${item["المعدل"]}</td>
+                <td>${item["الحالة"] || "إضافي"}</td>
                 <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
               requirementsTable.querySelector("tbody").appendChild(row);
-              studentDayForm.querySelector(
-                'button[type="submit"]'
-              ).disabled = false;
+              studentDayFormSubmitBtn.disabled = false;
             }
           );
 
@@ -1024,7 +1060,7 @@ async function loadDayStudentsList() {
           attendanceInput.dispatchEvent(new Event("change"));
 
           requirMoyenneInput.value =
-            row[result.columns.indexOf("requirMoyenne")] || "";
+            row[result.columns.indexOf("requirsMoyenne")] || "";
 
           clothingInput.value = row[result.columns.indexOf("clothing")] || "";
           haircutInput.value = row[result.columns.indexOf("haircut")] || "";
@@ -1077,39 +1113,31 @@ async function loadDayStudentsList() {
                 row[result.columns.indexOf("studentId")]
               }"></label>`
                 : ""),
-          book: attendanceOption ? row[2] || "" : "/",
-          type: attendanceOption ? row[3] || "" : "/",
-          quantity: attendanceOption ? row[4] || "" : "/",
-          evaluation: attendanceOption
-            ? "/"
-            : row[5] === 0
-            ? "إعادة"
-            : row[5] || "",
-          requirement: attendance_value === 1 ? "/" : row[6] || "",
-          clothing:
-            row[7] === 1
-              ? "/"
-              : clothingOption
+          book: attendanceOption ? "" : "/",
+          type: attendanceOption ? "" : "/",
+          quantity: attendanceOption ? "" : "/",
+          evaluation: attendanceOption ? "" : "/",
+          clothing: attendanceOption
+            ? clothingOption
               ? clothingOption.textContent
-              : "",
-          haircut:
-            attendance_value === 1
-              ? "/"
-              : haircutOption
+              : ""
+            : "/",
+
+          haircut: attendanceOption
+            ? haircutOption
               ? haircutOption.textContent
-              : "",
-          behavior:
-            attendance_value === 1
-              ? "/"
-              : behaviorOption
+              : ""
+            : "/",
+          behavior: attendanceOption
+            ? behaviorOption
               ? behaviorOption.textContent
-              : "",
-          prayer:
-            attendance_value === 1
-              ? "/"
-              : prayerOption
+              : ""
+            : "/",
+          prayer: attendanceOption
+            ? prayerOption
               ? prayerOption.textContent
-              : "",
+              : ""
+            : "/",
         });
       });
     } else {
@@ -1129,7 +1157,6 @@ async function loadDayStudentsList() {
         { data: "type", defaultContent: "/" },
         { data: "quantity", defaultContent: "/" },
         { data: "evaluation", defaultContent: "/" },
-        { data: "requirement", defaultContent: "/" },
         { data: "clothing", defaultContent: "/" },
         { data: "haircut", defaultContent: "/" },
         { data: "behavior", defaultContent: "/" },
@@ -1148,7 +1175,7 @@ async function loadDayStudentsList() {
         responsive: true,
 
         columnDefs: [
-          { visible: false, targets: [...[0], ...[6, 7, 8, 9, 10, 11, 12]] },
+          { visible: false, targets: [...[0], ...[6, 7, 8, 9, 10, 11]] },
           {
             targets: 1,
             orderable: false,
@@ -1160,7 +1187,7 @@ async function loadDayStudentsList() {
               {
                 text: "إظهار التفاصيل",
                 action: function (e, dt) {
-                  const columns = dt.columns([6, 7, 8, 9, 10, 11, 12]);
+                  const columns = dt.columns([6, 7, 8, 9, 10, 11]);
                   const isVisible = dt.column(columns[0][0]).visible();
 
                   columns.visible(!isVisible);
@@ -1412,11 +1439,7 @@ addQuranSelectionBtn.onclick = function () {
       requirTypeInput.value
     )}</td>
     <td>
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" role="switch" ${
-          document.getElementById("requirSwitch").checked ? "checked" : ""
-        }>
-      </div>
+      ${requirSwitch.checked ? "واجب" : "إظافي"}
     </td>
     <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
   requirementsTable.querySelector("tbody").appendChild(row);
@@ -1815,7 +1838,7 @@ firstSurahSelect.onchange = async function () {
     firstAyahSelect.appendChild(createOption("", "--  --"));
 
     secondSurahSelect.disabled = true;
-    secondSurahSelect.querySelector("option").style.display = "none";
+    secondSurahSelect.querySelector("option").style.pdisplay = "none";
 
     secondAyahSelect.disabled = true;
     secondAyahSelect.innerHTML = "";
