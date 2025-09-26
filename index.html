@@ -640,6 +640,11 @@
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js"></script>
 
+<script>
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('src/sw.js')
+  }
+</script>
 <script src="src/auth.js"></script>
 <script src="src/script.js"></script>
 
