@@ -1,9 +1,13 @@
 {
   "name": "متابعة",
   "short_name": "متابعة",
+  "name": "متابعة",
+  "short_name": "متابعة",
   "start_url": ".",
   "display": "standalone",
-  "display_override": ["window-controls-overlay"],
+  "display_override": [
+    "window-controls-overlay"
+  ],
   "protocol_handlers": [
     {
       "protocol": "web+quran",
@@ -13,6 +17,7 @@
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50",
+  "description": "تطبيق لمتابعة طلاب القرآن الكريم",
   "description": "تطبيق لمتابعة طلاب القرآن الكريم",
   "icons": [
     {
@@ -59,5 +64,8 @@
       "form_factor": "wide"
     }
   ],
-  "categories": ["education", "productivity"]
+  "categories": [
+    "education",
+    "productivity"
+  ]
 }
