@@ -839,11 +839,9 @@ attendanceInput.onchange = function () {
   requireBookInput.value = "";
   requireBookInput.dispatchEvent(new Event("change"));
   if (disable == "1") {
-    studentDayFormSubmitBtn.disabled = true;
     requirSwitch.disabled = true;
     requirementsTable.style.display = "none";
   } else {
-    studentDayFormSubmitBtn.disabled = false;
     requirSwitch.disabled = false;
     requirementsTable.style.display = "block";
   }
@@ -1051,7 +1049,6 @@ async function loadDayStudentsList() {
                 <td>${item["الحالة"] || "إضافي"}</td>
                 <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
               requirementsTable.querySelector("tbody").appendChild(row);
-              studentDayFormSubmitBtn.disabled = false;
             }
           );
 
@@ -1060,12 +1057,12 @@ async function loadDayStudentsList() {
           attendanceInput.dispatchEvent(new Event("change"));
 
           requirMoyenneInput.value =
-            row[result.columns.indexOf("requirsMoyenne")] || "";
+            row[result.columns.indexOf("requirsMoyenne")];
 
-          clothingInput.value = row[result.columns.indexOf("clothing")] || "";
-          haircutInput.value = row[result.columns.indexOf("haircut")] || "";
-          behaviorInput.value = row[result.columns.indexOf("behavior")] || "";
-          prayerInput.value = row[result.columns.indexOf("prayer")] || "";
+          clothingInput.value = row[result.columns.indexOf("clothing")];
+          haircutInput.value = row[result.columns.indexOf("haircut")];
+          behaviorInput.value = row[result.columns.indexOf("behavior")];
+          prayerInput.value = row[result.columns.indexOf("prayer")];
 
           studentDayForm.onsubmit = function (e) {
             e.preventDefault();
@@ -1409,7 +1406,6 @@ function removeRequirItem(button) {
   const row = button.closest("tr");
   if (requirementsTable.querySelector("tbody").childElementCount === 1) {
     requirementsTable.style.display = "none";
-    studentDayFormSubmitBtn.disabled = true;
   }
   row.remove();
   requirMoyenneInput.value = calcRequirementsMoyenne();
@@ -1452,7 +1448,6 @@ addQuranSelectionBtn.onclick = function () {
   requirTypeInput.dispatchEvent(new Event("change"));
   requirQuantityInput.dispatchEvent(new Event("change"));
   requirEvaluationInput.dispatchEvent(new Event("change"));
-  studentDayFormSubmitBtn.disabled = false;
 };
 
 document.getElementById("newDBbtn").onclick = async function () {
