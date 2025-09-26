@@ -88,7 +88,7 @@ async function loadDBFromFile(file) {
   project_db = new SQL.Database(new Uint8Array(arrayBuffer));
   await saveToIndexedDB(project_db.export());
   window.showToast("success", "تم تحميل قاعدة البيانات.");
-  window.location.reload()
+  window.location.reload();
 }
 
 // --- Fetch and Read File Async ---
@@ -168,7 +168,7 @@ document.getElementById("newDBbtn").onclick = async function () {
   );
   await downloadQuranDB();
   window.showToast("success", "تم تحميل قواعد البيانات.");
-  window.location.reload()
+  window.location.reload();
 };
 
 document.getElementById("downloadBtn").onclick = exportDB;
