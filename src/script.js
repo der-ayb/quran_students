@@ -160,23 +160,6 @@ if(window.matchMedia('(display-mode: standalone)').matches){
   document.getElementById('install').style.display = 'none';
 }
 
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
-document.getElementById('install').onclick = async () => {
-  deferredPrompt.prompt();
-  deferredPrompt = null;
-};
-window.addEventListener("appinstalled", () => {
-  deferredPrompt = null;
-  document.getElementById('install').style.display = 'none';
-});
-if(window.matchMedia('(display-mode: standalone)').matches){
-  document.getElementById('install').style.display = 'none';
-}
-
 // --- Download Quran DB Async ---
 async function downloadQuranDB() {
   await fetchAndReadFile(
