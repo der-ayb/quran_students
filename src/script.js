@@ -17,10 +17,6 @@ function openDatabaseAsync() {
   });
 }
 
-const loadingModal = new bootstrap.Modal(
-  document.getElementById("loadingModal")
-);
-
 async function saveToIndexedDB(data, db_key = PROJECT_DB_KEY) {
   const idb = await openDatabaseAsync();
   return new Promise((resolve, reject) => {
@@ -143,22 +139,6 @@ async function init() {
     }
   });
 }
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
-document.getElementById('install').onclick = async () => {
-  deferredPrompt.prompt();
-  deferredPrompt = null;
-};
-window.addEventListener("appinstalled", () => {
-  deferredPrompt = null;
-  document.getElementById('install').style.display = 'none';
-});
-if(window.matchMedia('(display-mode: standalone)').matches){
-  document.getElementById('install').style.display = 'none';
-}
 
 // --- Download Quran DB Async ---
 async function downloadQuranDB() {
@@ -172,27 +152,6 @@ async function downloadQuranDB() {
     }
   );
 }
-
-// --- Event Handlers Async ---
-document.getElementById("newDBbtn").onclick = async function () {
-  await fetchAndReadFile(
-    PROJECT_DB_KEY,
-    "https://der-ayb.github.io/quran_students/default.sqlite3",
-    (db) => {
-      project_db = db;
-    }
-  );
-  await downloadQuranDB();
-  window.showToast("success", "تم تحميل قواعد البيانات.");
-  window.location.reload();
-};
-
-document.getElementById("downloadBtn").onclick = exportDB;
-document.getElementById("fileInput").onchange = async (e) => {
-  if (e.target.files.length) {
-    await loadDBFromFile(e.target.files[0]);
-  }
-};
 
 // --- Async Utility for DataTable Reload ---
 async function initOrReloadDataTable(
@@ -221,6 +180,45 @@ async function initOrReloadDataTable(
     table.buttons(0).trigger();
   }
   return table;
+}
+
+// --- Event Handlers Async ---
+document.getElementById("newDBbtn").onclick = async function () {
+  await fetchAndReadFile(
+    PROJECT_DB_KEY,
+    "https://der-ayb.github.io/quran_students/default.sqlite3",
+    (db) => {
+      project_db = db;
+    }
+  );
+  await downloadQuranDB();
+  window.showToast("success", "تم تحميل قواعد البيانات.");
+  window.location.reload();
+};
+
+document.getElementById("downloadBtn").onclick = exportDB;
+document.getElementById("fileInput").onchange = async (e) => {
+  if (e.target.files.length) {
+    await loadDBFromFile(e.target.files[0]);
+  }
+};
+
+// install button
+let deferredPrompt;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+document.getElementById("install").onclick = async () => {
+  deferredPrompt.prompt();
+  deferredPrompt = null;
+};
+window.addEventListener("appinstalled", () => {
+  deferredPrompt = null;
+  document.getElementById("install").style.display = "none";
+});
+if (window.matchMedia("(display-mode: standalone)").matches) {
+  document.getElementById("install").style.display = "none";
 }
 
 // --- Initialize the application (async) ---
@@ -307,6 +305,9 @@ const statisticType = document.getElementById("statisticType");
 const themeSelector = document.getElementById("themeSelector");
 const themeTag = document.getElementById("themeStylesheet");
 
+const loadingModal = new bootstrap.Modal(
+  document.getElementById("loadingModal")
+);
 const newStudentDayModal = new bootstrap.Modal(
   document.getElementById("newStudentDayModal")
 );

@@ -76,17 +76,14 @@
       }
     }
   </style>
-  <link id="themeStylesheet" rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/spacelab/bootstrap.rtl.min.css">
-  <link type="text/css" rel="stylesheet" href="src/style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
-    integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/spacelab/bootstrap.rtl.min.css"
+    id="themeStylesheet">
+    <link type="text/css" rel="stylesheet" href="src/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
   <link rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.bootstrap5.css" />
-<script>navigator.serviceWorker.register("service-worker.js")</script> 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 </head>
 
@@ -101,7 +98,6 @@
   <div class="tab-content" id="pills-tabContent">
 
     <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
-      <button id="install">Install</button>
       <h1 class="text-center">تطبيق متابعة الحفظ</h1>
       <div id="loginUI">
         <div id="firebaseui-auth-container"></div>
@@ -226,6 +222,7 @@
           </div>
           <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
             data-bs-parent="#pills-preferences">
+            <button class="btn btn-danger" id="install">تثبيت التطبيق</button>
             <div class="card-body">
               <div class="input-group mb-3">
                 <span class="input-group-text" id="basic-addon1">السمة</span>
@@ -619,13 +616,9 @@
     }, 500);
   });
 </script>
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-  integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-  integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js"
-  integrity="sha512-Yra4xuTWinXfBpG2ftgDX8MVmMiOev1FtqiYs51+kEna/5peD0kZqAL1syYCH61f9gxmAFidIJz42IKcRhWMkw=="
-  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.js"></script>
@@ -633,98 +626,38 @@
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.bootstrap5.js"></script>
-<script src="src/pdfmake.js"></script>
-<script src="src/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.js"></script>
-<!-- <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.print.js"></script> -->
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.print.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js"></script>
+<script src="src/pdfmake.js"></script>
+<script src="src/vfs_fonts.js"></script>
 
+<!-- <script>navigator.serviceWorker.register("src/service-worker.js")</script> -->
 <script>
-  // Enhanced Service Worker Registration
-  if ('serviceWorkerd' in navigator) {
-    window.addEventListener('load', async () => {
-      try {
-        const registration = await navigator.serviceWorker.register('sw.js');
-        console.log('Service Worker registered successfully:', registration.scope);
-        
-        // Handle service worker updates
+  // app.js
+// app.js
+// app.js
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('src/service-worker.js')
+      .then(registration => {
+        console.log('Service Worker registered:', registration.scope);
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
-          console.log('New service worker found, installing...');
-          
           newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed') {
-              if (navigator.serviceWorker.controller) {
-                // New service worker available
-                showUpdateNotification();
-              } else {
-                // First time installation
-                console.log('Service worker installed for the first time');
-                if (window.showToast) {
-                  window.showToast('success', 'التطبيق جاهز للعمل بدون اتصال');
-                }
-              }
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              alert('New version available, including updated Bootstrap! Please refresh.');
             }
           });
         });
-        
-        // Listen for messages from service worker
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          const { type, message } = event.data;
-          
-          if (window.showToast) {
-            switch (type) {
-              case 'SYNC_START':
-                window.showToast('info', message);
-                break;
-              case 'SYNC_COMPLETE':
-                window.showToast('success', message);
-                break;
-              case 'SYNC_ERROR':
-                window.showToast('error', message);
-                break;
-              case 'BACKUP_START':
-                window.showToast('info', message);
-                break;
-              case 'BACKUP_COMPLETE':
-                window.showToast('success', message);
-                break;
-            }
-          }
-        });
-        
-        // Check for updates periodically
-        setInterval(() => {
-          registration.update();
-        }, 60000); // Check every minute
-        
-      } catch (error) {
+      })
+      .catch(error => {
         console.error('Service Worker registration failed:', error);
-      }
-    });
-    
-    // Function to show update notification
-    function showUpdateNotification() {
-      if (window.showToast) {
-        window.showToast('info', 'تحديث جديد متوفر. سيتم تطبيقه عند إعادة تحميل الصفحة.', 8000);
-      }
-      
-      // Auto-reload after 10 seconds if user doesn't interact
-      setTimeout(() => {
-        if (confirm('تحديث جديد متوفر. هل تريد إعادة تحميل الصفحة الآن؟')) {
-          window.location.reload();
-        }
-      }, 10000);
-    }
-    
-    // Handle service worker controller change
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      console.log('Service worker controller changed, reloading...');
-      window.location.reload();
-    });
-  }
+      });
+  });
+}
 </script>
 <script src="src/auth.js"></script>
 <script src="src/script.js"></script>
