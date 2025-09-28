@@ -1,13 +1,14 @@
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js');
 
-// Enable Workbox debugging in development (set to false in production)
-workbox.setConfig({ debug: false });
+// Force waiting service worker to become active
+workbox.core.skipWaiting();
+workbox.core.clientsClaim();
 
-// Cache name for precached resources
-const CACHE_NAME = 'my-pwa-cache-v1';
+if (workbox) {
+  console.log('Workbox loaded successfully');
 
-// Precache local and CDN files
-workbox.precaching.precacheAndRoute([
+  // Precache critical files with revisions (update revisions when files change)
+  workbox.precaching.precacheAndRoute([
   { url: '/', revision: '1' },
   { url: '/favicon.ico', revision: '1' },
   { url: '/index.html', revision: '1' },
@@ -45,69 +46,87 @@ workbox.precaching.precacheAndRoute([
   { url: 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js', revision: '1' },
   { url: 'https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js', revision: '1' },
   { url: 'https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@100..900&family=Poppins&display=swap', revision: '1' }
-], {
-  // Ignore URL parameters to prevent duplicate caching
-  ignoreURLParametersMatching: [/.*/]
-});
+]);
 
-// Cache-first for precached local and CDN files
+  // Cache API requests 
+  workbox.routing.registerRoute(new workbox.strategies.NetworkFirst({
+      cacheName: 'weather-api-cache',
+      plugins: [
+        new workbox.expiration.ExpirationPlugin({
+          maxAgeSeconds: 24 * 60 * 60,
+          maxEntries: 10,
+        }),
+      ],
+    })
+  );
+
+  // Cache images
+  workbox.routing.registerRoute(
+    ({ request }) => request.destination === 'image',
+    new workbox.strategies.StaleWhileRevalidate({
+      cacheName: 'image-cache',
+    })
+  );
+
+    // Serve Cached Resources 
+  workbox.routing.registerRoute(
+    ({url}) => url.origin === self.location.origin,  
+    new workbox.strategies.CacheFirst({
+      cacheName: 'static-cache',  
+      plugins: [
+        new workbox.expiration.ExpirationPlugin({
+          maxAgeSeconds: 7 * 24 * 60 * 60,  // Cache static resources for 7 days
+        }),
+      ],
+    })
+  );
+
+  // Serve HTML pages with Network First and offline fallback
+// Serve HTML pages with Network First and offline fallback
 workbox.routing.registerRoute(
-  ({ url }) =>
-    url.origin === location.origin ||
-    url.origin === 'https://cdnjs.cloudflare.com' ||
-    url.origin === 'https://www.gstatic.com' ||
-    url.origin === 'https://cdn.datatables.net' ||
-    url.origin === 'https://cdn.jsdelivr.net' ||
-    url.origin === 'https://code.jquery.com' ||
-    url.origin === 'https://fonts.googleapis.com',
-  new workbox.strategies.CacheFirst({
-    cacheName: CACHE_NAME,
-    plugins: [
-      new workbox.expiration.ExpirationPlugin({
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-        maxEntries: 100, // Increased to accommodate more files
-        purgeOnQuotaError: true // Remove old entries if quota exceeded
-      }),
-      new workbox.cacheableResponse.CacheableResponsePlugin({
-        statuses: [0, 200] // Cache successful and opaque responses
-      })
-    ]
-  })
-);
-
-// Stale-while-revalidate for other dynamic CDN resources
-workbox.routing.registerRoute(
-  ({ url }) => url.origin !== location.origin && !url.pathname.includes('/api/'),
-  new workbox.strategies.StaleWhileRevalidate({
-    cacheName: 'cdn-dynamic-cache',
-    plugins: [
-      new workbox.expiration.ExpirationPlugin({
-        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-        maxEntries: 50
-      }),
-      new workbox.cacheableResponse.CacheableResponsePlugin({
-        statuses: [0, 200]
-      })
-    ]
-  })
-);
-
-// Network-only for API requests
-workbox.routing.registerRoute(
-  ({ url }) => url.pathname.includes('/api/'),
-  new workbox.strategies.NetworkOnly()
-);
-
-// Fallback for navigation requests (offline)
-workbox.routing.setDefaultHandler(
-  ({ request }) => {
-    if (request.mode === 'navigate') {
-      return caches.match('/index.html');
+  ({ request }) => request.mode === 'navigate',
+  async ({ event }) => {
+    try {
+      const response = await workbox.strategies.networkFirst({
+        cacheName: 'pages-cache',
+        plugins: [
+          new workbox.expiration.ExpirationPlugin({
+            maxEntries: 50,
+          }),
+        ],
+      }).handle({ event });
+      return response || await caches.match('/offline.html');
+    } catch (error) {
+      return await caches.match('/offline.html');
     }
-    return Response.error();
   }
 );
 
-// Immediate activation and client control
-workbox.core.skipWaiting();
-workbox.core.clientsClaim();
+
+  
+} else {
+  console.log('❌ Workbox failed to load');
+}
+
+// Clean up old/unused caches during activation
+self.addEventListener('activate', event => {
+  const currentCaches = [
+    workbox.core.cacheNames.precache,
+    'weather-api-cache',
+    'image-cache',
+    'pages-cache',
+    'static-cache'
+  ];
+
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (!currentCaches.includes(cacheName)) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
