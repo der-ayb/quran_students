@@ -634,11 +634,7 @@
 <script src="src/pdfmake.js"></script>
 <script src="src/vfs_fonts.js"></script>
 
-<!-- <script>navigator.serviceWorker.register("src/service-worker.js")</script> -->
 <script>
-  // app.js
-// app.js
-// app.js
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('src/service-worker.js')
@@ -648,7 +644,7 @@ if ('serviceWorker' in navigator) {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              alert('New version available, including updated Bootstrap! Please refresh.');
+              window.showToast("info",'New version available, including updated Bootstrap! Please refresh.');
             }
           });
         });
