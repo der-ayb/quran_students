@@ -22,7 +22,6 @@ if ("serviceWorker" in navigator) {
 let deferredPrompt;
 const installBtn = document.getElementById("installBtn")
 document.addEventListener("DOMContentLoaded", () => {
-  
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;

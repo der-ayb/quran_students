@@ -5,7 +5,7 @@ importScripts(
 workbox.setConfig({ debug: false });
 
 // Force waiting service worker to become active
-workbox.core.skipWaiting();
+self.skipWaiting();
 workbox.core.clientsClaim();
 
 if (workbox) {
@@ -120,12 +120,12 @@ if (workbox) {
   workbox.routing.registerRoute(
     ({ url }) =>
       url.origin === location.origin ||
+      url.origin === 'https://code.jquery.com' ||
+      url.origin === 'https://fonts.googleapis.com' ||
       url.origin === 'https://cdnjs.cloudflare.com' ||
       url.origin === 'https://www.gstatic.com' ||
       url.origin === 'https://cdn.datatables.net' ||
-      url.origin === 'https://cdn.jsdelivr.net' ||
-      url.origin === 'https://code.jquery.com' ||
-      url.origin === 'https://fonts.googleapis.com',
+      url.origin === 'https://cdn.jsdelivr.net' ,
     new workbox.strategies.NetworkFirst({
       cacheName: "core-cache",
       plugins: [
