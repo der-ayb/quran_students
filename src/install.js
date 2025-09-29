@@ -20,22 +20,23 @@ if ("serviceWorker" in navigator) {
 
 // install button
 let deferredPrompt;
+const installBtn = document.getElementById("installBtn")
 document.addEventListener("DOMContentLoaded", () => {
   let deferredPrompt;
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
   });
-  document.getElementById("installBtn").onclick = async () => {
+  installBtn.onclick = async () => {
     deferredPrompt.prompt();
     deferredPrompt = null;
   };
   window.addEventListener("appinstalled", () => {
     deferredPrompt = null;
-    document.getElementById("install").style.display = "none";
+    installBtn.style.display = "none";
   });
 
   if (window.matchMedia("(display-mode: standalone)").matches) {
-    document.getElementById("install").style.display = "none";
+    installBtn.style.display = "none";
   }
 });

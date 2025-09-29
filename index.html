@@ -439,10 +439,58 @@
               </select>
             </div>
 
+            <div class="row">
+              <div class="col">
+                <div class="mb-3">
+                  <label for="clothing">الهندام:</label>
+                  <select class="form-control" id="clothing" required>
+                    <option value="3">جيد</option>
+                    <option value="2">مقبول</option>
+                    <option value="1">غير مقبول</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col">
+                <div class="mb-3">
+                  <label for="haircut">الحلاقة:</label>
+                  <select class="form-control" id="haircut" required>
+                    <option value="3">جيد</option>
+                    <option value="2">مقبول</option>
+                    <option value="1">غير مقبول</option>
+                  </select>
+                </div>
+              </div>
+              <div class="w-100"></div>
+              <div class="col">
+                <div class="mb-3">
+                  <label for="behavior">السلوك:</label>
+                  <select class="form-control" id="behavior" required>
+                    <option value="5">ممتاز</option>
+                    <option value="4">جيد</option>
+                    <option value="3">مقبول</option>
+                    <option value="0">سيئ</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col">
+                <div class="mb-3">
+                  <label for="prayer">الصلاة:</label>
+                  <select class="form-control" id="prayer" required>
+                    <option value="4">ممتاز</option>
+                    <option value="0">غائب</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
             <div class="my-1 d-flex align-items-center">
               <hr class="flex-grow-1">
               <span class="mx-2 text-muted">المطلوب</span>
               <hr class="flex-grow-1">
+            </div>
+            <div class="mb-3">
+              <label for="requirMoyenne">معدل المطلوب:</label>
+              <input type="number" class="form-control" id="requirMoyenne" readonly required />
             </div>
             <div class="table-responsive">
               <table class="table" id="requirementTable" style="display: none;">
@@ -529,60 +577,6 @@
                   </div>
                 </div>
               </div>
-
-            </div>
-
-            <div class="mb-3">
-              <label for="requirMoyenne">معدل المطلوب:</label>
-              <input type="number" class="form-control" id="requirMoyenne" readonly required />
-            </div>
-            <div class="my-1 d-flex align-items-center">
-              <hr class="flex-grow-1">
-              <span class="mx-2 text-muted">الملاحظات الأخرى</span>
-              <hr class="flex-grow-1">
-            </div>
-            <div class="row">
-              <div class="col">
-                <div class="mb-3">
-                  <label for="clothing">الهندام:</label>
-                  <select class="form-control" id="clothing" required>
-                    <option value="3">جيد</option>
-                    <option value="2">مقبول</option>
-                    <option value="1">غير مقبول</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="haircut">الحلاقة:</label>
-                  <select class="form-control" id="haircut" required>
-                    <option value="3">جيد</option>
-                    <option value="2">مقبول</option>
-                    <option value="1">غير مقبول</option>
-                  </select>
-                </div>
-              </div>
-              <div class="w-100"></div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="behavior">السلوك:</label>
-                  <select class="form-control" id="behavior" required>
-                    <option value="5">ممتاز</option>
-                    <option value="4">جيد</option>
-                    <option value="3">مقبول</option>
-                    <option value="0">سيئ</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="prayer">الصلاة:</label>
-                  <select class="form-control" id="prayer" required>
-                    <option value="4">ممتاز</option>
-                    <option value="0">غائب</option>
-                  </select>
-                </div>
-              </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -634,7 +628,7 @@
 <script src="src/pdfmake.js"></script>
 <script src="src/vfs_fonts.js"></script>
 
-<script type="module" src="src/install.js"></script>
+<!-- <script type="module" src="src/install.js"></script> -->
 <script src="src/auth.js"></script>
 <script src="src/script.js"></script>
 

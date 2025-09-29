@@ -127,7 +127,7 @@ if (workbox) {
       url.origin === 'https://code.jquery.com' ||
       url.origin === 'https://fonts.googleapis.com',
     new workbox.strategies.NetworkFirst({
-      cacheName: "weather-api-cache",
+      cacheName: "core-cache",
       plugins: [
         new workbox.expiration.ExpirationPlugin({
           maxAgeSeconds: 24 * 60 * 60,
@@ -188,7 +188,7 @@ if (workbox) {
 self.addEventListener("activate", (event) => {
   const currentCaches = [
     workbox.core.cacheNames.precache,
-    "weather-api-cache",
+    "core-cache",
     "image-cache",
     "pages-cache",
     "static-cache",

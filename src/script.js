@@ -203,7 +203,6 @@ document.getElementById("fileInput").onchange = async (e) => {
   }
 };
 
-
 // --- Initialize the application (async) ---
 window._toastQueue = window._toastQueue || [];
 window._toastReady = false;
@@ -913,15 +912,22 @@ function update_student_day_notes(studentId) {
       requirList.push(rowData);
     });
 
-    project_db.run(
-      "INSERT OR REPLACE INTO day_requirements (student_id, day_id, detail, moyenne) VALUES (?, ?, ?, ?);",
-      [
-        studentId,
-        currentDay,
-        JSON.stringify(requirList),
-        requirMoyenneInput.value || "0",
-      ]
-    );
+    if (requirList.length) {
+      project_db.run(
+        "INSERT OR REPLACE INTO day_requirements (student_id, day_id, detail, moyenne) VALUES (?, ?, ?, ?);",
+        [
+          studentId,
+          currentDay,
+          JSON.stringify(requirList),
+          requirMoyenneInput.value || "0",
+        ]
+      );
+    } else {
+      project_db.run(
+        "DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;",
+        [studentId, currentDay]
+      );
+    }
 
     project_db.run(
       "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,clothing,haircut,behavior,prayer,moyenne) VALUES (?, ?, ?, ?,?,?,?,?);",
@@ -1057,7 +1063,7 @@ async function loadDayStudentsList() {
           attendanceInput.dispatchEvent(new Event("change"));
 
           requirMoyenneInput.value =
-            row[result.columns.indexOf("requirsMoyenne")];
+            row[result.columns.indexOf("requirsMoyenne")] || "0";
 
           clothingInput.value = row[result.columns.indexOf("clothing")];
           haircutInput.value = row[result.columns.indexOf("haircut")];
