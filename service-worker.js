@@ -119,7 +119,7 @@ if (workbox) {
   // Cache API requests
   workbox.routing.registerRoute(
     ({ url }) =>
-      url.origin === location.origin ||
+      url.origin === location.origin +"quran_students/"||
       url.origin === 'https://code.jquery.com' ||
       url.origin === 'https://fonts.googleapis.com' ||
       url.origin === 'https://cdnjs.cloudflare.com' ||
