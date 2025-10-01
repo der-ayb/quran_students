@@ -1,7 +1,7 @@
 //service workers
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("quran_students/service-worker.js").then((reg) => {
+    navigator.serviceWorker.register("/service-worker.js").then((reg) => {
       reg.onupdatefound = () => {
         const newWorker = reg.installing;
         newWorker.onstatechange = () => {
