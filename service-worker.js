@@ -13,21 +13,21 @@ if (workbox) {
 
   // Precache critical files with revisions (update revisions when files change)
   workbox.precaching.precacheAndRoute([
-    { url: "/", revision: "1" },
-    { url: "/favicon.ico", revision: "1" },
-    { url: "/index.html", revision: "1" },
-    { url: "/offline.html", revision: "1" },
-    { url: "/manifest.json", revision: "1" },
-    { url: "/src/style.css", revision: "1" },
-    { url: "/src/script.js", revision: "1" },
-    { url: "/src/auth.js", revision: "1" },
-    { url: "/src/pdfmake.js", revision: "1" },
-    { url: "/src/vfs_fonts.js", revision: "1" },
-    { url: "/assets/default.sqlite3", revision: "1" },
-    { url: "/assets/quran.sqlite", revision: "1" },
-    { url: "/assets/manifest-icon-192.maskable.png", revision: "1" },
-    { url: "/assets/manifest-icon-512.maskable.png", revision: "1" },
-    { url: "/assets/apple-icon-180.png", revision: "1" },
+    { url: "./", revision: "1" },
+    { url: "./favicon.ico", revision: "1" },
+    { url: "./index.html", revision: "1" },
+    { url: "./offline.html", revision: "1" },
+    { url: "./manifest.json", revision: "1" },
+    { url: "./src/style.css", revision: "1" },
+    { url: "./src/script.js", revision: "1" },
+    { url: "./src/auth.js", revision: "1" },
+    { url: "./src/pdfmake.js", revision: "1" },
+    { url: "./src/vfs_fonts.js", revision: "1" },
+    { url: "./assets/default.sqlite3", revision: "1" },
+    { url: "./assets/quran.sqlite", revision: "1" },
+    { url: "./assets/manifest-icon-192.maskable.png", revision: "1" },
+    { url: "./assets/manifest-icon-512.maskable.png", revision: "1" },
+    { url: "./assets/apple-icon-180.png", revision: "1" },
     {
       url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/spacelab/bootstrap.rtl.min.css",
       revision: "1",
@@ -174,9 +174,9 @@ if (workbox) {
             ],
           })
           .handle({ event });
-        return response || (await caches.match("/offline.html"));
+        return response || (await caches.match("./offline.html"));
       } catch (error) {
-        return await caches.match("/offline.html");
+        return await caches.match("./offline.html");
       }
     }
   );
