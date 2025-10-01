@@ -20,22 +20,38 @@ if ("serviceWorker" in navigator) {
 
 // install button
 let deferredPrompt;
-const installBtn = document.getElementById("installBtn")
-document.addEventListener("DOMContentLoaded", () => {
-  window.addEventListener("beforeinstallprompt", (e) => {
+
+document.addEventListener('DOMContentLoaded', () => {
+  const installBtn = document.getElementById('installBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-  });
-  installBtn.onclick = async () => {
-    deferredPrompt.prompt();
-    deferredPrompt = null;
-  };
-  window.addEventListener("appinstalled", () => {
-    deferredPrompt = null;
-    installBtn.style.display = "none";
+
+    // Show the button
+    installBtn.style.display = 'block';
+
+    installBtn.addEventListener('click', () => {
+      // Directly triggered by user click
+      installBtn.style.display = 'none';
+
+      // Show the install prompt
+      deferredPrompt.prompt();
+
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        deferredPrompt = null;
+      });
+    });
   });
 
-  if (window.matchMedia("(display-mode: standalone)").matches) {
-    installBtn.style.display = "none";
-  }
-});
+
+  //Confirm successful installation.
+  window.addEventListener('appinstalled', () => {
+    console.log('PWA was installed');
+  });
+})
