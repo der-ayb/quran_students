@@ -28,8 +28,45 @@ if (workbox) {
     { url: "./assets/manifest-icon-192.maskable.png", revision: "1" },
     { url: "./assets/manifest-icon-512.maskable.png", revision: "1" },
     { url: "./assets/apple-icon-180.png", revision: "1" },
+    // bootstrap
     {
       url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/spacelab/bootstrap.rtl.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/cerulean/bootstrap.rtl.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/cosmo/bootstrap.rtl.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/yeti/bootstrap.rtl.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/flatly/bootstrap.rtl.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/simplex/bootstrap.rtl.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/slate/bootstrap.rtl.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/solar/bootstrap.rtl.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/superhero/bootstrap.rtl.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/cyborg/bootstrap.rtl.min.css",
       revision: "1",
     },
     {
@@ -119,13 +156,13 @@ if (workbox) {
   // Cache API requests
   workbox.routing.registerRoute(
     ({ url }) =>
-      url.origin === location.origin +"quran_students/"||
-      url.origin === 'https://code.jquery.com' ||
-      url.origin === 'https://fonts.googleapis.com' ||
-      url.origin === 'https://cdnjs.cloudflare.com' ||
-      url.origin === 'https://www.gstatic.com' ||
-      url.origin === 'https://cdn.datatables.net' ||
-      url.origin === 'https://cdn.jsdelivr.net' ,
+      url.origin === location.origin  ||
+      url.origin === "https://code.jquery.com" ||
+      url.origin === "https://fonts.googleapis.com" ||
+      url.origin === "https://cdnjs.cloudflare.com" ||
+      url.origin === "https://www.gstatic.com" ||
+      url.origin === "https://cdn.datatables.net" ||
+      url.origin === "https://cdn.jsdelivr.net",
     new workbox.strategies.NetworkFirst({
       cacheName: "core-cache",
       plugins: [
