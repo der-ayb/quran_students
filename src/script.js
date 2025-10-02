@@ -132,10 +132,10 @@ async function init() {
       } else {
         await downloadQuranDB();
       }
-      showTab("pills-summary");
+      showTab("pills-home");
       nav_bar.style.removeProperty("display");
     } else {
-      showTab("pills-home");
+      showTab("pills-splash");
     }
   });
 }
@@ -198,6 +198,11 @@ document.getElementById("newDBbtn").onclick = async function () {
 
 document.getElementById("downloadBtn").onclick = exportDB;
 document.getElementById("fileInput").onchange = async (e) => {
+  if(!e.target.files) return;
+  if(project_db && !confirm("سيتم استبدال قاعدة البيانات الحالية. هل أنت متأكد؟")){
+    e.target.value = "";
+    return;
+  }
   if (e.target.files.length) {
     await loadDBFromFile(e.target.files[0]);
   }
@@ -1466,7 +1471,7 @@ document.getElementById("newDBbtn").onclick = async function () {
   );
   await downloadQuranDB();
   window.showToast("success", "تم تحميل قواعد البيانات.");
-  showTab("pills-summary");
+  showTab("pills-home");
   nav_bar.style.removeProperty("display");
 };
 
@@ -1483,9 +1488,9 @@ async function showTab(tabId) {
     .forEach((el) => el.classList.remove("show", "active"));
   document.getElementById(tabId).classList.add("show", "active");
 
-  if (tabId === "pills-home") {
+  if (tabId === "pills-splash") {
     nav_bar.style.display = "none";
-  } else if (tabId === "pills-summary") {
+  } else if (tabId === "pills-home") {
     await loadClassRoomsList();
   } else if (tabId === "pills-preferences") {
     // pass
@@ -1504,7 +1509,7 @@ async function showTab(tabId) {
       // Optionally load statistics
     }
   } else {
-    showTab("pills-summary");
+    showTab("pills-home");
     window.showToast("warning", "الرجاء إختيار قسم.");
   }
 }

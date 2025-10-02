@@ -2,17 +2,15 @@ importScripts(
   "https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js"
 );
 
-workbox.setConfig({ debug: false });
+workbox.setConfig({ debug: true });
 
 // Force waiting service worker to become active
 self.skipWaiting();
 workbox.core.clientsClaim();
 
-if (workbox) {
-  console.log("Workbox loaded successfully");
-
-  // Precache critical files with revisions (update revisions when files change)
-  workbox.precaching.precacheAndRoute([
+// Precache critical files with revisions (update revisions when files change)
+workbox.precaching.precacheAndRoute(
+  [
     { url: "./", revision: "1" },
     { url: "./favicon.ico", revision: "1" },
     { url: "./index.html", revision: "1" },
@@ -151,94 +149,51 @@ if (workbox) {
       url: "https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@100..900&family=Poppins&display=swap",
       revision: "1",
     },
-  ]);
+  ],
+  {
+    // Ignore URL parameters to prevent duplicate caching
+    ignoreURLParametersMatching: [/.*/],
+  }
+);
 
-  // Cache API requests
-  workbox.routing.registerRoute(
-    ({ url }) =>
-      url.origin === location.origin  ||
-      url.origin === "https://code.jquery.com" ||
-      url.origin === "https://fonts.googleapis.com" ||
-      url.origin === "https://cdnjs.cloudflare.com" ||
-      url.origin === "https://www.gstatic.com" ||
-      url.origin === "https://cdn.datatables.net" ||
-      url.origin === "https://cdn.jsdelivr.net",
-    new workbox.strategies.NetworkFirst({
-      cacheName: "core-cache",
-      plugins: [
-        new workbox.expiration.ExpirationPlugin({
-          maxAgeSeconds: 24 * 60 * 60,
-          maxEntries: 10,
-        }),
-      ],
-    })
-  );
+// Runtime caching for same-origin requests (network first, fallback to cache)
+workbox.routing.registerRoute(
+  ({ request }) => request.destination === "document",
+  new workbox.strategies.NetworkFirst({
+    cacheName: "pages",
+    plugins: [new workbox.expiration.ExpirationPlugin({ maxEntries: 50 })],
+  })
+);
 
-  // Cache images
-  workbox.routing.registerRoute(
-    ({ request }) => request.destination === "image",
-    new workbox.strategies.StaleWhileRevalidate({
-      cacheName: "image-cache",
-    })
-  );
+// Runtime caching for CSS/JS (stale-while-revalidate)
+workbox.routing.registerRoute(
+  ({ request }) =>
+    request.destination === "style" || request.destination === "script",
+  new workbox.strategies.StaleWhileRevalidate({
+    cacheName: "assets",
+  })
+);
 
-  // Serve Cached Resources
-  workbox.routing.registerRoute(
-    ({ url }) => url.origin === self.location.origin,
-    new workbox.strategies.CacheFirst({
-      cacheName: "static-cache",
-      plugins: [
-        new workbox.expiration.ExpirationPlugin({
-          maxAgeSeconds: 7 * 24 * 60 * 60, // Cache static resources for 7 days
-        }),
-      ],
-    })
-  );
+// Runtime caching for images
+workbox.routing.registerRoute(
+  ({ request }) => request.destination === "image",
+  new workbox.strategies.CacheFirst({
+    cacheName: "images",
+    plugins: [
+      new workbox.expiration.ExpirationPlugin({
+        maxEntries: 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
+      }),
+    ],
+  })
+);
 
-  // Serve HTML pages with Network First and offline fallback
-  workbox.routing.registerRoute(
-    ({ request }) => request.mode === "navigate",
-    async ({ event }) => {
-      try {
-        const response = await workbox.strategies
-          .networkFirst({
-            cacheName: "pages-cache",
-            plugins: [
-              new workbox.expiration.ExpirationPlugin({
-                maxEntries: 50,
-              }),
-            ],
-          })
-          .handle({ event });
-        return response || (await caches.match("./offline.html"));
-      } catch (error) {
-        return await caches.match("./offline.html");
-      }
-    }
-  );
-} else {
-  console.log("❌ Workbox failed to load");
-}
-
-// Clean up old/unused caches during activation
-self.addEventListener("activate", (event) => {
-  const currentCaches = [
-    workbox.core.cacheNames.precache,
-    "core-cache",
-    "image-cache",
-    "pages-cache",
-    "static-cache",
-  ];
-
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (!currentCaches.includes(cacheName)) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
+// Fallback to offline.html for navigation requests
+workbox.routing.setCatchHandler(async ({ event }) => {
+  if (event.request.destination === "document") {
+    return workbox.precaching.matchPrecache("./offline.html");
+  }
+  return Response.error();
 });
+
+console.log("[SW] worker-service.js loaded");
