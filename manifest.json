@@ -1,7 +1,8 @@
 {
   "name": "متابعة",
   "short_name": "متابعة",
-  "start_url": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "display_override": [
     "window-controls-overlay"
