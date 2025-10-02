@@ -7,9 +7,6 @@ workbox.setConfig({ debug: true });
 // Precache critical files with revisions (update revisions when files change)
 workbox.precaching.precacheAndRoute(
   [
-// Precache critical files with revisions (update revisions when files change)
-workbox.precaching.precacheAndRoute(
-  [
     { url: "./", revision: "1" },
     { url: "./favicon.ico", revision: "1" },
     { url: "./index.html", revision: "1" },
@@ -148,12 +145,6 @@ workbox.precaching.precacheAndRoute(
       url: "https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@100..900&family=Poppins&display=swap",
       revision: "1",
     },
-  ],
-  {
-    // Ignore URL parameters to prevent duplicate caching
-    ignoreURLParametersMatching: [/.*/],
-  }
-);
   ],
   {
     // Ignore URL parameters to prevent duplicate caching
