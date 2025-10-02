@@ -19,13 +19,15 @@ if (workbox) {
       { url: "./index.html", revision: "1" },
       { url: "./offline.html", revision: "1" },
       { url: "./manifest.json", revision: "1" },
+
       { url: "./src/style.css", revision: "1" },
       { url: "./src/script.js", revision: "1" },
       { url: "./src/auth.js", revision: "1" },
       { url: "./src/pdfmake.js", revision: "1" },
       { url: "./src/vfs_fonts.js", revision: "1" },
-      { url: "./assets/default.sqlite3", revision: "1" },
-      { url: "./assets/quran.sqlite", revision: "1" },
+
+      // { url: "./assets/default.sqlite3", revision: "1" },
+      // { url: "./assets/quran.sqlite", revision: "1" },
       { url: "./assets/manifest-icon-192.maskable.png", revision: "1" },
       { url: "./assets/manifest-icon-512.maskable.png", revision: "1" },
       { url: "./assets/apple-icon-180.png", revision: "1" },
@@ -104,6 +106,10 @@ if (workbox) {
       },
       {
         url: "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js",
+        revision: "1",
+      },
+      {
+        url: "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.wasm",
         revision: "1",
       },
       {

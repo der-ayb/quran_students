@@ -1,217 +1,13 @@
-// --- IndexedDB Promisified ---
-function openDatabaseAsync() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(PROJECT_DB_KEY, 1);
-    request.onupgradeneeded = function (event) {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(DB_STORE_NAME)) {
-        db.createObjectStore(DB_STORE_NAME);
-      }
-    };
-    request.onsuccess = function () {
-      resolve(request.result);
-    };
-    request.onerror = function (e) {
-      reject(e.target.error);
-    };
-  });
-}
-
-async function saveToIndexedDB(data, db_key = PROJECT_DB_KEY) {
-  const idb = await openDatabaseAsync();
-  return new Promise((resolve, reject) => {
-    const tx = idb.transaction(DB_STORE_NAME, "readwrite");
-    const store = tx.objectStore(DB_STORE_NAME);
-    store.put(data, db_key);
-    tx.oncomplete = () => {
-      idb.close();
-      resolve();
-    };
-    tx.onerror = (e) => {
-      idb.close();
-      reject(e.target.error);
-    };
-  });
-}
-
-async function loadFromIndexedDB(callback) {
-  const idb = await openDatabaseAsync();
-  return new Promise((resolve) => {
-    const tx = idb.transaction(DB_STORE_NAME, "readonly");
-    const store = tx.objectStore(DB_STORE_NAME);
-    const getProjectRequest = store.get(PROJECT_DB_KEY);
-    const getQuranRequest = store.get(QURAN_DB_KEY);
-
-    let projectResult, quranResult;
-    let projectDone = false,
-      quranDone = false;
-
-    function maybeCallback() {
-      if (projectDone && quranDone) {
-        callback(projectResult, quranResult);
-        resolve();
-        idb.close();
-      }
-    }
-
-    getProjectRequest.onsuccess = () => {
-      projectResult = getProjectRequest.result || null;
-      projectDone = true;
-      maybeCallback();
-    };
-    getQuranRequest.onsuccess = () => {
-      quranResult = getQuranRequest.result || null;
-      quranDone = true;
-      maybeCallback();
-    };
-
-    getProjectRequest.onerror = () => {
-      projectResult = null;
-      projectDone = true;
-      maybeCallback();
-    };
-    getQuranRequest.onerror = () => {
-      quranResult = null;
-      quranDone = true;
-      maybeCallback();
-    };
-  });
-}
-
-// --- File Reading Async ---
-async function loadDBFromFile(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  project_db = new SQL.Database(new Uint8Array(arrayBuffer));
-  await saveToIndexedDB(project_db.export());
-  window.showToast("success", "تم تحميل قاعدة البيانات.");
-  window.location.reload();
-}
-
-// --- Fetch and Read File Async ---
-async function fetchAndReadFile(
-  db_key,
-  url,
-  callback = function () {
-    window.showToast("success", "تم تحميل قاعدة البيانات.");
-  }
-) {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Failed to fetch file");
-    const blob = await response.blob();
-    const uInt8Array = new Uint8Array(await blob.arrayBuffer());
-    const db = new SQL.Database(uInt8Array);
-    await saveToIndexedDB(db.export(), db_key);
-    callback(db);
-  } catch (error) {
-    window.showToast("error", "Error reading file:" + error);
-  }
-}
-
-// --- Export DB Async ---
-async function exportDB() {
-  const data = project_db.export();
-  download(data, "quran_students.sqlite3", "application/x-sqlite3");
-}
-
-// --- Initialization Async ---
-async function init() {
-  initializeToast();
-  SQL = await initSqlJs({
-    locateFile: (file) =>
-      `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/${file}`,
-  });
-
-  await loadFromIndexedDB(async (savedProjectData, savedQuranData) => {
-    if (savedProjectData) {
-      project_db = new SQL.Database(new Uint8Array(savedProjectData));
-      if (savedQuranData) {
-        quran_db = new SQL.Database(new Uint8Array(savedQuranData));
-        await initializeAyatdata(quran_db);
-        await dayDatePickerInit();
-      } else {
-        await downloadQuranDB();
-      }
-      showTab("pills-home");
-      nav_bar.style.removeProperty("display");
-    } else {
-      showTab("pills-splash");
-    }
-  });
-}
-
-// --- Download Quran DB Async ---
-async function downloadQuranDB() {
-  await fetchAndReadFile(
-    QURAN_DB_KEY,
-    "https://der-ayb.github.io/quran_students/assets/quran.sqlite",
-    async (db) => {
-      quran_db = db;
-      await initializeAyatdata(db);
-      await dayDatePickerInit();
-    }
-  );
-}
-
-// --- Async Utility for DataTable Reload ---
-async function initOrReloadDataTable(
-  selector,
-  data,
-  columns,
-  options = {},
-  TableDetailIsShow = false,
-  shoulDestroy = false
-) {
-  if ($.fn.DataTable.isDataTable(selector)) {
-    if (shoulDestroy) {
-      $(selector).DataTable().destroy();
-      $(selector).empty();
-    } else {
-      return $(selector).DataTable().clear().rows.add(data).draw();
-    }
-  }
-  const table = new DataTable(selector, {
-    data,
-    columns,
-    ...options,
-  });
-
-  if (TableDetailIsShow) {
-    table.buttons(0).trigger();
-  }
-  return table;
-}
-
-// --- Event Handlers Async ---
-document.getElementById("newDBbtn").onclick = async function () {
-  await fetchAndReadFile(
-    PROJECT_DB_KEY,
-    "https://der-ayb.github.io/quran_students/default.sqlite3",
-    (db) => {
-      project_db = db;
-    }
-  );
-  await downloadQuranDB();
-  window.showToast("success", "تم تحميل قواعد البيانات.");
-  window.location.reload();
-};
-
-document.getElementById("downloadBtn").onclick = exportDB;
-document.getElementById("fileInput").onchange = async (e) => {
-  if(!e.target.files) return;
-  if(project_db && !confirm("سيتم استبدال قاعدة البيانات الحالية. هل أنت متأكد؟")){
-    e.target.value = "";
-    return;
-  }
-  if (e.target.files.length) {
-    await loadDBFromFile(e.target.files[0]);
-  }
-};
-
 // --- Initialize the application (async) ---
 window._toastQueue = window._toastQueue || [];
 window._toastReady = false;
-init();
+initializeToast();
+const nav_bar = document.querySelector(".nav-bar");
+if (localStorage.getItem("newUser") == true) {
+  showTab("pills-splash");
+} else {
+  init();
+}
 
 let project_db, quran_db, SQL;
 const surahsData = [];
@@ -241,7 +37,6 @@ let userIsAuth = false;
 let currentDay = new Date().toISOString().slice(0, 10);
 
 const workingClassroomSelect = document.getElementById("workingClassroom");
-const nav_bar = document.querySelector(".nav-bar");
 const dayDateInput = $("#dayDate");
 const dayNoteContainer = document.getElementById("dayNoteContainer");
 const statisticsDateInput = $("#statisticsrange");
@@ -353,6 +148,285 @@ document.addEventListener("DOMContentLoaded", async function () {
       .split("T")[0]
   );
 });
+
+// --- IndexedDB Promisified ---
+function openDatabaseAsync() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(PROJECT_DB_KEY, 1);
+    request.onupgradeneeded = function (event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(DB_STORE_NAME)) {
+        db.createObjectStore(DB_STORE_NAME);
+      }
+    };
+    request.onsuccess = function () {
+      resolve(request.result);
+    };
+    request.onerror = function (e) {
+      reject(e.target.error);
+    };
+  });
+}
+
+async function saveToIndexedDB(data, db_key = PROJECT_DB_KEY) {
+  const idb = await openDatabaseAsync();
+  return new Promise((resolve, reject) => {
+    const tx = idb.transaction(DB_STORE_NAME, "readwrite");
+    const store = tx.objectStore(DB_STORE_NAME);
+    store.put(data, db_key);
+    tx.oncomplete = () => {
+      idb.close();
+      resolve();
+    };
+    tx.onerror = (e) => {
+      idb.close();
+      reject(e.target.error);
+    };
+  });
+}
+
+async function loadFromIndexedDB(callback) {
+  const idb = await openDatabaseAsync();
+  return new Promise((resolve) => {
+    const tx = idb.transaction(DB_STORE_NAME, "readonly");
+    const store = tx.objectStore(DB_STORE_NAME);
+    const getProjectRequest = store.get(PROJECT_DB_KEY);
+    const getQuranRequest = store.get(QURAN_DB_KEY);
+
+    let projectResult, quranResult;
+    let projectDone = false,
+      quranDone = false;
+
+    function maybeCallback() {
+      if (projectDone && quranDone) {
+        callback(projectResult, quranResult);
+        resolve();
+        idb.close();
+      }
+    }
+
+    getProjectRequest.onsuccess = () => {
+      projectResult = getProjectRequest.result || null;
+      projectDone = true;
+      maybeCallback();
+    };
+    getQuranRequest.onsuccess = () => {
+      quranResult = getQuranRequest.result || null;
+      quranDone = true;
+      maybeCallback();
+    };
+
+    getProjectRequest.onerror = () => {
+      projectResult = null;
+      projectDone = true;
+      maybeCallback();
+    };
+    getQuranRequest.onerror = () => {
+      quranResult = null;
+      quranDone = true;
+      maybeCallback();
+    };
+  });
+}
+
+// --- File Reading Async ---
+async function loadDBFromFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  try {
+    project_db = new SQL.Database(new Uint8Array(arrayBuffer));
+    await saveToIndexedDB(project_db.export());
+    window.showToast("success", "تم تحميل قاعدة البيانات.");
+    window.location.reload();
+  } catch (e) {
+    loadingModal.hide();
+    console.error("Error loading DB from file:", e);
+    window.showToast(
+      "error",
+      "فشل في تحميل قاعدة البيانات. تأكد من صحة الملف."
+    );
+  }
+}
+
+// --- Fetch and Read File Async ---
+async function fetchAndPutIntoIndexedDBFile(
+  db_key,
+  url,
+  onSuccessCallback = function () {}
+) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch file from:" + url);
+    const blob = await response.blob();
+    const uInt8Array = new Uint8Array(await blob.arrayBuffer());
+    const db = new SQL.Database(uInt8Array);
+    await saveToIndexedDB(db.export(), db_key);
+    onSuccessCallback(db);
+    return true;
+  } catch (error) {
+    console.error("Error reading file:" + error);
+    return false;
+  }
+}
+
+// --- Export DB Async ---
+async function exportDB() {
+  const data = project_db.export();
+  download(data, "quran_students.sqlite3", "application/x-sqlite3");
+}
+
+// --- Initialization Async ---
+async function init() {
+  SQL = await initSqlJs({
+    locateFile: (file) =>
+      `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/${file}`,
+  });
+
+  await loadFromIndexedDB(async (savedProjectData, savedQuranData) => {
+    if (savedProjectData) {
+      project_db = new SQL.Database(new Uint8Array(savedProjectData));
+      if (savedQuranData) {
+        quran_db = new SQL.Database(new Uint8Array(savedQuranData));
+      } else {
+        if (!(await downloadQuranDB())) {
+          window.showToast(
+            "error",
+            "فشل في إنشاء قاعدة بيانات جديدة، تأكد من الاتصال بالإنترنت."
+          );
+          return;
+        }
+      }
+      localStorage.setItem("newUser", false);
+      await initializeAyatdata(quran_db);
+      await dayDatePickerInit();
+      showTab("pills-home");
+      nav_bar.style.removeProperty("display");
+    } else {
+      showTab("pills-splash");
+    }
+  });
+}
+
+// --- Download Quran DB Async ---
+async function downloadQuranDB() {
+  return await fetchAndPutIntoIndexedDBFile(
+    QURAN_DB_KEY,
+    "./assets/quran.sqlite",
+    async (db) => {
+      quran_db = db;
+      await initializeAyatdata(db);
+      await dayDatePickerInit();
+    }
+  );
+}
+
+// --- Async Utility for DataTable Reload ---
+async function initOrReloadDataTable(
+  selector,
+  data,
+  columns,
+  options = {},
+  TableDetailIsShow = false,
+  shoulDestroy = false
+) {
+  if ($.fn.DataTable.isDataTable(selector)) {
+    if (shoulDestroy) {
+      $(selector).DataTable().destroy();
+      $(selector).empty();
+    } else {
+      return $(selector).DataTable().clear().rows.add(data).draw();
+    }
+  }
+  const table = new DataTable(selector, {
+    data,
+    columns,
+    ...options,
+  });
+
+  if (TableDetailIsShow) {
+    table.buttons(0).trigger();
+  }
+  return table;
+}
+
+// show loading modal
+function showLoadingModal() {
+  const modalElement = document.getElementById("loadingModal");
+  return new Promise((resolve) => {
+    // Listen for when modal is fully shown
+    const handleShown = () => {
+      modalElement.removeEventListener("shown.bs.modal", handleShown);
+      resolve(loadingModal);
+    };
+
+    modalElement.addEventListener("shown.bs.modal", handleShown);
+    loadingModal.show();
+  });
+}
+
+// --- Event Handlers Async ---
+document.getElementById("downloadDBbtn").onclick = exportDB;
+document.getElementById("createNewDBbtn").onclick = async function () {
+  if (
+    project_db &&
+    !confirm("سيتم استبدال قاعدة البيانات الحالية. هل أنت متأكد؟")
+  ) {
+    return;
+  }
+  await showLoadingModal();
+  if (
+    !(await fetchAndPutIntoIndexedDBFile(
+      PROJECT_DB_KEY,
+      "./assets/default.sqlite3",
+      (db) => {
+        project_db = db;
+      }
+    )) ||
+    !(await downloadQuranDB())
+  ) {
+    loadingModal.hide();
+    window.showToast(
+      "error",
+      "فشل في إنشاء قاعدة بيانات جديدة، تأكد من الاتصال بالإنترنت."
+    );
+    return;
+  }
+  window.showToast("success", "تم تحميل قواعد البيانات.");
+  window.location.reload();
+};
+
+document.getElementById("importDBbtn").onchange = async (e) => {
+  if (e.target.files) {
+    if (
+      project_db &&
+      !confirm("سيتم استبدال قاعدة البيانات الحالية. هل أنت متأكد؟")
+    ) {
+      e.target.value = "";
+      return;
+    }
+    await showLoadingModal();
+    await loadDBFromFile(e.target.files[0]);
+  }
+};
+
+document.getElementById("asyncDBbtn").onclick = async (e) => {
+  if (!navigator.onLine) {
+    window.showToast("error", "لا يوجد اتصال بالإنترنت.");
+    return;
+  }
+  if (!userIsAuth) {
+    window.showToast("info", "الرجاء تسجيل الدخول أولاً.");
+    return;
+  }
+  if (project_db) {
+    await showLoadingModal();
+    try {
+      uploadDB(project_db.export());
+    } catch (e) {
+      window.showToast("error", "فشل في مزامنة قاعدة البيانات. حاول مرة أخرى.");
+    }
+    loadingModal.hide()
+  }
+};
 
 // classrooms tab
 workingClassroomSelect.onchange = async function () {
@@ -1459,27 +1533,6 @@ addQuranSelectionBtn.onclick = function () {
   requirTypeInput.dispatchEvent(new Event("change"));
   requirQuantityInput.dispatchEvent(new Event("change"));
   requirEvaluationInput.dispatchEvent(new Event("change"));
-};
-
-document.getElementById("newDBbtn").onclick = async function () {
-  await fetchAndReadFile(
-    PROJECT_DB_KEY,
-    "https://der-ayb.github.io/quran_students/assets/default.sqlite3",
-    (db) => {
-      project_db = db;
-    }
-  );
-  await downloadQuranDB();
-  window.showToast("success", "تم تحميل قواعد البيانات.");
-  showTab("pills-home");
-  nav_bar.style.removeProperty("display");
-};
-
-document.getElementById("downloadBtn").onclick = exportDB;
-document.getElementById("fileInput").onchange = async (e) => {
-  if (e.target.files.length) {
-    await loadDBFromFile(e.target.files[0]);
-  }
 };
 
 async function showTab(tabId) {

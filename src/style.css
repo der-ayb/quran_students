@@ -4,6 +4,11 @@ body {
   font-family: "Noto Sans Arabic", sans-serif;
 }
 
+html,
+body {
+  overscroll-behavior: none;
+}
+
 .UndoCountdown::after {
   content: ' ' attr(data-count);
 }
@@ -12,8 +17,8 @@ input {
   direction: rtl !important;
 }
 
-#fileInput,
-#downloadBtn {
+#importDBbtn,
+#downloadDBbtn {
   opacity: 0;
   width: 0.1px;
   height: 0.1px;
@@ -26,6 +31,10 @@ input {
   left: 10px;
   font-size: 0.85rem;
   color: #555;
+}
+
+.files-inputs button {
+  display: none;
 }
 
 .files-inputs label {
