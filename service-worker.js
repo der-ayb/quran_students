@@ -4,10 +4,9 @@ importScripts(
 
 workbox.setConfig({ debug: true });
 
-// Force waiting service worker to become active
-self.skipWaiting();
-workbox.core.clientsClaim();
-
+// Precache critical files with revisions (update revisions when files change)
+workbox.precaching.precacheAndRoute(
+  [
 // Precache critical files with revisions (update revisions when files change)
 workbox.precaching.precacheAndRoute(
   [
@@ -155,6 +154,12 @@ workbox.precaching.precacheAndRoute(
     ignoreURLParametersMatching: [/.*/],
   }
 );
+  ],
+  {
+    // Ignore URL parameters to prevent duplicate caching
+    ignoreURLParametersMatching: [/.*/],
+  }
+);
 
 // Runtime caching for same-origin requests (network first, fallback to cache)
 workbox.routing.registerRoute(
@@ -164,7 +169,23 @@ workbox.routing.registerRoute(
     plugins: [new workbox.expiration.ExpirationPlugin({ maxEntries: 50 })],
   })
 );
+// Runtime caching for same-origin requests (network first, fallback to cache)
+workbox.routing.registerRoute(
+  ({ request }) => request.destination === "document",
+  new workbox.strategies.NetworkFirst({
+    cacheName: "pages",
+    plugins: [new workbox.expiration.ExpirationPlugin({ maxEntries: 50 })],
+  })
+);
 
+// Runtime caching for CSS/JS (stale-while-revalidate)
+workbox.routing.registerRoute(
+  ({ request }) =>
+    request.destination === "style" || request.destination === "script",
+  new workbox.strategies.StaleWhileRevalidate({
+    cacheName: "assets",
+  })
+);
 // Runtime caching for CSS/JS (stale-while-revalidate)
 workbox.routing.registerRoute(
   ({ request }) =>
@@ -187,7 +208,29 @@ workbox.routing.registerRoute(
     ],
   })
 );
+// Runtime caching for images
+workbox.routing.registerRoute(
+  ({ request }) => request.destination === "image",
+  new workbox.strategies.CacheFirst({
+    cacheName: "images",
+    plugins: [
+      new workbox.expiration.ExpirationPlugin({
+        maxEntries: 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
+      }),
+    ],
+  })
+);
 
+// Fallback to offline.html for navigation requests
+workbox.routing.setCatchHandler(async ({ event }) => {
+  if (event.request.destination === "document") {
+    return workbox.precaching.matchPrecache("./offline.html");
+  }
+  return Response.error();
+});
+
+console.log("[SW] worker-service.js loaded");
 // Fallback to offline.html for navigation requests
 workbox.routing.setCatchHandler(async ({ event }) => {
   if (event.request.destination === "document") {
