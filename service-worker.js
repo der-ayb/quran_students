@@ -196,7 +196,6 @@ if (workbox) {
   );
 
   // Serve HTML pages with Network First and offline fallback
-  // Serve HTML pages with Network First and offline fallback
   workbox.routing.registerRoute(
     ({ request }) => request.mode === "navigate",
     async ({ event }) => {
