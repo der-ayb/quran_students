@@ -33,7 +33,6 @@ let workingClassroomId = null;
 let studentsTableDetailIsShow = false;
 let studentsDayTableDetailIsShow = false;
 let classroomsTableDetailIsShow = false;
-let userIsAuth = false;
 let currentDay = new Date().toISOString().slice(0, 10);
 
 const workingClassroomSelect = document.getElementById("workingClassroom");
@@ -236,7 +235,7 @@ async function loadDBFromFile(file) {
     project_db = new SQL.Database(new Uint8Array(arrayBuffer));
     await saveToIndexedDB(project_db.export());
     window.showToast("success", "تم تحميل قاعدة البيانات.");
-    window.location.reload();
+    setTimeout(()=> window.location.reload(),1000)
   } catch (e) {
     loadingModal.hide();
     console.error("Error loading DB from file:", e);
@@ -410,24 +409,22 @@ document.getElementById("importDBbtn").onchange = async (e) => {
 
 document.getElementById("asyncDBbtn").onclick = async (e) => {
   if (!navigator.onLine) {
-    window.showToast("error", "لا يوجد اتصال بالإنترنت.");
+    window.showToast("warning", "لا يوجد اتصال بالإنترنت.");
     return;
   }
-  if (!userIsAuth) {
-    window.showToast("info", "الرجاء تسجيل الدخول أولاً.");
-    return;
-  }
+
   if (project_db) {
     await showLoadingModal();
     try {
-      uploadDB(project_db.export());
+      // await uploadDBtoDrive(project_db.export());
+      await loadDBFromFile(await downloadDBfromDrive())
+      window.showToast("success","تمت المزامنة بنجاح.")
     } catch (e) {
       window.showToast("error", "فشل في مزامنة قاعدة البيانات. حاول مرة أخرى.");
     }
     loadingModal.hide()
   }
 };
-
 // classrooms tab
 workingClassroomSelect.onchange = async function () {
   workingClassroomId = this.value;
