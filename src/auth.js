@@ -133,7 +133,7 @@ async function initAuth() {
     if (idToken) {
       user = decodeJwt(idToken);
       userIsAuth = true;
-      const { file, creationTime } = await searchFileInDrive();
+      const [file, creationTime ] = await searchFileInDrive();
       loginStatus.innerHTML = `
         <div class="card" style="width: 18rem;">
           <div class="card-body">
