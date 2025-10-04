@@ -197,7 +197,7 @@ async function _performUpload(data) {
     }
     let fileId = null
     // Check if a file named 'quran_students.sqlite3' already exists.
-    const { file, creationTime } = await searchFileInDrive(accessToken);
+    const [ file, creationTime ] = await searchFileInDrive(accessToken);
     if (file) {
       if (
         !confirm(
@@ -276,7 +276,7 @@ async function _performDownload() {
       return null;
     }
 
-    const { file, creationTime } = await searchFileInDrive(accessToken);
+    const [ file, creationTime ] = await searchFileInDrive(accessToken);
     if (!file) {
       console.log(
         "⚠️ No 'quran_students.sqlite3' found on Google Drive for this user."
