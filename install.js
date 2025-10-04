@@ -6,7 +6,6 @@ if ("serviceWorker" in navigator) {
       window.location.hostname !== "127.0.0.1" &&
       !window.location.hostname.includes('ngrok-free')
     ) {
-      alert(window.location.hostname+(!window.location.hostname.includes('ngrok-free')))
       navigator.serviceWorker
         .register("./service-worker.js")
         .then((reg) => {

@@ -34,6 +34,7 @@ let studentsTableDetailIsShow = false;
 let studentsDayTableDetailIsShow = false;
 let classroomsTableDetailIsShow = false;
 let currentDay = new Date().toISOString().slice(0, 10);
+let loadingModalShowNumber = 0;
 
 const workingClassroomSelect = document.getElementById("workingClassroom");
 const dayDateInput = $("#dayDate");
@@ -85,7 +86,6 @@ const statisticType = document.getElementById("statisticType");
 
 const themeSelector = document.getElementById("themeSelector");
 const themeTag = document.getElementById("themeStylesheet");
-
 const loadingModal = new bootstrap.Modal(
   document.getElementById("loadingModal")
 );
@@ -235,9 +235,9 @@ async function loadDBFromFile(file) {
     project_db = new SQL.Database(new Uint8Array(arrayBuffer));
     await saveToIndexedDB(project_db.export());
     window.showToast("success", "تم تحميل قاعدة البيانات.");
-    setTimeout(()=> window.location.reload(),1000)
+    setTimeout(() => window.location.reload(), 1000);
   } catch (e) {
-    loadingModal.hide();
+    loadingModalHide();
     console.error("Error loading DB from file:", e);
     window.showToast(
       "error",
@@ -348,30 +348,74 @@ async function initOrReloadDataTable(
 }
 
 // show loading modal
-function showLoadingModal() {
-  const modalElement = document.getElementById("loadingModal");
+function showLoadingModal(text = null) {
+  const loadingModalElement = document.getElementById("loadingModal");
+  const loadingModalText = document.getElementById("loadingText");
+  if (text) {
+    loadingModalText.style.display = "block";
+    loadingModalText.innerText = text + "...";
+  } else {
+    loadingModalText.style.display = "none";
+  }
+  loadingModalShowNumber += 1;
+  if (loadingModalShowNumber > 1) return;
+  
   return new Promise((resolve) => {
     // Listen for when modal is fully shown
     const handleShown = () => {
-      modalElement.removeEventListener("shown.bs.modal", handleShown);
+      loadingModalElement.removeEventListener("shown.bs.modal", handleShown);
       resolve(loadingModal);
     };
 
-    modalElement.addEventListener("shown.bs.modal", handleShown);
+    loadingModalElement.addEventListener("shown.bs.modal", handleShown);
     loadingModal.show();
   });
 }
 
+function loadingModalHide() {
+  loadingModalShowNumber -= 1;
+  if (loadingModalShowNumber < 1) {
+    loadingModalShowNumber = 1;
+  }
+  if (loadingModalShowNumber == 1) {
+    loadingModal.hide();
+  }
+}
 // --- Event Handlers Async ---
-document.getElementById("downloadDBbtn").onclick = exportDB;
-document.getElementById("createNewDBbtn").onclick = async function () {
+document.getElementById("googleSigninBtn").onclick = async () => {
+  await showLoadingModal("جاري تسجيل الدخول");
+  await initializeGoogleAuth(async (accessToken) => {
+    document.getElementById("googleSigninBtn").style.display = "none";
+    const { file, _ } = await searchFileInDrive(accessToken);
+    if (!file) {
+      if (confirm(`لاتوجد ملفات سابقة، هل تريد إنشاء قاعدة جديدة؟`)) {
+        await createNewDB();
+        await uploadDBtoDrive(project_db.export());
+      }
+    } else {
+      try {
+        await loadDBFromFile(await downloadDBfromDrive());
+        window.showToast("success", "تم تحميل قاعدة البيانات بنجاح.");
+      } catch (e) {
+        console.log(e);
+        window.showToast(
+          "error",
+          "فشل في تحميل قاعدة البيانات. حاول مرة أخرى."
+        );
+      }
+      loadingModalHide();
+    }
+  });
+};
+
+async function createNewDB() {
   if (
     project_db &&
     !confirm("سيتم استبدال قاعدة البيانات الحالية. هل أنت متأكد؟")
   ) {
     return;
   }
-  await showLoadingModal();
+  await showLoadingModal("جاري إنشاء قاعدة بيانات جديدة");
   if (
     !(await fetchAndPutIntoIndexedDBFile(
       PROJECT_DB_KEY,
@@ -382,17 +426,19 @@ document.getElementById("createNewDBbtn").onclick = async function () {
     )) ||
     !(await downloadQuranDB())
   ) {
-    loadingModal.hide();
+    loadingModalHide();
     window.showToast(
       "error",
       "فشل في إنشاء قاعدة بيانات جديدة، تأكد من الاتصال بالإنترنت."
     );
     return;
   }
-  window.showToast("success", "تم تحميل قواعد البيانات.");
+  window.showToast("success", "تم إنشاء قاعدة بيانات جديدة.");
   window.location.reload();
-};
+}
 
+document.getElementById("downloadDBbtn").onclick = exportDB;
+document.getElementById("createNewDBbtn").onclick = createNewDB;
 document.getElementById("importDBbtn").onchange = async (e) => {
   if (e.target.files) {
     if (
@@ -402,7 +448,7 @@ document.getElementById("importDBbtn").onchange = async (e) => {
       e.target.value = "";
       return;
     }
-    await showLoadingModal();
+    await showLoadingModal("جاري استيراد قاعدة البيانات");
     await loadDBFromFile(e.target.files[0]);
   }
 };
@@ -414,15 +460,16 @@ document.getElementById("asyncDBbtn").onclick = async (e) => {
   }
 
   if (project_db) {
-    await showLoadingModal();
+    await showLoadingModal("جاري المزامنة");
     try {
-      // await uploadDBtoDrive(project_db.export());
-      await loadDBFromFile(await downloadDBfromDrive())
-      window.showToast("success","تمت المزامنة بنجاح.")
+      await uploadDBtoDrive(project_db.export());
+      // await loadDBFromFile(await downloadDBfromDrive())
+      window.showToast("success", "تمت المزامنة بنجاح.");
     } catch (e) {
+      console.log(e);
       window.showToast("error", "فشل في مزامنة قاعدة البيانات. حاول مرة أخرى.");
     }
-    loadingModal.hide()
+    loadingModalHide();
   }
 };
 // classrooms tab

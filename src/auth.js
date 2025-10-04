@@ -1,3 +1,8 @@
+const loginStatus = document.getElementById("loginStatus");
+let db;
+let user;
+let userIsAuth = false;
+
 function openAuthDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open("auth-db", 1);
@@ -59,45 +64,67 @@ async function getAccessToken(db) {
 }
 
 function decodeJwt(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
+  const base64Url = token.split(".")[1];
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split("")
+      .map(function (c) {
+        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+      })
+      .join("")
+  );
 
   return JSON.parse(jsonPayload);
 }
 
-let db;
-let user;
-let userIsAuth = false;
+function codeJwt(payload) {
+  const header = {
+    alg: "none",
+    typ: "JWT",
+  };
 
-async function handleCredentialResponse(response) {
-  const idToken = response.credential;
-  user = decodeJwt(idToken);
-  userIsAuth = true;
+  const headerStr = JSON.stringify(header);
+  const payloadStr = JSON.stringify(payload);
 
-  await openAuthDB().then(async (res) => {
-    db = res;
-    await putToken(db, idToken);
-  });
+  const encodedHeader = btoa(unescape(encodeURIComponent(headerStr)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
 
-  document.getElementById("loginStatus").textContent = `Welcome, ${user.name}`;
-  document.getElementById("logoutBtn").style.display = "block";
-  document.querySelector(".g_id_signin").style.display = "none";
+  const encodedPayload = btoa(unescape(encodeURIComponent(payloadStr)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
 
-  // Request access token for Google Drive
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: '233292477998-p0cdmaicj108fcp76fk5tpisb6qdmmgc.apps.googleusercontent.com',
-    scope: 'https://www.googleapis.com/auth/drive.file',
-    callback: async (tokenResponse) => {
-      if (tokenResponse && tokenResponse.access_token) {
-        await putAccessToken(db, tokenResponse.access_token);
-      }
-    },
-  });
-  client.requestAccessToken();
+  return `${encodedHeader}.${encodedPayload}.`;
 }
+
+// async function handleCredentialResponse(response) {
+//   const idToken = response.credential;
+//   user = decodeJwt(idToken);
+//   userIsAuth = true;
+
+//   await openAuthDB().then(async (res) => {
+//     db = res;
+//     await putToken(db, idToken);
+//   });
+
+//   loginStatus.textContent = `تم تسجيل الدخول لـ${user.name}`;
+
+//   // Request access token for Google Drive
+//   const client = google.accounts.oauth2.initTokenClient({
+//     client_id:
+//       "233292477998-p0cdmaicj108fcp76fk5tpisb6qdmmgc.apps.googleusercontent.com",
+//     scope: "https://www.googleapis.com/auth/drive.file",
+//     callback: async (tokenResponse) => {
+//       if (tokenResponse && tokenResponse.access_token) {
+//         await putAccessToken(db, tokenResponse.access_token);
+//       }
+//     },
+//   });
+//   client.requestAccessToken();
+// }
 
 async function initAuth() {
   await openAuthDB().then(async (res) => {
@@ -106,38 +133,61 @@ async function initAuth() {
     if (idToken) {
       user = decodeJwt(idToken);
       userIsAuth = true;
-      document.getElementById("loginStatus").textContent = `Welcome back, ${user.name}`;
-      document.getElementById("logoutBtn").style.display = "block";
-      const gIdSignin = document.querySelector(".g_id_signin");
-      if (gIdSignin) {
-        gIdSignin.style.display = "none";
-      }
+      const { file, creationTime } = await searchFileInDrive();
+      loginStatus.innerHTML = `
+        <div class="card" style="width: 18rem;">
+          <div class="card-body">
+            <h5 class="card-title">${user.name}</h5>
+            <h6 class="card-subtitle mb-2 text-body-secondary">${user.email}</h6>
+            <p class="card-text">${file? `آخر تحديث:${creationTime}`:'لم تتم المزامنة'}</p>
+            <button onclick="logout()" class="btn btn-sm btn-secondary">تسجيل الخروج</button>
+          </div>
+        </div>
+      `
     }
   });
 }
 
 initAuth();
 
-document.getElementById("logoutBtn").onclick= async () => {
+async function logout() {
   google.accounts.id.disableAutoSelect();
   await deleteToken(db);
   await deleteAccessToken(db);
   user = null;
   userIsAuth = false;
-  document.getElementById("loginStatus").textContent = "Logged out.";
-  document.getElementById("logoutBtn").style.display = "none";
-  const gIdSignin = document.querySelector(".g_id_signin");
-  if (gIdSignin) {
-    gIdSignin.style.display = "block";
-  }
+  loginStatus.textContent = "تم تسجيل الخروج.";
 };
 
-async function uploadDBtoDrive(data) {
-  if (!userIsAuth) {
-    window.showToast("warning", "الرجاء تسجيل الدخول أولاً.");
-    return;
+async function searchFileInDrive(accessToken = null) {
+  if (!accessToken) accessToken = await getAccessToken(db);
+  // Search for the file named 'quran_students.sqlite3'
+  const query = encodeURIComponent(
+    "name='quran_students.sqlite3' and trashed=false"
+  );
+  const listResponse = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,createdTime)`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  if (!listResponse.ok) {
+    throw new Error(`Failed to list files: ${listResponse.statusText}`);
   }
 
+  const listResult = await listResponse.json();
+  if (!listResult.files || listResult.files.length === 0) {
+    return false;
+  }
+  const file = listResult.files[0];
+  const date = new Date(file.createdTime).toLocaleString();
+  return [file,date];
+}
+
+async function _performUpload(data) {
   try {
     const accessToken = await getAccessToken(db);
 
@@ -145,31 +195,20 @@ async function uploadDBtoDrive(data) {
       window.showToast("warning", "خطأ في المصادقة، يرجى إعادة تسجيل الدخول.");
       return;
     }
-
+    let fileId = null
     // Check if a file named 'quran_students.sqlite3' already exists.
-    let fileId = null;
-    const query = encodeURIComponent(
-      "name='quran_students.sqlite3' and trashed=false"
-    );
-    const listResponse = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=${query}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+    const { file, creationTime } = await searchFileInDrive(accessToken);
+    if (file) {
+      if (
+        !confirm(
+          `Database file found. Created on: ${creationTime}. upload now?`
+        )
+      ) {
+        return null;
       }
-    );
-
-    if (listResponse.ok) {
-      const listResult = await listResponse.json();
-      if (listResult.files && listResult.files.length > 0) {
-        fileId = listResult.files[0].id;
-      }
-    } else {
-      console.warn(
-        "Could not check for existing file, proceeding to create a new one."
-      );
+      fileId = file.id;
     }
+    
 
     const metadata = {
       name: "quran_students.sqlite3",
@@ -228,12 +267,7 @@ async function uploadDBtoDrive(data) {
   }
 }
 
-async function downloadDBfromDrive() {
-  if (!userIsAuth) {
-    window.showToast("warning", "الرجاء تسجيل الدخول أولاً.");
-    return null;
-  }
-
+async function _performDownload() {
   try {
     const accessToken = await getAccessToken(db);
 
@@ -242,34 +276,14 @@ async function downloadDBfromDrive() {
       return null;
     }
 
-    // Search for the file named 'quran_students.sqlite3'
-    const query = encodeURIComponent(
-      "name='quran_students.sqlite3' and trashed=false"
-    );
-    const listResponse = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,createdTime)`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    if (!listResponse.ok) {
-      throw new Error(`Failed to list files: ${listResponse.statusText}`);
-    }
-
-    const listResult = await listResponse.json();
-    if (!listResult.files || listResult.files.length === 0) {
+    const { file, creationTime } = await searchFileInDrive(accessToken);
+    if (!file) {
       console.log(
         "⚠️ No 'quran_students.sqlite3' found on Google Drive for this user."
       );
       return null;
     }
-
-    const file = listResult.files[0];
     const fileId = file.id;
-    const creationTime = new Date(file.createdTime).toLocaleString();
 
     if (
       !confirm(
@@ -303,5 +317,77 @@ async function downloadDBfromDrive() {
     return downloadResponse;
   } catch (err) {
     console.error("Error downloading from Google Drive:", err);
+    throw err;
   }
+}
+
+// Reusable OAuth function
+async function initializeGoogleAuth(callback) {
+  return new Promise((resolve, reject) => {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id:
+        "233292477998-p0cdmaicj108fcp76fk5tpisb6qdmmgc.apps.googleusercontent.com",
+      scope: "https://www.googleapis.com/auth/drive.file",
+      callback: async (tokenResponse) => {
+        if (tokenResponse && tokenResponse.access_token) {
+          try {
+            await putAccessToken(db, tokenResponse.access_token);
+            const userInfoResponse = await fetch(
+              "https://www.googleapis.com/oauth2/v3/userinfo",
+              {
+                headers: {
+                  Authorization: `Bearer ${tokenResponse.access_token}`,
+                },
+              }
+            );
+
+            user = await userInfoResponse.json();
+            await openAuthDB().then(async (res) => {
+              db = res;
+              await putToken(db, codeJwt(user));
+            });
+            userIsAuth = true;
+            loginStatus.textContent = `تم تسجيل الدخول لـ${user.name}`;
+
+            // Execute the provided callback with the token
+            if (callback) {
+              await callback(tokenResponse.access_token);
+            }
+
+            resolve(tokenResponse.access_token);
+          } catch (error) {
+            console.error("Auth initialization failed:", error);
+            reject(error);
+          }
+        } else {
+          reject(new Error("No access token received"));
+        }
+      },
+    });
+
+    client.requestAccessToken();
+  });
+}
+
+// Updated upload function
+async function uploadDBtoDrive(data) {
+  if (userIsAuth) {
+    await _performUpload(data);
+    return;
+  }
+
+  await initializeGoogleAuth(async (accessToken) => {
+    await _performUpload(data);
+  });
+}
+
+// Updated download function
+async function downloadDBfromDrive() {
+  if (userIsAuth) {
+    return await _performDownload();
+  }
+
+  return await initializeGoogleAuth(async (accessToken) => {
+    return await _performDownload();
+  });
 }
