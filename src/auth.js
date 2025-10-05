@@ -178,6 +178,9 @@ async function initAuth() {
   });
 }
 
+openAuthDB().then(async (res) => {
+  db = res;
+});
 
 async function logout() {
   google.accounts.id.disableAutoSelect();

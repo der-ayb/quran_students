@@ -4,7 +4,7 @@ if ("serviceWorker" in navigator) {
     if (
       window.location.hostname !== "localhost" &&
       window.location.hostname !== "127.0.0.1" &&
-      !window.location.hostname.includes('ngrok-free')
+      !window.location.hostname.includes("ngrok-free")
     ) {
       navigator.serviceWorker
         .register("./service-worker.js")
@@ -29,38 +29,37 @@ if ("serviceWorker" in navigator) {
 }
 
 // install button
-let deferredPrompt;
+let installPrompt = null;
+const installButton = document.getElementById("installBtn");
 
 document.addEventListener("DOMContentLoaded", () => {
-  const installBtn = document.getElementById("installBtn");
-
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-
-    // Show the button
-    installBtn.style.display = "block";
-
-    installBtn.addEventListener("click", () => {
-      // Directly triggered by user click
-      installBtn.style.display = "none";
-
-      // Show the install prompt
-      deferredPrompt.prompt();
-
-      deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === "accepted") {
-          console.log("User accepted the install prompt");
-        } else {
-          console.log("User dismissed the install prompt");
-        }
-        deferredPrompt = null;
-      });
-    });
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    installButton.removeAttribute("hidden");
   });
 
-  //Confirm successful installation.
-  window.addEventListener("appinstalled", () => {
-    console.log("PWA was installed");
+  installButton.addEventListener("click", async () => {
+    if (!installPrompt) {
+      return;
+    }
+    const result = await installPrompt.prompt();
+    console.log(`Install prompt was: ${result.outcome}`);
+    disableInAppInstallPrompt();
   });
+
+  function disableInAppInstallPrompt() {
+    installPrompt = null;
+    installButton.setAttribute("hidden", "");
+  }
 });
+
+
+window.addEventListener("appinstalled", () => {
+  disableInAppInstallPrompt();
+});
+
+function disableInAppInstallPrompt() {
+  installPrompt = null;
+  installButton.setAttribute("hidden", "");
+}

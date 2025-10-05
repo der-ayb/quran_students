@@ -98,7 +98,7 @@ if (workbox) {
         revision: "1",
       },
       {
-        url: "https://code.jquery.com/jquery-3.5.1.slim.min.js",
+        url: "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js",
         revision: "1",
       },
       {
@@ -180,7 +180,6 @@ if (workbox) {
   workbox.routing.registerRoute(
     ({ url }) =>
       url.origin === location.origin ||
-      url.origin === "https://code.jquery.com" ||
       url.origin === "https://fonts.googleapis.com" ||
       url.origin === "https://cdnjs.cloudflare.com" ||
       url.origin === "https://www.gstatic.com" ||
