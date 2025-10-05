@@ -631,7 +631,7 @@ async function loadClassRoomsList() {
         columnDefs: [
           { visible: false, targets: [0, 4, 5] },
           {
-            targets: 4,
+            targets: 5,
             orderable: false,
           },
         ],
