@@ -1765,7 +1765,7 @@ async function showAttendanceStatistics() {
                         /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
                       ) {
                         const [year, month] = cell.text.split("-").slice(0, 2);
-                        const key = `${arabicMonths[Number(month)]-1} ${year}`;
+                        const key = `${arabicMonths[Number(month)-1]} ${year}`;
                         if (!monthMap[key]) {
                           monthMap[key] = { start: idx, count: 1 };
                           monthOrder.push(key);
