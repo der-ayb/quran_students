@@ -1,6 +1,9 @@
+moment.locale("ar_dz");
+
 const loginStatus = document.getElementById("loginStatus");
+const googleSigninBtn = document.getElementById("googleSigninBtn");
 let db;
-let user;
+let currentUser;
 let userIsAuth = false;
 
 function openAuthDB() {
@@ -100,6 +103,18 @@ function codeJwt(payload) {
   return `${encodedHeader}.${encodedPayload}.`;
 }
 
+function fromNow(date) {
+  const diffHours = Math.abs(moment().diff(moment(date), "hours"));
+
+  if (diffHours < 48) {
+    // Use moment's Arabic relative time for short durations
+    return moment(date).fromNow();
+  } else {
+    // For longer durations, use days
+    const diffDays = Math.abs(moment().diff(moment(date), "days"));
+    return moment().subtract(diffDays, "days").fromNow();
+  }
+}
 // async function handleCredentialResponse(response) {
 //   const idToken = response.credential;
 //   user = decodeJwt(idToken);
@@ -126,53 +141,70 @@ function codeJwt(payload) {
 //   client.requestAccessToken();
 // }
 
+function profileElement(updateTime) {
+  return `
+        <div class="card" style="width: 18rem;">
+          <div class="card-body">
+            <h5 class="card-title">${currentUser.name}</h5>
+            <h6 class="card-subtitle mb-2 text-body-secondary">${
+              currentUser.email
+            }</h6>
+            <p class="card-text">${
+              updateTime ? `آخر تحديث:${updateTime}` : "لم تتم المزامنة بعد"
+            }</p>
+            <button onclick="asyncDB()" class="btn btn-sm btn-secondary">🔄 مزامنة</button>
+            <button onclick="logout()" class="btn btn-sm btn-warning">تسجيل الخروج</button>
+          </div>
+        </div>
+      `;
+}
 async function initAuth() {
   await openAuthDB().then(async (res) => {
     db = res;
     const idToken = await getToken(db);
     if (idToken) {
-      user = decodeJwt(idToken);
+      currentUser = decodeJwt(idToken);
       userIsAuth = true;
-      const [file, creationTime ] = await searchFileInDrive();
-      loginStatus.innerHTML = `
-        <div class="card" style="width: 18rem;">
-          <div class="card-body">
-            <h5 class="card-title">${user.name}</h5>
-            <h6 class="card-subtitle mb-2 text-body-secondary">${user.email}</h6>
-            <p class="card-text">${file? `آخر تحديث:${creationTime}`:'لم تتم المزامنة'}</p>
-            <button onclick="logout()" class="btn btn-sm btn-secondary">تسجيل الخروج</button>
-          </div>
-        </div>
-      `
+      if (navigator.onLine) {
+        await searchFileInDrive();
+      } else {
+        loginStatus.innerHTML = profileElement(
+          localStorage.getItem("lastUpdateTime")
+        );
+      }
+    } else {
+      loginStatus.replaceChildren(googleSigninBtn.cloneNode(true));
     }
   });
 }
 
-initAuth();
 
 async function logout() {
   google.accounts.id.disableAutoSelect();
   await deleteToken(db);
   await deleteAccessToken(db);
-  user = null;
+  currentUser = null;
   userIsAuth = false;
-  loginStatus.textContent = "تم تسجيل الخروج.";
-};
+  loginStatus.replaceChildren(googleSigninBtn.cloneNode(true));
+}
 
 async function searchFileInDrive(accessToken = null) {
+  if (loadingModalShowNumber.length)
+    await showLoadingModal("جاري البحث عن قاعدة بيانات سابقة");
   if (!accessToken) accessToken = await getAccessToken(db);
   // Search for the file named 'quran_students.sqlite3'
   const query = encodeURIComponent(
     "name='quran_students.sqlite3' and trashed=false"
   );
   const listResponse = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,createdTime)`,
+    `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,modifiedTime)`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
     }
   );
+  hideLoadingModal();
 
   if (!listResponse.ok) {
     throw new Error(`Failed to list files: ${listResponse.statusText}`);
@@ -180,145 +212,14 @@ async function searchFileInDrive(accessToken = null) {
 
   const listResult = await listResponse.json();
   if (!listResult.files || listResult.files.length === 0) {
-    return false;
+    loginStatus.innerHTML = profileElement(null);
+    return [];
   }
   const file = listResult.files[0];
-  const date = new Date(file.createdTime).toLocaleString();
-  return [file,date];
-}
-
-async function _performUpload(data) {
-  try {
-    const accessToken = await getAccessToken(db);
-
-    if (!accessToken) {
-      window.showToast("warning", "خطأ في المصادقة، يرجى إعادة تسجيل الدخول.");
-      return;
-    }
-    let fileId = null
-    // Check if a file named 'quran_students.sqlite3' already exists.
-    const [ file, creationTime ] = await searchFileInDrive(accessToken);
-    if (file) {
-      if (
-        !confirm(
-          `Database file found. Created on: ${creationTime}. upload now?`
-        )
-      ) {
-        return null;
-      }
-      fileId = file.id;
-    }
-    
-
-    const metadata = {
-      name: "quran_students.sqlite3",
-      mimeType: "application/octet-stream",
-    };
-
-    const formData = new FormData();
-    formData.append(
-      "metadata",
-      new Blob([JSON.stringify(metadata)], { type: "application/json" })
-    );
-    formData.append(
-      "file",
-      new Blob([data], { type: "application/octet-stream" })
-    );
-
-    let uploadUrl;
-    let method;
-
-    if (fileId) {
-      // File exists, so update it.
-      uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`;
-      method = "PATCH";
-    } else {
-      // File doesn't exist, so create it.
-      uploadUrl =
-        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
-      method = "POST";
-    }
-
-    const response = await fetch(uploadUrl, {
-      method: method,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        alert("إنتهت صلاحية تسجيل الدخول، يرجى إعادة ذلك .");
-      }
-      throw new Error(`Upload failed: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    if (fileId) {
-      console.log("📤 DB updated on Google Drive:", result.id);
-    } else {
-      console.log("📤 DB uploaded to Google Drive:", result.id);
-    }
-    return result;
-  } catch (err) {
-    console.error("Error uploading to Google Drive:", err);
-    throw err;
-  }
-}
-
-async function _performDownload() {
-  try {
-    const accessToken = await getAccessToken(db);
-
-    if (!accessToken) {
-      window.showToast("warning", "خطأ في المصادقة، يرجى إعادة تسجيل الدخول.");
-      return null;
-    }
-
-    const [ file, creationTime ] = await searchFileInDrive(accessToken);
-    if (!file) {
-      console.log(
-        "⚠️ No 'quran_students.sqlite3' found on Google Drive for this user."
-      );
-      return null;
-    }
-    const fileId = file.id;
-
-    if (
-      !confirm(
-        `Database file found. Created on: ${creationTime}. Download now?`
-      )
-    ) {
-      return null;
-    }
-
-    // Download the file content
-    const downloadResponse = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    if (!downloadResponse.ok) {
-      if (downloadResponse.status === 401) {
-        window.showToast(
-          "warning",
-          "إنتهت صلاحية تسجيل الدخول، يرجى إعادة ذلك ."
-        );
-      }
-      throw new Error(`Download failed: ${downloadResponse.statusText}`);
-    }
-
-    console.log("📥 DB downloaded from Google Drive for", user.sub);
-    return downloadResponse;
-  } catch (err) {
-    console.error("Error downloading from Google Drive:", err);
-    throw err;
-  }
+  const date = fromNow(new Date(file.modifiedTime));
+  loginStatus.innerHTML = profileElement(date);
+  localStorage.setItem("lastUpdateTime", date);
+  return [file, date];
 }
 
 // Reusable OAuth function
@@ -341,13 +242,12 @@ async function initializeGoogleAuth(callback) {
               }
             );
 
-            user = await userInfoResponse.json();
+            currentUser = await userInfoResponse.json();
             await openAuthDB().then(async (res) => {
               db = res;
-              await putToken(db, codeJwt(user));
+              await putToken(db, codeJwt(currentUser));
             });
             userIsAuth = true;
-            loginStatus.textContent = `تم تسجيل الدخول لـ${user.name}`;
 
             // Execute the provided callback with the token
             if (callback) {
@@ -371,23 +271,125 @@ async function initializeGoogleAuth(callback) {
 
 // Updated upload function
 async function uploadDBtoDrive(data) {
-  if (userIsAuth) {
-    await _performUpload(data);
-    return;
+  if (!userIsAuth) {
+    throw new Error("عليك تسجيل الدخول أولا.");
   }
 
-  await initializeGoogleAuth(async (accessToken) => {
-    await _performUpload(data);
+  const accessToken = await getAccessToken(db);
+
+  if (!accessToken) {
+    throw new Error("خطأ في المصادقة، يرجى إعادة تسجيل الدخول.");
+  }
+  let fileId = null;
+  // Check if a file named 'quran_students.sqlite3' already exists.
+  const [file, updateTime] = await searchFileInDrive(accessToken);
+  if (file) {
+    if (
+      !confirm(
+        `تم العثور على قاعدة بيانات محملة ${updateTime}، هل تريد تبديلها؟`
+      )
+    ) {
+      return false;
+    }
+    fileId = file.id;
+  }
+
+  const metadata = {
+    name: "quran_students.sqlite3",
+    mimeType: "application/octet-stream",
+  };
+
+  const formData = new FormData();
+  formData.append(
+    "metadata",
+    new Blob([JSON.stringify(metadata)], { type: "application/json" })
+  );
+  formData.append(
+    "file",
+    new Blob([data], { type: "application/octet-stream" })
+  );
+
+  let uploadUrl;
+  let method;
+
+  if (fileId) {
+    // File exists, so update it.
+    uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`;
+    method = "PATCH";
+  } else {
+    // File doesn't exist, so create it.
+    uploadUrl =
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+    method = "POST";
+  }
+
+  const response = await fetch(uploadUrl, {
+    method: method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData,
   });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("إنتهت صلاحية تسجيل الدخول، يرجى إعادة ذلك .");
+    }
+    throw new Error(`خطأ أثناء التحميل: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  loginStatus.innerHTML = profileElement(fromNow(new Date()));
+  localStorage.setItem("lastUpdateTime", fromNow(new Date()));
+  if (fileId) {
+    console.log("📤 DB updated on Google Drive:", result.id);
+  } else {
+    console.log("📤 DB uploaded to Google Drive:", result.id);
+  }
+  return true;
 }
 
 // Updated download function
 async function downloadDBfromDrive() {
-  if (userIsAuth) {
-    return await _performDownload();
+  if (!userIsAuth) throw new Error("عليك تسجيل الدخول أولا.");
+
+  const accessToken = await getAccessToken(db);
+
+  if (!accessToken) {
+    throw new Error("خطأ في المصادقة، يرجى إعادة تسجيل الدخول.");
   }
 
-  return await initializeGoogleAuth(async (accessToken) => {
-    return await _performDownload();
-  });
+  const [file, updateTime] = await searchFileInDrive(accessToken);
+  if (!file) {
+    return null;
+  }
+  const fileId = file.id;
+
+  if (
+    !confirm(
+      `تم العثور على قاعدة بيانات محملة ${updateTime}، هل تريد تنزيلها و استبدال الحالية؟`
+    )
+  ) {
+    return false;
+  }
+
+  // Download the file content
+  const downloadResponse = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  if (!downloadResponse.ok) {
+    if (downloadResponse.status === 401) {
+      throw new Error("إنتهت صلاحية تسجيل الدخول، يرجى إعادة ذلك .");
+    }
+    throw new Error(`Download failed: ${downloadResponse.statusText}`);
+  }
+
+  console.log("📥 DB downloaded from Google Drive for", currentUser.sub);
+  return downloadResponse;
 }

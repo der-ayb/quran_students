@@ -72,6 +72,7 @@ if (workbox) {
         url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/cyborg/bootstrap.rtl.min.css",
         revision: "1",
       },
+      // other cdn
       {
         url: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css",
         revision: "1",
@@ -149,7 +150,11 @@ if (workbox) {
         revision: "1",
       },
       {
-        url: "https://cdn.jsdelivr.net/npm/moment/min/moment.min.js",
+        url: "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js",
+        revision: "1",
+      },
+      {
+        url: "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/locale/ar-dz.min.js",
         revision: "1",
       },
       {
