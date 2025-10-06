@@ -166,7 +166,7 @@ async function initAuth() {
       currentUser = decodeJwt(idToken);
       userIsAuth = true;
       if (navigator.onLine) {
-        await searchFileInDrive();
+        searchFileInDrive();
       } else {
         loginStatus.innerHTML = profileElement(
           localStorage.getItem("lastUpdateTime")

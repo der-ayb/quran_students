@@ -44,7 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     const result = await installPrompt.prompt();
-    console.log(`Install prompt was: ${result.outcome}`);
     disableInAppInstallPrompt();
   });
 

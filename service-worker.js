@@ -25,6 +25,8 @@ if (workbox) {
       { url: "./src/auth.js", revision: "1" },
       { url: "./src/pdfmake.js", revision: "1" },
       { url: "./src/vfs_fonts.js", revision: "1" },
+      { url: "./src/yearpicker.css", revision: "1" },
+      { url: "./src/yearpicker.js", revision: "1" },
 
       // { url: "./assets/default.sqlite3", revision: "1" },
       // { url: "./assets/quran.sqlite", revision: "1" },

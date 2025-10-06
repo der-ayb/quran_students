@@ -72,7 +72,7 @@ const levelInput = document.getElementById("level");
 
 const studentIdInput = document.getElementById("studentId");
 const nameInput = document.getElementById("name");
-const birthdayInput = document.getElementById("birthday");
+const birthyearInput = document.getElementById("birthyear");
 const parentPhoneInput = document.getElementById("parentPhone");
 
 const newStudentInfosForm = document.getElementById("newStudentInfosForm");
@@ -133,20 +133,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     themeSelector.dispatchEvent(new Event("change"));
   }
 
-  // set birthday input limits
+  // set birthyear input limits
   const today = new Date();
-  birthdayInput.setAttribute(
-    "max",
-    new Date(today.setFullYear(today.getFullYear() - 3))
-      .toISOString()
-      .split("T")[0]
-  );
-  birthdayInput.setAttribute(
-    "min",
-    new Date(today.setFullYear(today.getFullYear() - 97))
-      .toISOString()
-      .split("T")[0]
-  );
+  $("#birthyear").yearpicker({
+    endYear: today.getFullYear() - 3,
+    startYear: today.getFullYear() - 97,
+  });
 });
 
 // --- IndexedDB Promisified ---
@@ -377,7 +369,9 @@ async function hideLoadingModal() {
   if (!loadingModalShowNumber.length) {
     loadingModal.hide();
   } else {
-    setLoadingModalText(loadingModalShowNumber[loadingModalShowNumber.length - 1]);
+    setLoadingModalText(
+      loadingModalShowNumber[loadingModalShowNumber.length - 1]
+    );
   }
 }
 // --- Event Handlers Async ---
@@ -713,8 +707,8 @@ async function loadStudentsList() {
           studentIdInput.value = studentId;
           nameInput.value =
             result[0].values[0][result[0].columns.indexOf("name")];
-          birthdayInput.value =
-            result[0].values[0][result[0].columns.indexOf("birthday")];
+          birthyearInput.value =
+            result[0].values[0][result[0].columns.indexOf("birthyear")];
           parentPhoneInput.value =
             result[0].values[0][result[0].columns.indexOf("parent_phone")];
         };
@@ -769,7 +763,7 @@ async function loadStudentsList() {
           name: row[result.columns.indexOf("name")],
           age: Math.abs(
             moment().diff(
-              moment(new Date(row[result.columns.indexOf("birthday")])),
+              moment(new Date(row[result.columns.indexOf("birthyear")])),
               "years"
             )
           ),
@@ -851,10 +845,10 @@ newStudentInfosForm.addEventListener("submit", (e) => {
     return;
   }
   const name = nameInput.value;
-  const birthday = birthdayInput.value;
+  const birthyear = birthyearInput.value;
   const parentPhone = parentPhoneInput.value;
 
-  if (!name || !birthday) {
+  if (!name || !birthyear) {
     window.showToast("error", "الرجاء ملء جميع الحقول.");
     return;
   }
@@ -868,14 +862,14 @@ newStudentInfosForm.addEventListener("submit", (e) => {
   try {
     if (studentIdInput.value) {
       project_db.run(
-        "UPDATE students SET name = ?, birthday = ?, parent_phone = ? WHERE id = ?;",
-        [name, birthday, parentPhone, studentIdInput.value]
+        "UPDATE students SET name = ?, birthyear = ?, parent_phone = ? WHERE id = ?;",
+        [name, birthyear, parentPhone, studentIdInput.value]
       );
       window.showToast("success", "تم تعديل الطالب بنجاح.");
     } else {
       project_db.run(
-        "INSERT INTO students (name, birthday, parent_phone, class_room_id) VALUES (?, ?, ?,?);",
-        [name, birthday, parentPhone, workingClassroomId]
+        "INSERT INTO students (name, birthyear, parent_phone, class_room_id) VALUES (?, ?, ?,?);",
+        [name, birthyear, parentPhone, workingClassroomId]
       );
       newStudentInfosForm.reset();
       studentIdInput.value = "";
@@ -1765,7 +1759,9 @@ async function showAttendanceStatistics() {
                         /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
                       ) {
                         const [year, month] = cell.text.split("-").slice(0, 2);
-                        const key = `${arabicMonths[Number(month)-1]} ${year}`;
+                        const key = `${
+                          arabicMonths[Number(month) - 1]
+                        } ${year}`;
                         if (!monthMap[key]) {
                           monthMap[key] = { start: idx, count: 1 };
                           monthOrder.push(key);
