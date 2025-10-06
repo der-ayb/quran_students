@@ -43,10 +43,6 @@ if (workbox) {
         revision: "1",
       },
       {
-        url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/cosmo/bootstrap.rtl.min.css",
-        revision: "1",
-      },
-      {
         url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/yeti/bootstrap.rtl.min.css",
         revision: "1",
       },
@@ -55,23 +51,11 @@ if (workbox) {
         revision: "1",
       },
       {
-        url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/simplex/bootstrap.rtl.min.css",
-        revision: "1",
-      },
-      {
         url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/slate/bootstrap.rtl.min.css",
         revision: "1",
       },
       {
         url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/solar/bootstrap.rtl.min.css",
-        revision: "1",
-      },
-      {
-        url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/superhero/bootstrap.rtl.min.css",
-        revision: "1",
-      },
-      {
-        url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/cyborg/bootstrap.rtl.min.css",
         revision: "1",
       },
       // other cdn

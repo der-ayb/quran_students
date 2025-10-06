@@ -17,14 +17,6 @@ input {
   direction: rtl !important;
 }
 
-#importDBbtn,
-#downloadDBbtn {
-  opacity: 0;
-  width: 0.1px;
-  height: 0.1px;
-  position: absolute;
-}
-
 .file-name {
   position: absolute;
   bottom: -35px;

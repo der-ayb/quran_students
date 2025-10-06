@@ -102,7 +102,7 @@
     <div class="tab-pane fade" id="pills-splash" role="tabpanel" aria-labelledby="pills-splash-tab">
       <h1 class="text-center">تطبيق متابعة الحفظ</h1>
 
-      <button id="googleSigninBtn" onclick="googleSignin()">
+      <button id="googleSigninBtn" class="mx-auto" onclick="googleSignin()">
         <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid" viewBox="0 0 256 262">
           <path fill="#4285F4"
             d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622 38.755 30.023 2.685.268c24.659-22.774 38.875-56.282 38.875-96.027">
@@ -119,13 +119,9 @@
         </svg>
         تسجيل الدخول
       </button>
-      <div class="good-inputs">
-        <button id="createNewDBbtn"></button>
-        <label for="createNewDBbtn">جديد</label>
-      </div>
-      <div class="good-inputs">
-        <input type="file" id="importDBbtn">
-        <label for="importDBbtn">📥 استيراد</label>
+      <div style="display: flex;" class="btn-group mt-3" role="group" aria-label="Basic example">
+        <button type="button" id="createNewDBbtn" class="btn btn-primary">➕ جديد</button>
+        <button type="button" id="importDBbtn" class="btn btn-primary">📥 استيراد</button>
       </div>
     </div>
 
@@ -244,14 +240,10 @@
                 <select id="themeSelector" class="form-select">
                   <option value="spacelab" selected>Spacelab</option>
                   <option value="cerulean">Cerulean</option>
-                  <option value="cosmo">Cosmo</option>
                   <option value="yeti">Yeti</option>
                   <option value="flatly">Flatly</option>
-                  <option value="simplex">Simplex</option>
                   <option value="slate">Slate (dark)</option>
                   <option value="solar">Solar (dark)</option>
-                  <option value="cyborg">Cyborg (dark)</option>
-                  <option value="superhero">Superhero (dark)</option>
                 </select>
               </div>
             </div>
@@ -267,7 +259,7 @@
               </button>
             </h2>
           </div>
-          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree"
+          <div id="collapseThree" class="accordion-collapse collapse text-center mt-3 aria-labelledby="headingThree"
             data-bs-parent="#pills-preferences">
 
             <!-- <div id="g_id_onload"
@@ -278,19 +270,11 @@
             <p id="loginStatus"></p>
             <button class="btn btn-sm btn-secondary" id="logoutBtn" style="display: none;">تسجيل الخروج</button>
 
-            <div class="good-inputs">
-              <button id="createNewDBbtn"></button>
-              <label for="createNewDBbtn">➕ جديد</label>
+            <div class="btn-group" role="group" aria-label="Basic example">
+              <button type="button" id="createNewDBbtn" class="btn btn-primary">➕ جديد</button>
+              <button type="button" id="importDBbtn" class="btn btn-primary">📥 استيراد</button>
+              <button type="button" id="downloadDBbtn" class="btn btn-primary">📤 تصدير</button>
             </div>
-            <div class="good-inputs">
-              <input type="file" id="importDBbtn">
-              <label for="importDBbtn">📥 استيراد</label>
-            </div>
-            <div class="good-inputs">
-              <button id="downloadDBbtn"></button>
-              <label for="downloadDBbtn">📤 تصدير</label>
-            </div>
-
           </div>
         </div>
       </div>

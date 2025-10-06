@@ -143,7 +143,7 @@ function fromNow(date) {
 
 function profileElement(updateTime) {
   return `
-        <div class="card" style="width: 18rem;">
+        <div class="card mx-auto" style="width: 18rem;">
           <div class="card-body">
             <h5 class="card-title">${currentUser.name}</h5>
             <h6 class="card-subtitle mb-2 text-body-secondary">${
@@ -210,6 +210,7 @@ async function searchFileInDrive(accessToken = null) {
   hideLoadingModal();
 
   if (!listResponse.ok) {
+    await logout()
     throw new Error(`Failed to list files: ${listResponse.statusText}`);
   }
 
@@ -289,7 +290,7 @@ async function uploadDBtoDrive(data) {
   if (file) {
     if (
       !confirm(
-        `تم العثور على قاعدة بيانات محملة ${updateTime}، هل تريد تبديلها؟`
+        `سيتم استبدال قاعدة البيانات التي في حسابك , هل أنت موافق؟`
       )
     ) {
       return false;
@@ -370,7 +371,7 @@ async function downloadDBfromDrive() {
 
   if (
     !confirm(
-      `تم العثور على قاعدة بيانات محملة ${updateTime}، هل تريد تنزيلها و استبدال الحالية؟`
+      `تم العثور على قاعدة بيانات في حسابك ${updateTime}، هل تريد تنزيلها؟`
     )
   ) {
     return false;
