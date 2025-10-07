@@ -158,6 +158,7 @@
         <thead>
           <tr>
             <th></th>
+            <th>#</th>
             <th>الاسم</th>
             <th>العمر</th>
             <th>هاتف الولي</th>
@@ -270,14 +271,13 @@
                  data-callback="handleCredentialResponse">
             </div> -->
 
-            <p id="loginStatus">
+            <div id="loginStatus">
               <div class="progress-container mx-5">
                 <div class="progress-bar"></div>
               </div>
-            </p>
-            <button class="btn btn-sm btn-secondary" id="logoutBtn" style="display: none;">تسجيل الخروج</button>
+            </div>
 
-            <div class="btn-group" role="group" aria-label="Basic example">
+            <div class="btn-group mt-3" role="group" aria-label="Basic example">
               <button type="button" id="createNewDBbtn" class="btn btn-primary">➕ جديد</button>
               <label for="importDBbtn" class="btn btn-primary mb-0">
                 📥 استيراد
@@ -525,7 +525,6 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>لاتوجد واجبات</tr>
                 </tbody>
               </table>
             </div>

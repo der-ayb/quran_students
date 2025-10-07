@@ -761,6 +761,7 @@ async function loadStudentsList() {
 
         data.push({
           id: row[0],
+          num: data.length + 1,
           name: row[result.columns.indexOf("name")],
           age: Math.abs(
             moment().diff(
@@ -779,6 +780,7 @@ async function loadStudentsList() {
       data,
       [
         { data: "id" },
+        { data: "num" },
         { data: "name" },
         { data: "age" },
         { data: "parentPhone" },
@@ -787,9 +789,9 @@ async function loadStudentsList() {
       {
         destroy: true,
         columnDefs: [
-          { visible: false, targets: [4] },
+          { visible: false, targets: [0, 5] },
           {
-            targets: [4, 3],
+            targets: [4, 5],
             orderable: false,
           },
         ],
@@ -809,7 +811,7 @@ async function loadStudentsList() {
               {
                 text: "إظهار التفاصيل",
                 action: function (e, dt) {
-                  const columns = dt.columns([4]);
+                  const columns = dt.columns([5]);
                   const isVisible = dt.column(columns[0][0]).visible();
 
                   columns.visible(!isVisible);
@@ -1226,7 +1228,13 @@ async function loadDayStudentsList() {
           student: row[result.columns.indexOf("studentName")],
           attendance: attendanceOption
             ? attendanceOption.textContent
-            : "غائب" +
+            : (row[result.columns.indexOf("parentPhone")]
+                ? `<button class="btn btn-sm btn-primary"
+                onclick = "">
+                  <i class="fa-solid fa-circle-check"></i>
+                  </button>`
+                : "") +
+              "غائب" +
               (row[result.columns.indexOf("parentPhone")]
                 ? `<input type="checkbox" id="sms_btn${
                     row[result.columns.indexOf("studentId")]
@@ -1533,11 +1541,6 @@ function initializeToast() {
 
 function removeRequirItem(button) {
   const row = button.closest("tr");
-  if (requirementsTable.querySelector("tbody").childElementCount === 1) {
-    const row = document.createElement("tr");
-    row.innerText = "لاتوجد واجبات";
-    requirementsTable.querySelector("tbody").appendChild(row);
-  }
   row.remove();
   requirMoyenneInput.value = calcRequirementsMoyenne();
 }
@@ -1591,7 +1594,7 @@ async function showTab(tabId) {
   } else if (tabId === "pills-home") {
     await loadClassRoomsList();
   } else if (tabId === "pills-preferences") {
-    if (!loginStatus.innerHTML) initAuth();
+    if (loginStatus.innerHTML.includes("progress-bar")) initAuth();
   } else if (workingClassroomId) {
     if (tabId === "pills-students") {
       await loadStudentsList();
