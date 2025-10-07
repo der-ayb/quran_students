@@ -1713,6 +1713,10 @@ async function showAttendanceStatistics() {
           layout: {
             topStart: {
               buttons: [
+{
+                    extend: 'pdfHtml5',
+                    download: 'open'
+                },
                 {
                   extend: "pdf",
                   text: "انشاء PDF",
