@@ -121,7 +121,10 @@
       </button>
       <div style="display: flex;" class="btn-group mt-3" role="group" aria-label="Basic example">
         <button type="button" id="createNewDBbtn" class="btn btn-primary">➕ جديد</button>
-        <button type="button" id="importDBbtn" class="btn btn-primary">📥 استيراد</button>
+        <label for="importDBbtn" class="btn btn-primary mb-0">
+          📥 استيراد
+          <input type="file" id="importDBbtn" class="d-none">
+        </label>
       </div>
     </div>
 
@@ -259,7 +262,7 @@
               </button>
             </h2>
           </div>
-          <div id="collapseThree" class="accordion-collapse collapse text-center my-3 aria-labelledby="headingThree"
+          <div id="collapseThree" class="accordion-collapse collapse text-center my-3 aria-labelledby=" headingThree"
             data-bs-parent="#pills-preferences">
 
             <!-- <div id="g_id_onload"
@@ -272,7 +275,10 @@
 
             <div class="btn-group" role="group" aria-label="Basic example">
               <button type="button" id="createNewDBbtn" class="btn btn-primary">➕ جديد</button>
-              <button type="button" id="importDBbtn" class="btn btn-primary">📥 استيراد</button>
+              <label for="importDBbtn" class="btn btn-primary mb-0">
+                📥 استيراد
+                <input type="file" id="importDBbtn" class="d-none">
+              </label>
               <button type="button" id="downloadDBbtn" class="btn btn-primary">📤 تصدير</button>
             </div>
           </div>
@@ -501,7 +507,7 @@
               <input type="number" class="form-control" id="requirMoyenne" readonly required />
             </div>
             <div class="table-responsive">
-              <table class="table" id="requirementTable" >
+              <table class="table" id="requirementTable">
                 <thead>
                   <tr>
                     <th scope="col">الكتاب</th>
@@ -515,7 +521,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>لاتوجد واجبات</td></tr>
+                  <tr>لاتوجد واجبات</tr>
                 </tbody>
               </table>
             </div>

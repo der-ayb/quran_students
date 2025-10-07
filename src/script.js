@@ -745,18 +745,55 @@ async function loadStudentsList() {
           phone_button_group.className = "btn-group";
           phone_button_group.setAttribute("role", "group");
           phone_button_group.setAttribute("aria-label", "Basic example");
-          // Edit
+          // call
           const callBtn = document.createElement("a");
           callBtn.href = "tel:" + row[result.columns.indexOf("parent_phone")];
           callBtn.className = "btn btn-success btn-sm";
           callBtn.innerHTML = '<i class="fa-solid fa-phone-flip"></i>';
           phone_button_group.appendChild(callBtn);
-          // Delete
+          // sms
           const smsBtn = document.createElement("a");
           smsBtn.href = "sms:" + row[result.columns.indexOf("parent_phone")];
           smsBtn.className = "btn btn-info btn-sm";
           smsBtn.innerHTML = '<i class="fa-solid fa-comment-sms"></i>';
           phone_button_group.appendChild(smsBtn);
+          // whatsapp
+          function checkWhatsAppExists(number) {
+            // Clean and format the number
+            const cleanNumber = number.replace(/\D/g, "");
+
+            // Create WhatsApp API link
+            const whatsappLink = `https://wa.me/${cleanNumber}`;
+
+            return new Promise((resolve) => {
+              const img = new Image();
+              img.src = `https://web.whatsapp.com/faq?phone=${cleanNumber}`;
+
+              img.onload = function () {
+                // If image loads successfully, WhatsApp likely exists
+                resolve(true);
+              };
+
+              img.onerror = function () {
+                // If image fails to load, WhatsApp might not exist
+                resolve(false);
+              };
+
+              // Timeout fallback
+              setTimeout(() => resolve(false), 5000);
+            });
+          }
+
+          // Usage
+          checkWhatsAppExists(row[result.columns.indexOf("parent_phone")]).then((exists) => {
+            const whatsappBtn = document.createElement("a");
+            whatsappBtn.target = "_blank"
+            whatsappBtn.href =
+              "https://api.whatsapp.com/send?phone=" + row[result.columns.indexOf("parent_phone")].replace(row[result.columns.indexOf("parent_phone")][0],"213");
+            whatsappBtn.className = "btn btn-info btn-sm";
+            whatsappBtn.innerHTML = '<i class="fa-brands fa-whatsapp"></i>';
+            phone_button_group.appendChild(whatsappBtn);
+          });
         }
 
         data.push({
