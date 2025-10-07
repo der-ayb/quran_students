@@ -227,16 +227,16 @@
       <div class="accordion" id="accordionExample">
         <div class="card">
           <div class="card-header" id="headingOne">
-            <h2 class="mb-0">
+            <h2 class="mb-0 d-flex justify-content-between">
               <button class="btn btn-link btn-block text-start" type="button" data-bs-toggle="collapse"
                 data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                 عامة
               </button>
+              <button class="btn btn-danger" id="installBtn" hidden>تثبيت التطبيق</button>
             </h2>
           </div>
           <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
             data-bs-parent="#pills-preferences">
-            <button class="btn btn-danger" id="installBtn" hidden>تثبيت التطبيق</button>
             <div class="card-body">
               <div class="input-group mb-3">
                 <span class="input-group-text" id="basic-addon1">السمة</span>
@@ -270,7 +270,11 @@
                  data-callback="handleCredentialResponse">
             </div> -->
 
-            <p id="loginStatus"></p>
+            <p id="loginStatus">
+              <div class="progress-container mx-5">
+                <div class="progress-bar"></div>
+              </div>
+            </p>
             <button class="btn btn-sm btn-secondary" id="logoutBtn" style="display: none;">تسجيل الخروج</button>
 
             <div class="btn-group" role="group" aria-label="Basic example">

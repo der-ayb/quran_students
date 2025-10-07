@@ -757,43 +757,6 @@ async function loadStudentsList() {
           smsBtn.className = "btn btn-info btn-sm";
           smsBtn.innerHTML = '<i class="fa-solid fa-comment-sms"></i>';
           phone_button_group.appendChild(smsBtn);
-          // whatsapp
-          function checkWhatsAppExists(number) {
-            // Clean and format the number
-            const cleanNumber = number.replace(/\D/g, "");
-
-            // Create WhatsApp API link
-            const whatsappLink = `https://wa.me/${cleanNumber}`;
-
-            return new Promise((resolve) => {
-              const img = new Image();
-              img.src = `https://web.whatsapp.com/faq?phone=${cleanNumber}`;
-
-              img.onload = function () {
-                // If image loads successfully, WhatsApp likely exists
-                resolve(true);
-              };
-
-              img.onerror = function () {
-                // If image fails to load, WhatsApp might not exist
-                resolve(false);
-              };
-
-              // Timeout fallback
-              setTimeout(() => resolve(false), 5000);
-            });
-          }
-
-          // Usage
-          checkWhatsAppExists(row[result.columns.indexOf("parent_phone")]).then((exists) => {
-            const whatsappBtn = document.createElement("a");
-            whatsappBtn.target = "_blank"
-            whatsappBtn.href =
-              "https://api.whatsapp.com/send?phone=" + row[result.columns.indexOf("parent_phone")].replace(row[result.columns.indexOf("parent_phone")][0],"213");
-            whatsappBtn.className = "btn btn-info btn-sm";
-            whatsappBtn.innerHTML = '<i class="fa-brands fa-whatsapp"></i>';
-            phone_button_group.appendChild(whatsappBtn);
-          });
         }
 
         data.push({
@@ -1491,14 +1454,14 @@ function setIsCustomDate() {
 
   dayDateInput.data("daterangepicker").isCustomDate = function (date) {
     if (events.includes(date.format("YYYY-MM-DD"))) {
-      return "text-decoration-underline";
+      return "fs-6 fw-bold";
     }
     return "";
   };
 
   statisticsDateInput.data("daterangepicker").isCustomDate = function (date) {
     if (events.includes(date.format("YYYY-MM-DD"))) {
-      return "text-decoration-underline";
+      return "fs-6 fw-bold";
     }
     return "";
   };
@@ -1572,7 +1535,7 @@ function removeRequirItem(button) {
   const row = button.closest("tr");
   if (requirementsTable.querySelector("tbody").childElementCount === 1) {
     const row = document.createElement("tr");
-    row.innerHTML = "<td>لاتوجد واجبات</td>";
+    row.innerText = "لاتوجد واجبات";
     requirementsTable.querySelector("tbody").appendChild(row);
   }
   row.remove();
@@ -1749,9 +1712,9 @@ async function showAttendanceStatistics() {
           layout: {
             topStart: {
               buttons: [
-{
-                    extend: 'pdfHtml5',
-                    download: 'open'
+                {
+                  extend: "pdfHtml5",
+                  download: "open",
                 },
                 {
                   extend: "pdf",
