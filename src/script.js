@@ -29,7 +29,7 @@ const arabicMonths = [
   "ديسمبر",
 ];
 const arabicDays = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
-let workingClassroomId = null;
+let workingClassroomId = localStorage.getItem("workingClassroomId");
 let studentsTableDetailIsShow = false;
 let studentsDayTableDetailIsShow = false;
 let classroomsTableDetailIsShow = false;
@@ -418,7 +418,7 @@ async function googleSignin() {
           await createNewDB();
         }
       } else if (downloadResult == false) {
-        ("pass");
+        if (project_db) await asyncDB();
       } else {
         await loadDBFromFile(downloadResult);
       }
@@ -474,6 +474,7 @@ async function asyncDB() {
 // classrooms tab
 workingClassroomSelect.onchange = async function () {
   workingClassroomId = this.value;
+  localStorage.setItem("workingClassroomId", workingClassroomId);
   setIsCustomDate();
 };
 newClassroomInfosForm.onsubmit = (e) => {
@@ -964,10 +965,8 @@ attendanceInput.onchange = function () {
   requireBookInput.dispatchEvent(new Event("change"));
   if (disable == "1") {
     requirSwitch.disabled = true;
-    requirementsTable.style.display = "none";
   } else {
     requirSwitch.disabled = false;
-    requirementsTable.style.display = "block";
   }
 };
 
@@ -1168,7 +1167,6 @@ async function loadDayStudentsList() {
           requirementsTable.querySelector("tbody").innerHTML = "";
           JSON.parse(row[result.columns.indexOf("detail")] || "[]").forEach(
             (item) => {
-              requirementsTable.style.display = "block";
               const row = document.createElement("tr");
               row.innerHTML = `
                 <td>${item["الكتاب"]}</td>
@@ -1536,7 +1534,9 @@ function initializeToast() {
 function removeRequirItem(button) {
   const row = button.closest("tr");
   if (requirementsTable.querySelector("tbody").childElementCount === 1) {
-    requirementsTable.style.display = "none";
+    const row = document.createElement("tr");
+    row.innerHTML = "<td>لاتوجد واجبات</td>";
+    requirementsTable.querySelector("tbody").appendChild(row);
   }
   row.remove();
   requirMoyenneInput.value = calcRequirementsMoyenne();
@@ -1552,7 +1552,6 @@ addQuranSelectionBtn.onclick = function () {
     window.showToast("error", "الرجاء إدخال الحقول اللازمة.");
     return;
   }
-  requirementsTable.style.display = "block";
   const row = document.createElement("tr");
   row.innerHTML = `
     <td>${requireBookInput.value}</td>
@@ -1911,6 +1910,14 @@ const checkSecondSurahAyahs = (secondSurahNumber) => {
   }
 };
 
+function setRequirQuantityDetailInput() {
+  requirQuantityDetailInput.value = `${
+    firstSurahSelect.options[firstSurahSelect.selectedIndex].text
+  } - ${firstAyahSelect.options[firstAyahSelect.selectedIndex].value} إلى ${
+    secondSurahSelect.options[secondSurahSelect.selectedIndex].text
+  } - ${secondAyahSelect.options[secondAyahSelect.selectedIndex].value}`;
+}
+
 firstSurahSelect.onchange = async function () {
   const firstSurahNumber = parseInt(this.value);
 
@@ -1959,15 +1966,12 @@ firstSurahSelect.onchange = async function () {
 
 secondSurahSelect.onchange = async function () {
   checkSecondSurahAyahs(parseInt(this.value));
-  requirQuantityDetailInput.value = `${
-    firstSurahSelect.options[firstSurahSelect.selectedIndex].text
-  } - ${firstAyahSelect.options[firstAyahSelect.selectedIndex].value} إلى ${
-    this.options[this.selectedIndex].text
-  } - ${this.options[this.selectedIndex].dataset.ayahs}`;
+  setRequirQuantityDetailInput();
 };
 
 firstAyahSelect.onchange = async function () {
   checkSecondSurahAyahs(parseInt(this.value));
+  setRequirQuantityDetailInput();
 };
 
 secondAyahSelect.onchange = async function () {
@@ -1996,6 +2000,7 @@ secondAyahSelect.onchange = async function () {
   }
   const totalLines = results[0].values[0][0];
   requirQuantityInput.value = totalLines;
+  setRequirQuantityDetailInput();
 };
 
 // // Function to get the difference in ayahs between two surahs
