@@ -1718,9 +1718,7 @@ async function showAttendanceStatistics() {
                 {
                   extend: "pdfHtml5",
                   download: "open",
-                },
-                {
-                  extend: "pdf",
+                
                   text: "انشاء PDF",
                   className: "btn btn-primary",
                   customize: function (doc) {
