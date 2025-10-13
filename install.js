@@ -33,16 +33,25 @@ if ("serviceWorker" in navigator) {
 
 // install button
 let installPrompt = null;
-const installButton = document.getElementById("installBtn");
+const installButton1 = document.getElementById("installBtn1");
+const installButton2 = document.getElementById("installBtn2");
 
 document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     installPrompt = event;
-    installButton.removeAttribute("hidden");
+    installButton1.removeAttribute("hidden");
+    installButton2.removeAttribute("hidden");
   });
 
-  installButton.addEventListener("click", async () => {
+  installButton1.addEventListener("click", async () => {
+    if (!installPrompt) {
+      return;
+    }
+    const result = await installPrompt.prompt();
+    disableInAppInstallPrompt();
+  });
+  installButton2.addEventListener("click", async () => {
     if (!installPrompt) {
       return;
     }
@@ -52,7 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function disableInAppInstallPrompt() {
     installPrompt = null;
-    installButton.setAttribute("hidden", "");
+    installButton1.setAttribute("hidden", "");
+    installButton2.setAttribute("hidden", "");
   }
 });
 
@@ -62,5 +72,6 @@ window.addEventListener("appinstalled", () => {
 
 function disableInAppInstallPrompt() {
   installPrompt = null;
-  installButton.setAttribute("hidden", "");
+  installButton1.setAttribute("hidden", "");
+  installButton2.setAttribute("hidden", "");
 }

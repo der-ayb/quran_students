@@ -1333,7 +1333,7 @@ async function loadDayStudentsList() {
                 <td class="d-none">${item["المقدار"]}</td>
                 <td style="white-space: normal;">${item["التفاصيل"]}</td>
                 <td>${item["التقدير"]}</td>
-                <td>${item["الأخطاء"]}</td>
+                <td>${item["الأخطاء"] || ""}</td>
                 <td>${item["المعدل"]}</td>
                 <td>${item["الحالة"] || "إضافي"}</td>
                 <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
@@ -1462,6 +1462,7 @@ async function loadDayStudentsList() {
         responsive: true,
 
         columnDefs: [
+          { type: "num", "targets": 4 },
           { visible: false, targets: [...[0], ...[5, 6, 7, 8]] },
           {
             targets: 1,

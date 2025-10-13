@@ -16,18 +16,19 @@ if (workbox) {
     [
       { url: "./", revision: "1" },
       { url: "./favicon.ico", revision: "1" },
-      { url: "./index.html", revision: "1" },
+      { url: "./index.html", revision: "2" },
       { url: "./offline.html", revision: "1" },
       { url: "./manifest.json", revision: "1" },
 
-      { url: "./src/style.css", revision: "1" },
-      { url: "./src/script.js", revision: "1" },
+      { url: "./src/style.css", revision: "2" },
+      { url: "./src/script.js", revision: "2" },
       { url: "./src/auth.js", revision: "1" },
       { url: "./src/pdfmake.js", revision: "1" },
       { url: "./src/vfs_fonts.js", revision: "1" },
       { url: "./src/yearpicker.css", revision: "1" },
       { url: "./src/yearpicker.js", revision: "1" },
 
+      { url: "./assets/notoNeskhArabic.woff2", revision: "1" },
       { url: "./assets/default.sqlite3", revision: "1" },
       { url: "./assets/quran.sqlite", revision: "1" },
       { url: "./assets/manifest-icon-192.maskable.png", revision: "1" },
