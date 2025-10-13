@@ -100,7 +100,10 @@
   <div class="tab-content" id="pills-tabContent">
 
     <div class="tab-pane fade" id="pills-splash" role="tabpanel" aria-labelledby="pills-splash-tab">
-      <h1 class="text-center">تطبيق متابعة الحفظ</h1>
+      <div class="row">
+        <h1 class="col text-center">تطبيق متابعة الحفظ</h1>
+        <button class="col-2 btn btn-danger btn-sm" id="installBtn">تثبيت</button>
+      </div>
 
       <button id="googleSigninBtn" class="mx-auto" onclick="googleSignin()">
         <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid" viewBox="0 0 256 262">
@@ -120,7 +123,7 @@
         تسجيل الدخول
       </button>
       <div style="display: flex;" class="btn-group mt-3" role="group" aria-label="Basic example">
-        <button type="button" id="createNewDBbtn" class="btn btn-primary">➕ جديد</button>
+        <button type="button" onclick="createNewDB()" class="btn btn-primary">➕ جديد</button>
         <label for="importDBbtn" class="btn btn-primary mb-0">
           📥 استيراد
           <input type="file" id="importDBbtn" class="d-none">
@@ -187,10 +190,7 @@
             <th class=""></th>
             <th class="px-4">الطالب</th>
             <th class="">الحضور</th>
-            <th class="">الكتاب</th>
-            <th class="">النوع</th>
-            <th class="">المقدار</th>
-            <th class="">التقدير</th>
+            <th class="">العلامة</th>
             <th class="">الهندام</t>
             <th class="">الحلاقة</th>
             <th class="">السلوك</th>
@@ -250,9 +250,11 @@
                   <option value="solar">Solar (dark)</option>
                 </select>
               </div>
+
             </div>
           </div>
         </div>
+
 
         <div class="card">
           <div class="card-header" id="headingThree">
@@ -278,7 +280,7 @@
             </div>
 
             <div class="btn-group mt-3" role="group" aria-label="Basic example">
-              <button type="button" id="createNewDBbtn" class="btn btn-primary">➕ جديد</button>
+              <button type="button" onclick="createNewDB()" class="btn btn-primary">➕ جديد</button>
               <label for="importDBbtn" class="btn btn-primary mb-0">
                 📥 استيراد
                 <input type="file" id="importDBbtn" class="d-none">
@@ -364,6 +366,22 @@
         </g>
       </svg>
     </button>
+    <button id="maximizeModalBtn" style="display: none;">
+      <svg width="256px" height="30px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+        <g id="SVGRepo_iconCarrier">
+          <path
+            d="M11.9999 2C16.714 2 19.071 2 20.5354 3.46447C21.9999 4.92893 21.9999 7.28595 21.9999 12C21.9999 16.714 21.9999 19.0711 20.5354 20.5355C19.1784 21.8926 17.055 21.9921 12.9999 21.9994M2.00049 11C2.00779 6.94493 2.10734 4.8215 3.46438 3.46447C4.43813 2.49071 5.8065 2.16443 8 2.0551"
+            stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"></path>
+          <path d="M12 12L17 7M17 7H13.25M17 7V10.75" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"
+            stroke-linejoin="round"></path>
+          <path
+            d="M2 18C2 16.1144 2 15.1716 2.58579 14.5858C3.17157 14 4.11438 14 6 14C7.88562 14 8.82843 14 9.41421 14.5858C10 15.1716 10 16.1144 10 18C10 19.8856 10 20.8284 9.41421 21.4142C8.82843 22 7.88562 22 6 22C4.11438 22 3.17157 22 2.58579 21.4142C2 20.8284 2 19.8856 2 18Z"
+            stroke="#ffffff" stroke-width="1.5"></path>
+        </g>
+      </svg>
+    </button>
   </div>
 
   <!-- Modal for adding a new student -->
@@ -413,10 +431,13 @@
         <div class="modal-body">
           <form id="newStudentInfosForm">
             <input type="hidden" id="studentId" />
-            <label for="name">الاسم:</label>
-            <input type="text" id="name" class="form-control" required />
+            <label>الاسم واللقب:</label>
+            <div class="input-group">
+              <input type="text" id="fname" aria-label="First name" class="form-control" required>
+              <input type="text" id="lname" aria-label="Last name" class="form-control" required>
+            </div>
             <label for="birthyear">سنة الميلاد:</label>
-            <input type="text" id="birthyear" class="form-control" required />
+            <input type="text" id="birthyear" class="form-control" required readonly />
             <label for="parentPhone">هاتف الولي:</label>
             <input type="text" id="parentPhone" class="form-control"
               title="رقم هاتف جزائري يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام" />
@@ -446,115 +467,143 @@
               <label for="studentName">اسم التلميذ:</label>
               <input type="text" class="form-control" id="studentName" readonly />
             </div>
-            <div class="mb-3">
-              <label for="attendance">الحضور:</label>
-              <select class="form-control" id="attendance" required>
-                <option value="5">حضور كلي</option>
-                <option value="4">تأخر قليل</option>
-                <option value="3">تأخر</option>
-                <option value="2">تأخر طويل</option>
-                <option value="1">غائب</option>
-              </select>
-            </div>
 
-            <div class="row">
-              <div class="col">
-                <div class="mb-3">
-                  <label for="clothing">الهندام:</label>
-                  <select class="form-control" id="clothing" required>
-                    <option value="3">جيد</option>
-                    <option value="2">مقبول</option>
-                    <option value="1">غير مقبول</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="haircut">الحلاقة:</label>
-                  <select class="form-control" id="haircut" required>
-                    <option value="3">جيد</option>
-                    <option value="2">مقبول</option>
-                    <option value="1">غير مقبول</option>
-                  </select>
-                </div>
-              </div>
-              <div class="w-100"></div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="behavior">السلوك:</label>
-                  <select class="form-control" id="behavior" required>
-                    <option value="5">ممتاز</option>
-                    <option value="4">جيد</option>
-                    <option value="3">مقبول</option>
-                    <option value="0">سيئ</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="prayer">الصلاة:</label>
-                  <select class="form-control" id="prayer" required>
-                    <option value="4">ممتاز</option>
-                    <option value="0">غائب</option>
-                  </select>
-                </div>
+            <div class="mb-3 text-center">
+              <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                <input type="radio" class="btn-check" name="attendance" id="present" autocomplete="off"
+                  onchange="onChangeAttendanceState(this)">
+                <label class="btn btn-outline-primary" for="present">حاضر</label>
+
+                <input type="radio" class="btn-check" name="attendance" id="UnjustifiedAbsence" autocomplete="off"
+                  onchange="onChangeAttendanceState(this)" checked>
+                <label class="btn btn-outline-primary" for="UnjustifiedAbsence">غياب غير مبرر</label>
+
+                <input type="radio" class="btn-check" name="attendance" id="JustifiedAbsence" autocomplete="off"
+                  onchange="onChangeAttendanceState(this)">
+                <label class="btn btn-outline-primary" for="JustifiedAbsence">غياب مبرر</label>
               </div>
             </div>
 
-            <div class="my-1 d-flex align-items-center">
-              <hr class="flex-grow-1">
-              <span class="mx-2 text-muted">المطلوب</span>
-              <hr class="flex-grow-1">
-            </div>
-            <div class="mb-3">
-              <label for="requirMoyenne">معدل المطلوب:</label>
-              <input type="number" class="form-control" id="requirMoyenne" readonly required />
-            </div>
-            <div class="table-responsive">
-              <table class="table" id="requirementTable">
-                <thead>
-                  <tr>
-                    <th scope="col">الكتاب</th>
-                    <th scope="col">النوع</th>
-                    <th scope="col" class="d-none">المقدار</th>
-                    <th scope="col">التفاصيل</th>
-                    <th scope="col">التقدير</th>
-                    <th scope="col">المعدل</th>
-                    <th scope="col">الحالة</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                </tbody>
-              </table>
-            </div>
-            <div class="card px-2 py-2 mb-2">
+            <div id="newStudentDayModalBody">
+              <div class="my-1 d-flex align-items-center">
+                <hr class="flex-grow-1">
+                <span class="mx-2 text-muted">التقييم المستمر</span>
+                <hr class="flex-grow-1">
+              </div>
+
               <div class="row">
                 <div class="col">
                   <div class="mb-3">
-                    <label for="requirBook">الكتاب:</label>
-                    <input list="requirBookOptions" class="form-control" id="requirBook"
-                      placeholder="اختر أو أدخل قيمة..." />
-                    <datalist id="requirBookOptions">
-                      <option value="القرآن">
-                      <option value="الأربعين النووية">
-                    </datalist>
+                    <label for="retard">التأخر:</label>
+                    <div class="mb-3 input-group">
+                      <input type="number" step="1" min="0" class="form-control" id="retard" />
+                      <span class="input-group-text">دقيقة</span>
+                    </div>
                   </div>
                 </div>
                 <div class="col">
                   <div class="mb-3">
-                    <label for="requirType">النوع:</label>
-                    <select class="form-control" id="requirType">
-                      <option value="حفظ">حفظ</option>
-                      <option value="مراجعة">مراجعة</option>
+                    <label for="behavior">السلوك:</label>
+                    <select class="form-control" id="behavior">
+                      <option value="5">ممتاز</option>
+                      <option value="4">جيد</option>
+                      <option value="3">مقبول</option>
+                      <option value="-5">سيئ</option>
+                      <option value="-10">سيئ جدا</option>
+                      <option value="0">بدون تقييم</option>
                     </select>
                   </div>
                 </div>
                 <div class="w-100"></div>
+                <div class="col">
+                  <div class="mb-3">
+                    <label for="clothing">الهندام:</label>
+                    <select class="form-control" id="clothing">
+                      <option value="3">جيد</option>
+                      <option value="2">مقبول</option>
+                      <option value="-1">غير مقبول</option>
+                      <option value="0">بدون تقييم</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="mb-3">
+                    <label for="haircut">الحلاقة:</label>
+                    <select class="form-control" id="haircut">
+                      <option value="5">جيد</option>
+                      <option value="2">مقبول</option>
+                      <option value="-5">غير مقبول</option>
+                      <option value="0">بدون تقييم</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="mb-3">
+                    <label for="prayer">الصلاة:</label>
+                    <select class="form-control" id="prayer">
+                      <option value="5">ممتاز</option>
+                      <option value="-1">غائب</option>
+                      <option value="0">بدون تقييم</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
 
-                <div class="mb-3">
-                  <label for="">التفاصيل:</label>
-                  <textarea type="text" id="requirQuantityDetail" class="form-control"></textarea>
+              <div class="my-1 d-flex align-items-center">
+                <hr class="flex-grow-1">
+                <span class="mx-2 text-muted">المطلوب</span>
+                <hr class="flex-grow-1">
+              </div>
+              <div class="mb-3">
+                <label for="requirMoyenne">معدل المطلوب:</label>
+                <input type="number" class="form-control" id="requirMoyenne" readonly required />
+              </div>
+              <div class="table-responsive">
+                <table class="table" id="requirementTable">
+                  <thead>
+                    <tr>
+                      <th scope="col">الكتاب</th>
+                      <th scope="col">النوع</th>
+                      <th scope="col" class="d-none">المقدار</th>
+                      <th scope="col">التفاصيل</th>
+                      <th scope="col">التقدير</th>
+                      <th scope="col">الأخطاء</th>
+                      <th scope="col">المعدل</th>
+                      <th scope="col">الحالة</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+              <div class="card px-2 py-2 mb-2">
+                <div class="row">
+                  <div class="col">
+                    <div class="mb-3">
+                      <label for="requirBook">الكتاب:</label>
+                      <input list="requirBookOptions" class="form-control" id="requirBook"
+                        placeholder="اختر أو أدخل قيمة..." />
+                      <datalist id="requirBookOptions">
+                        <option value="القرآن">
+                        <option value="الأربعين النووية">
+                      </datalist>
+                    </div>
+                  </div>
+                  <div class="col-5">
+                    <div class="mb-3">
+                      <label for="requirType">النوع:</label>
+                      <select class="form-control" id="requirType">
+                        <option value="حفظ">حفظ</option>
+                        <option value="مراجعة">مراجعة</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="w-100"></div>
+                  <label class="mb-3">التفاصيل:</label>
+                  <div>
+                    <textarea type="text" id="requirQuantityDetail" class="form-control mb-3"></textarea>
+                  </div>
                   <div class="input-group mb-3" id="quranSelectionSection" style="display: none;">
                     <select id="first-surah" class="form-control surah-select">
                       <option value="" selected disabled>من</option>
@@ -565,41 +614,74 @@
                     </select>
                     <select id="second-ayah" class="form-control ayah-select" disabled></select>
                   </div>
-                </div>
-                <div class="w-100"></div>
-                <div class="col">
-                  <div class="mb-3">
-                    <label for="requirQuantity">المقدار:</label>
-                    <input type="number" id="requirQuantity" class="form-control" min="0" step="0.5" />
-                  </div>
-                </div>
-                <div class="col">
-                  <div class="mb-3">
-                    <label for="requirEvaluation">التقدير:</label>
-                    <input type="number" id="requirEvaluation" class="form-control" min="0" max="10" step="0.5" />
-                  </div>
-                </div>
-                <div class="w-100"></div>
-                <div class="col">
-                  <div class="mb-3">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" role="switch" id="requirSwitch" checked>
-                      <label class="form-check-label" for="requirSwitch">تعيين كواجب</label>
+                  <div class="w-100"></div>
+                  <div class="col mb-3">
+                    <div class="mb-3">
+                      <label for="saveStateErrors">الأخطاء في الحفظ:</label>
+                      <div class="input-group mb-3">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" id="calcRquirEvalBtn"><i
+                            class="fa-regular fa-square-minus fa-2x"></i></button>
+                        <input type="number" id="saveStateErrors" class="form-control text-center value=" 0" min="0"
+                          max="1000" step="1" placeholder="" aria-label="Example text with button addon"
+                          aria-describedby="button-addon1">
+                        <button class="btn btn-sm btn-outline-secondary " type="button" id="calcRquirEvalBtn"><i
+                            class="fa-regular fa-square-plus fa-2x"></i></button>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="col">
-                  <div class="">
-                    <button type="button" data-requirlength="0" class="btn btn-info mx-auto w-100"
-                      id="addQuranSelectionBtn">إظافة +</button>
+                  <div class="col">
+                    <div class="mb-3">
+                      <label for="saveStopErrors">عدد مرات الفتح:</label>
+                      <div class="input-group mb-3">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" id="calcRquirEvalBtn"><i
+                            class="fa-regular fa-square-minus fa-2x"></i></button>
+                        <input type="number" id="saveStopErrors" class="form-control text-center value=" 0" min="0"
+                          max="1000" step="1" placeholder="" aria-label="Example text with button addon"
+                          aria-describedby="button-addon1">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" id="calcRquirEvalBtn"><i
+                            class="fa-regular fa-square-plus fa-2x"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="w-100"></div>
+                  <div class="col">
+                    <div class="mb-3">
+                      <label for="requirQuantity">المقدار:</label>
+                      <input type="number" id="requirQuantity" class="form-control" min="0" step="0.5" />
+                    </div>
+                  </div>
+                  <div class="col">
+                    <div class="mb-3">
+                      <label for="requirEvaluation">التقدير:</label>
+                      <input type="number" id="requirEvaluation" class="form-control" min="0" max="10" step="0.5" />
+                    </div>
+                  </div>
+                  <div class="w-100"></div>
+                  <div class="col">
+                    <div class="mb-3">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="requirObligation" checked>
+                        <label class="form-check-label" for="requirObligation">تعيين كواجب</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col">
+                    <div class="">
+                      <button type="button" data-requirlength="0" class="btn btn-info mx-auto w-100"
+                        id="addQuranSelectionBtn">إظافة +</button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
-            <button id="studentDayFormSubmitBtn" type="submit" class="btn btn-primary">حفظ</button>
+          <div class="modal-footer d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+              onclick="minimizeModal(); return false;">تصغير</button>
+            <div>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+              <button id="studentDayFormSubmitBtn" type="submit" class="btn btn-primary">حفظ</button>
+            </div>
           </div>
         </form>
       </div>

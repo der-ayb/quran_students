@@ -169,11 +169,15 @@ async function initAuth() {
         searchFileInDrive();
       } else {
         loginStatus.innerHTML = profileElement(
-          localStorage.getItem("lastUpdateTime")
+          fromNow(localStorage.getItem("lastUpdateTime"))
         );
       }
     } else {
-      loginStatus.replaceChildren(googleSigninBtn.cloneNode(true));
+      const updateTime = fromNow(localStorage.getItem("lastUpdateTime"));
+      const p = document.createElement("p");
+      p.className = "card-text";
+      p.innerText = updateTime ? `آخر تحديث من هذا الجهاز:${updateTime}` : null;
+      loginStatus.replaceChildren(googleSigninBtn.cloneNode(true), p);
     }
   });
 }
@@ -188,7 +192,11 @@ async function logout() {
   await deleteAccessToken(db);
   currentUser = null;
   userIsAuth = false;
-  loginStatus.replaceChildren(googleSigninBtn.cloneNode(true));
+  const updateTime = fromNow(localStorage.getItem("lastUpdateTime"));
+  const p = document.createElement("p");
+  p.className = "card-text";
+  p.innerText = updateTime ? `آخر تحديث من هذا الجهاز:${updateTime}` : null;
+  loginStatus.replaceChildren(googleSigninBtn.cloneNode(true), p);
 }
 
 async function searchFileInDrive(accessToken = null) {
@@ -210,7 +218,7 @@ async function searchFileInDrive(accessToken = null) {
   hideLoadingModal();
 
   if (!listResponse.ok) {
-    await logout()
+    await logout();
     throw new Error(`Failed to list files: ${listResponse.statusText}`);
   }
 
@@ -222,7 +230,7 @@ async function searchFileInDrive(accessToken = null) {
   const file = listResult.files[0];
   const date = fromNow(new Date(file.modifiedTime));
   loginStatus.innerHTML = profileElement(date);
-  localStorage.setItem("lastUpdateTime", date);
+  localStorage.setItem("lastUpdateTime", new Date(file.modifiedTime));
   return [file, date];
 }
 
@@ -267,6 +275,14 @@ async function initializeGoogleAuth(callback) {
           reject(new Error("No access token received"));
         }
       },
+      error_callback: async (type) => {
+        hideLoadingModal();
+        if(type.type == "popup_failed_to_open"){
+          window.showToast('warning','لاتوجد صلاحية للنوافذ المنبثقة')
+        }else if(type.type == "unknown"){
+          window.showToast('warning','حدث خطأ.')
+        }
+      }
     });
 
     client.requestAccessToken();
@@ -288,11 +304,7 @@ async function uploadDBtoDrive(data) {
   // Check if a file named 'quran_students.sqlite3' already exists.
   const [file, updateTime] = await searchFileInDrive(accessToken);
   if (file) {
-    if (
-      !confirm(
-        `سيتم استبدال قاعدة البيانات التي في حسابك , هل أنت موافق؟`
-      )
-    ) {
+    if (!confirm(`سيتم استبدال قاعدة البيانات التي في حسابك , هل أنت موافق؟`)) {
       return false;
     }
     fileId = file.id;
@@ -344,7 +356,7 @@ async function uploadDBtoDrive(data) {
 
   const result = await response.json();
   loginStatus.innerHTML = profileElement(fromNow(new Date()));
-  localStorage.setItem("lastUpdateTime", fromNow(new Date()));
+  localStorage.setItem("lastUpdateTime", new Date());
   if (fileId) {
     console.log("📤 DB updated on Google Drive:", result.id);
   } else {

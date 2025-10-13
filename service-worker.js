@@ -3,7 +3,7 @@ importScripts(
 );
 
 workbox.setConfig({ debug: location.hostname !== "127.0.0.1"?false:true });
-
+const CORE_CACHE = "core-cache-v1"
 // Force waiting service worker to become active
 self.skipWaiting();
 workbox.core.clientsClaim();
@@ -28,8 +28,8 @@ if (workbox) {
       { url: "./src/yearpicker.css", revision: "1" },
       { url: "./src/yearpicker.js", revision: "1" },
 
-      // { url: "./assets/default.sqlite3", revision: "1" },
-      // { url: "./assets/quran.sqlite", revision: "1" },
+      { url: "./assets/default.sqlite3", revision: "1" },
+      { url: "./assets/quran.sqlite", revision: "1" },
       { url: "./assets/manifest-icon-192.maskable.png", revision: "1" },
       { url: "./assets/manifest-icon-512.maskable.png", revision: "1" },
       { url: "./assets/apple-icon-180.png", revision: "1" },
@@ -172,7 +172,7 @@ if (workbox) {
       url.origin === "https://cdn.datatables.net" ||
       url.origin === "https://cdn.jsdelivr.net",
     new workbox.strategies.NetworkFirst({
-      cacheName: "core-cache",
+      cacheName: CORE_CACHE,
       plugins: [
         new workbox.expiration.ExpirationPlugin({
           maxAgeSeconds: 30 * 24 * 60 * 60,
@@ -232,7 +232,7 @@ if (workbox) {
 self.addEventListener("activate", (event) => {
   const currentCaches = [
     workbox.core.cacheNames.precache,
-    "core-cache",
+    CORE_CACHE,
     "image-cache",
     "pages-cache",
     "static-cache",

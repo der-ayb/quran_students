@@ -8,22 +8,25 @@ if ("serviceWorker" in navigator) {
     ) {
       navigator.serviceWorker
         .register("./service-worker.js")
-        .then((reg) => {
-          reg.onupdatefound = () => {
-            const newWorker = reg.installing;
-            newWorker.onstatechange = () => {
+        .then((registration) => {
+          console.log("Service Worker registered:", registration.scope);
+          registration.addEventListener("updatefound", () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener("statechange", () => {
               if (
                 newWorker.state === "installed" &&
                 navigator.serviceWorker.controller
               ) {
-                window.location.reload();
+                alert(
+                  "New version available, including updated resources! Please refresh."
+                );
               }
-            };
-          };
+            });
+          });
         })
-        .catch((err) =>
-          console.log("Service Worker registration failed: ", err)
-        );
+        .catch((error) => {
+          console.error("Service Worker registration failed:", error);
+        });
     }
   });
 }
@@ -52,7 +55,6 @@ document.addEventListener("DOMContentLoaded", () => {
     installButton.setAttribute("hidden", "");
   }
 });
-
 
 window.addEventListener("appinstalled", () => {
   disableInAppInstallPrompt();
