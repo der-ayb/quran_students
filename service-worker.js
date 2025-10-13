@@ -2,8 +2,7 @@ importScripts(
   "https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js"
 );
 
-workbox.setConfig({ debug: location.hostname !== "127.0.0.1"?false:true });
-const CORE_CACHE = "core-cache-v1"
+workbox.setConfig({ debug: location.hostname !== "127.0.0.1" ? false : true });
 // Force waiting service worker to become active
 self.skipWaiting();
 workbox.core.clientsClaim();
@@ -16,19 +15,25 @@ if (workbox) {
     [
       { url: "./", revision: "1" },
       { url: "./favicon.ico", revision: "1" },
-      { url: "./index.html", revision: "2" },
+      { url: "./index.html", revision: "3" },
       { url: "./offline.html", revision: "1" },
       { url: "./manifest.json", revision: "1" },
 
-      { url: "./src/style.css", revision: "2" },
-      { url: "./src/script.js", revision: "2" },
+      { url: "./src/style.css", revision: "3" },
+      { url: "./src/fonts.css", revision: "1" },
+      { url: "./src/script.js", revision: "3" },
       { url: "./src/auth.js", revision: "1" },
       { url: "./src/pdfmake.js", revision: "1" },
       { url: "./src/vfs_fonts.js", revision: "1" },
       { url: "./src/yearpicker.css", revision: "1" },
       { url: "./src/yearpicker.js", revision: "1" },
 
-      { url: "./assets/notoNeskhArabic.woff2", revision: "1" },
+      { url: "./assets/fonts/changa/2-cm9JNi2YuVOUckY5y-au8.woff2", revision: "1" },
+      { url: "./assets/fonts/markazi/syk0-ydym6AtQaiEtX7yhqbVpHWVF1E.woff2", revision: "1" },
+      { url: "./assets/fonts/noto-sans/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj4wv4r4xA.woff2", revision: "1" },
+      { url: "./assets/fonts/raedex/SLXYc1bJ7HE5YDoGPuzj_dh8uc7wUy8ZQQyX2Iw1ZEzMhQ.woff2", revision: "1" },
+      { url: "./assets/fonts/rubik/iJWKBXyIfDnIV7nErXyi0A.woff2", revision: "1" },
+
       { url: "./assets/default.sqlite3", revision: "1" },
       { url: "./assets/quran.sqlite", revision: "1" },
       { url: "./assets/manifest-icon-192.maskable.png", revision: "1" },
@@ -173,7 +178,7 @@ if (workbox) {
       url.origin === "https://cdn.datatables.net" ||
       url.origin === "https://cdn.jsdelivr.net",
     new workbox.strategies.NetworkFirst({
-      cacheName: CORE_CACHE,
+      cacheName: "core-cache",
       plugins: [
         new workbox.expiration.ExpirationPlugin({
           maxAgeSeconds: 30 * 24 * 60 * 60,
@@ -233,7 +238,7 @@ if (workbox) {
 self.addEventListener("activate", (event) => {
   const currentCaches = [
     workbox.core.cacheNames.precache,
-    CORE_CACHE,
+    "core-cache",
     "image-cache",
     "pages-cache",
     "static-cache",

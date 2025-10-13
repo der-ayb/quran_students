@@ -91,6 +91,7 @@ const statisticType = document.getElementById("statisticType");
 let start_time = null;
 const themeSelector = document.getElementById("themeSelector");
 const themeTag = document.getElementById("themeStylesheet");
+const fontSelector = document.getElementById("fontSelect");
 
 const loadingModalText = document.getElementById("loadingText");
 const loadingModalElement = document.getElementById("loadingModal");
@@ -176,6 +177,18 @@ document.addEventListener("DOMContentLoaded", async function () {
     themeSelector.dispatchEvent(new Event("change"));
   }
 
+  // font change
+  fontSelector.onchange = async function () {
+    const font = this.value;
+    document.body.style.fontFamily = font;
+    document.body.style.fontOpticalSizing = "auto";
+    localStorage.setItem("selectedFont", font);
+  };
+  const savedFont = localStorage.getItem("selectedFont");
+  if (savedFont) {
+    fontSelector.value = savedFont;
+    fontSelector.dispatchEvent(new Event("change"));
+  }
   // set birthyear input limits
   const today = new Date();
   $("#birthyear").yearpicker({
@@ -1069,7 +1082,7 @@ function calcRequirementsMoyenne() {
 
 function calcEvaluationMoyenne(retard, clothing, haircut, behavior, prayer) {
   let moyenne = 0;
-  moyenne -= parseInt(retard) / 3 || -5;
+  moyenne += 20 - parseInt(retard) / 3;
   moyenne += parseInt(clothing) || 0;
   moyenne += parseInt(haircut) || 0;
   moyenne += parseInt(behavior) || 0;
@@ -1096,7 +1109,7 @@ function calcGlobalEvaluation(requirsMoyenne, evalMoyenne) {
   let globalEvaluation = 0;
   globalEvaluation = requirsMoyenne + evalMoyenne;
   globalEvaluation = globalEvaluation > 0 ? globalEvaluation : 0;
-  return globalEvaluation.toFixed(2)
+  return globalEvaluation.toFixed(2);
 }
 
 requirTypeInput.onchange = async () => {
@@ -1203,10 +1216,74 @@ function calcRetardTime() {
   return retardTime;
 }
 
+function compareWithCurrentTime(time, minutesToAdd) {
+    // Add minutes to given time
+    function addMinutes(timeStr, mins) {
+        const [h, m] = timeStr.split(':').map(Number);
+        const total = h * 60 + m + mins;
+        const newH = Math.floor(total / 60) % 24;
+        const newM = total % 60;
+        return {
+            time: `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`,
+            totalMinutes: total
+        };
+    }
+    
+    // Get current time
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Calculate new time
+    const newTimeObj = addMinutes(time, minutesToAdd + 60);
+    
+    // Comparison logic
+    const difference = newTimeObj.totalMinutes - currentTotalMinutes;
+    
+    let status, message;
+    if (difference > 0) {
+        status = 'future';
+        const hours = Math.floor(difference / 60);
+        const minutes = difference % 60;
+        message = `${hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''} and ` : ''}${minutes} minute${minutes !== 1 ? 's' : ''} from now`;
+    } else if (difference < 0) {
+        status = 'past';
+        const hours = Math.floor(Math.abs(difference) / 60);
+        const minutes = Math.abs(difference) % 60;
+        message = `${hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''} and ` : ''}${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    } else {
+        status = 'current';
+        message = 'right now';
+    }
+    
+    return {
+        originalTime: time,
+        minutesAdded: minutesToAdd,
+        resultTime: newTimeObj.time,
+        currentTime: currentTime,
+        status: status,
+        message: message,
+        differenceMinutes: Math.abs(difference),
+        isFuture: difference > 0,
+        isPast: difference < 0,
+        isCurrent: difference === 0
+    };
+}
+
 async function markPresence(studentId) {
+  const retard_time = calcRetardTime();
   project_db.run(
     "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,moyenne) VALUES (?, ?, ?,?, ?,?,?,?);",
-    [studentId, currentDay, 1, calcRetardTime(), null, null, null, null]
+    [
+      studentId,
+      currentDay,
+      1,
+      retard_time,
+      null,
+      null,
+      null,
+      calcEvaluationMoyenne(retard_time, null, null, null, null),
+    ]
   );
   saveToIndexedDB(project_db.export());
   await loadDayStudentsList();
@@ -1381,9 +1458,9 @@ async function loadDayStudentsList() {
             row[result.columns.indexOf("studentLName")],
           attendance:
             attendance_value == 1
-              ? retardValue == 0
-                ? "حضور كلي"
-                : `بعد ${retardValue} د`
+              ? (retardValue == 0
+                ? `حضور كلي `
+                : `بعد ${retardValue} د `)+(compareWithCurrentTime(start_time,retardValue).isPast ? '🟢' : '')
               : attendance_value == 0
               ? "غياب مبرر"
               : `<button onclick="markPresence(${
@@ -1462,7 +1539,7 @@ async function loadDayStudentsList() {
         responsive: true,
 
         columnDefs: [
-          { type: "num", "targets": 4 },
+          { type: "num", targets: 4 },
           { visible: false, targets: [...[0], ...[5, 6, 7, 8]] },
           {
             targets: 1,
@@ -1532,6 +1609,12 @@ async function loadDayStudentsList() {
                   }
                 },
               },
+              {
+                text: "تحديث",
+                action: async function () {
+                  await loadDayStudentsList()
+                }
+              }
             ],
           },
         },
@@ -1875,7 +1958,7 @@ async function showAttendanceStatistics() {
                 {
                   extend: "pdfHtml5",
                   download: "open",
-                
+
                   text: "انشاء PDF",
                   className: "btn btn-primary",
                   customize: function (doc) {

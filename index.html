@@ -78,6 +78,7 @@
   </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/spacelab/bootstrap.rtl.min.css"
     id="themeStylesheet">
+  <link type="text/css" rel="stylesheet" href="src/fonts.css" />
   <link type="text/css" rel="stylesheet" href="src/style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
 
@@ -136,7 +137,7 @@
 
       <div class="date-input-container">
         <div class="date-input-group">
-          <select id="workingClassroom" class="date-input-field" dir="ltr"></select>
+          <select id="workingClassroom" class="form-select"></select>
         </div>
       </div>
       <table id="classroomsListTable" class="display responsive nowrap" width="100%">
@@ -177,7 +178,7 @@
       <div class="date-input-container">
         <div class="date-input-group">
           <span class="date-input-label">تاريخ اليوم:</span>
-          <input type="text" id="dayDate" class="date-input-field" dir="ltr" readonly>
+          <input type="text" id="dayDate" class="date-input-field" readonly>
           <i class="fas fa-calendar-alt date-icon"></i>
         </div>
       </div>
@@ -209,7 +210,7 @@
       <div class="date-input-container">
         <div class="date-input-group">
           <span class="date-input-label">الفترة:</span>
-          <input type="text" id="statisticsrange" class="date-input-field" dir="ltr" readonly>
+          <input type="text" id="statisticsrange" class="date-input-field" readonly>
           <i class="fas fa-calendar-alt date-icon"></i>
         </div>
       </div>
@@ -240,7 +241,7 @@
             data-bs-parent="#pills-preferences">
             <div class="card-body">
               <div class="input-group mb-3">
-                <span class="input-group-text" id="basic-addon1">السمة</span>
+                <span class="input-group-text">السمة</span>
                 <select id="themeSelector" class="form-select">
                   <option value="spacelab" selected>Spacelab</option>
                   <option value="cerulean">Cerulean</option>
@@ -249,6 +250,16 @@
                   <option value="slate">Slate (dark)</option>
                   <option value="solar">Solar (dark)</option>
                 </select>
+              </div>
+              <div class="input-group mb-3">
+                <span class="input-group-text">الخط</span>
+                <select class="form-select" id="fontSelect">
+                  <option value='"Noto Sans Arabic", sans-serif'>Noto Sans Arabic</option>
+                  <option value='"Rubik", sans-serif'>Rubik</option>
+                  <option value='"Changa", sans-serif'>Changa</option>
+                  <option value='"Readex Pro", sans-serif'>Readex</option>
+                  <option value='"Markazi Text", serif'>Markazi</option>
+              </select>
               </div>
 
             </div>

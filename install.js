@@ -17,8 +17,8 @@ if ("serviceWorker" in navigator) {
                 newWorker.state === "installed" &&
                 navigator.serviceWorker.controller
               ) {
-                alert(
-                  "New version available, including updated resources! Please refresh."
+                window.showToast("info",
+                  "تم التماس تحديث جديد، يرجى تحديث الصفحة."
                 );
               }
             });
