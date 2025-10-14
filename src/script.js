@@ -33,7 +33,7 @@ let workingClassroomId = localStorage.getItem("workingClassroomId");
 let studentsTableDetailIsShow = false;
 let studentsDayTableDetailIsShow = false;
 let classroomsTableDetailIsShow = false;
-let currentDay = new Date().toISOString().slice(0, 10);
+let workingDay = new Date().toISOString().slice(0, 10);
 let loadingModalShowNumber = [];
 
 const workingClassroomSelect = document.getElementById("workingClassroom");
@@ -181,7 +181,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   fontSelector.onchange = async function () {
     const font = this.value;
     document.body.style.fontFamily = font;
-    document.body.style.fontOpticalSizing = "auto";
     localStorage.setItem("selectedFont", font);
   };
   const savedFont = localStorage.getItem("selectedFont");
@@ -700,15 +699,17 @@ async function loadClassRoomsList() {
           topStart: {
             buttons: [
               {
-                text: "إظهار التفاصيل",
-                action: function (e, dt, button, config) {
+                text: '<i class="fa-solid fa-table-cells"></i>',
+                action: async function (e, dt, button, config) {
                   const columns = dt.columns([0, 4, 5]);
                   const isVisible = dt.column(columns[0][0]).visible();
 
                   columns.visible(!isVisible);
                   classroomsTableDetailIsShow = !isVisible;
                   dt.button(0).text(
-                    isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل"
+                    isVisible
+                      ? '<i class="fa-solid fa-table-cells">'
+                      : '<i class="fa-solid fa-table"></i>'
                   );
                 },
               },
@@ -870,15 +871,17 @@ async function loadStudentsList() {
           topStart: {
             buttons: [
               {
-                text: "إظهار التفاصيل",
-                action: function (e, dt) {
+                text: '<i class="fa-solid fa-table-cells">',
+                action: async function (e, dt) {
                   const columns = dt.columns([5]);
                   const isVisible = dt.column(columns[0][0]).visible();
 
                   columns.visible(!isVisible);
                   studentsTableDetailIsShow = !isVisible;
                   dt.button(0).text(
-                    isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل"
+                    isVisible
+                      ? '<i class="fa-solid fa-table-cells">'
+                      : '<i class="fa-solid fa-table"></i>'
                   );
                 },
               },
@@ -1082,7 +1085,7 @@ function calcRequirementsMoyenne() {
 
 function calcEvaluationMoyenne(retard, clothing, haircut, behavior, prayer) {
   let moyenne = 0;
-  moyenne += 20 - parseInt(retard) / 3;
+  moyenne += 20 - parseInt(retard > -1 ? retard : 0) / 3;
   moyenne += parseInt(clothing) || 0;
   moyenne += parseInt(haircut) || 0;
   moyenne += parseInt(behavior) || 0;
@@ -1165,7 +1168,7 @@ function update_student_day_notes(studentId) {
         "INSERT OR REPLACE INTO day_requirements (student_id, day_id, detail, moyenne) VALUES (?, ?, ?, ?);",
         [
           studentId,
-          currentDay,
+          workingDay,
           JSON.stringify(requirList),
           requirMoyenneInput.value || "0",
         ]
@@ -1173,14 +1176,14 @@ function update_student_day_notes(studentId) {
     } else {
       project_db.run(
         "DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;",
-        [studentId, currentDay]
+        [studentId, workingDay]
       );
     }
     project_db.run(
       "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,prayer,moyenne) VALUES (?, ?, ?, ?,?,?,?,?,?);",
       [
         studentId,
-        currentDay,
+        workingDay,
         getAttendanceValue(),
         retardInput.value,
         clothingInput.value,
@@ -1199,7 +1202,7 @@ function update_student_day_notes(studentId) {
   } else {
     project_db.run(
       "DELETE FROM day_evaluations WHERE student_id = ? AND day_id = ?;",
-      [studentId, currentDay]
+      [studentId, workingDay]
     );
   }
   saveToIndexedDB(project_db.export());
@@ -1208,66 +1211,16 @@ function update_student_day_notes(studentId) {
 
 function calcRetardTime() {
   let retardTime = 0;
-  if (moment(start_time, "HH:mm").isBefore(moment())) {
-    retardTime = Math.abs(
-      moment().diff(moment(start_time, "HH:mm"), "minutes")
-    );
-  }
-  return retardTime;
+  return moment().diff(moment(start_time, "HH:mm"), "minutes");
 }
 
-function compareWithCurrentTime(time, minutesToAdd) {
-    // Add minutes to given time
-    function addMinutes(timeStr, mins) {
-        const [h, m] = timeStr.split(':').map(Number);
-        const total = h * 60 + m + mins;
-        const newH = Math.floor(total / 60) % 24;
-        const newM = total % 60;
-        return {
-            time: `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`,
-            totalMinutes: total
-        };
-    }
-    
-    // Get current time
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
-    
-    // Calculate new time
-    const newTimeObj = addMinutes(time, minutesToAdd + 60);
-    
-    // Comparison logic
-    const difference = newTimeObj.totalMinutes - currentTotalMinutes;
-    
-    let status, message;
-    if (difference > 0) {
-        status = 'future';
-        const hours = Math.floor(difference / 60);
-        const minutes = difference % 60;
-        message = `${hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''} and ` : ''}${minutes} minute${minutes !== 1 ? 's' : ''} from now`;
-    } else if (difference < 0) {
-        status = 'past';
-        const hours = Math.floor(Math.abs(difference) / 60);
-        const minutes = Math.abs(difference) % 60;
-        message = `${hours > 0 ? `${hours} hour${hours > 1 ? 's' : ''} and ` : ''}${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-    } else {
-        status = 'current';
-        message = 'right now';
-    }
-    
-    return {
-        originalTime: time,
-        minutesAdded: minutesToAdd,
-        resultTime: newTimeObj.time,
-        currentTime: currentTime,
-        status: status,
-        message: message,
-        differenceMinutes: Math.abs(difference),
-        isFuture: difference > 0,
-        isPast: difference < 0,
-        isCurrent: difference === 0
-    };
+function checkAuthorizedOut(time, requirMoyenne, minutesToAdd, after = 60) {
+  const now = new Date();
+  const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+  const [h, m] = time.split(":").map(Number);
+  const newTimeObj = h * 60 + m + (minutesToAdd + after);
+  const difference = newTimeObj - currentTotalMinutes;
+  return requirMoyenne && difference < 0;
 }
 
 async function markPresence(studentId) {
@@ -1276,7 +1229,7 @@ async function markPresence(studentId) {
     "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,moyenne) VALUES (?, ?, ?,?, ?,?,?,?);",
     [
       studentId,
-      currentDay,
+      workingDay,
       1,
       retard_time,
       null,
@@ -1310,7 +1263,7 @@ async function addNewDay() {
   }
   project_db.run(
     "INSERT OR REPLACE INTO education_day (date,time, notes,class_room_id) VALUES (?,?, ?,?);",
-    [currentDay, appointment_time, null, workingClassroomId]
+    [workingDay, appointment_time, null, workingClassroomId]
   );
   start_time = appointment_time;
   saveToIndexedDB(project_db.export());
@@ -1327,7 +1280,7 @@ async function loadDayStudentsList() {
 
   const dayResult = project_db.exec(
     `SELECT * FROM education_day WHERE class_room_id = ? AND date = ?`,
-    [workingClassroomId, currentDay]
+    [workingClassroomId, workingDay]
   );
   if (!dayResult.length) {
     if ($.fn.DataTable.isDataTable("#dayListTable")) {
@@ -1366,8 +1319,8 @@ async function loadDayStudentsList() {
           de.prayer AS "prayer",
           de.moyenne AS "evalMoyenne"	
       FROM students s
-      LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id = '${currentDay}'
-      LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id = '${currentDay}'
+      LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id = '${workingDay}'
+      LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id = '${workingDay}'
       WHERE s.class_room_id = ${workingClassroomId}
       GROUP BY s.id, CONCAT(s.fname,' ',s.lname)
       ORDER BY s.id
@@ -1424,9 +1377,9 @@ async function loadDayStudentsList() {
           requirEvaluationInput.value = "";
           saveStopErrorsInput.value = "0";
           saveStateErrorsInput.value = "0";
+          requirObligation.checked = true;
 
-          studentDayForm.onsubmit = function (e) {
-            e.preventDefault();
+          studentDayFormSubmitBtn.onclick = async function () {
             if (!project_db) {
               window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
               return;
@@ -1436,6 +1389,7 @@ async function loadDayStudentsList() {
           };
         };
         const attendance_value = row[result.columns.indexOf("attendance")];
+
         const clothingOption = document.querySelector(
           `#clothing option[value='${row[result.columns.indexOf("clothing")]}']`
         );
@@ -1448,7 +1402,7 @@ async function loadDayStudentsList() {
         const prayerOption = document.querySelector(
           `#prayer option[value='${row[result.columns.indexOf("prayer")]}']`
         );
-
+        const thisDay = new Date().toISOString().slice(0, 10);
         data.push({
           id: row[result.columns.indexOf("studentId")],
           actions: editBtn,
@@ -1458,9 +1412,19 @@ async function loadDayStudentsList() {
             row[result.columns.indexOf("studentLName")],
           attendance:
             attendance_value == 1
-              ? (retardValue == 0
-                ? `حضور كلي `
-                : `بعد ${retardValue} د `)+(compareWithCurrentTime(start_time,retardValue).isPast ? '🟢' : '')
+              ? (retardValue < 0
+                  ? `قبل ${retardValue * -1} د `
+                  : retardValue == 0
+                  ? `حضور كلي `
+                  : `بعد ${retardValue} د `) +
+                (thisDay == workingDay &&
+                checkAuthorizedOut(
+                  start_time,
+                  row[result.columns.indexOf("requirsMoyenne")],
+                  retardValue
+                )
+                  ? "🟢"
+                  : "")
               : attendance_value == 0
               ? "غياب مبرر"
               : `<button onclick="markPresence(${
@@ -1483,28 +1447,27 @@ async function loadDayStudentsList() {
                 row[result.columns.indexOf("requirsMoyenne")],
                 row[result.columns.indexOf("evalMoyenne")]
               )
-            : "/",
+            : null,
           clothing: attendance_value
             ? clothingOption
               ? clothingOption.textContent
               : ""
-            : "/",
-
+            : null,
           haircut: attendance_value
             ? haircutOption
               ? haircutOption.textContent
               : ""
-            : "/",
+            : null,
           behavior: attendance_value
             ? behaviorOption
               ? behaviorOption.textContent
               : ""
-            : "/",
+            : null,
           prayer: attendance_value
             ? prayerOption
               ? prayerOption.textContent
               : ""
-            : "/",
+            : null,
         });
       });
     } else {
@@ -1516,11 +1479,38 @@ async function loadDayStudentsList() {
       "#dayListTable",
       data,
       [
-        { data: "id" },
+        { data: "id", visible: false },
         { data: "actions" },
         { data: "student" },
-        { data: "attendance" },
-        { data: "evaluation", defaultContent: "/" },
+        {
+          data: "attendance",
+          type: "num",
+          render: function (data, type, row) {
+            if (type === "sort") {
+              const data1 = data.replace("🟢", "");
+              if (data1.includes("حضور كلي")) return 0;
+              else if (data1.includes("بعد")) {
+                return parseInt(data1.replace("بعد", "").replace("د", ""));
+              } else if (data1.includes("قبل")) {
+                return parseInt(data1.replace("قبل", "").replace("د", "")) * -1;
+              } else {
+                return null;
+              }
+            }
+            return data;
+          },
+        },
+        {
+          data: "evaluation",
+          type: "num",
+          defaultContent: "/",
+          render: function (data, type, row) {
+            if (type === "sort" && !data) {
+              return 0;
+            }
+            return data;
+          },
+        },
         { data: "clothing", defaultContent: "/" },
         { data: "haircut", defaultContent: "/" },
         { data: "behavior", defaultContent: "/" },
@@ -1539,8 +1529,7 @@ async function loadDayStudentsList() {
         responsive: true,
 
         columnDefs: [
-          { type: "num", targets: 4 },
-          { visible: false, targets: [...[0], ...[5, 6, 7, 8]] },
+          { visible: false, targets: [-4, -3, -2, -1] },
           {
             targets: 1,
             orderable: false,
@@ -1550,21 +1539,23 @@ async function loadDayStudentsList() {
           topStart: {
             buttons: [
               {
-                text: "إظهار التفاصيل",
-                action: function (e, dt) {
-                  const columns = dt.columns([5, 6, 7, 8]);
+                text: '<i class="fa-solid fa-table-cells"></i>',
+                action: async function (e, dt) {
+                  const columns = dt.columns([-4, -3, -2, -1]);
                   const isVisible = dt.column(columns[0][0]).visible();
 
                   columns.visible(!isVisible);
                   studentsDayTableDetailIsShow = !isVisible;
                   dt.button(0).text(
-                    isVisible ? "إظهار التفاصيل" : "إخفاء التفاصيل"
+                    isVisible
+                      ? '<i class="fa-solid fa-table-cells"></i>'
+                      : '<i class="fa-solid fa-table"></i>'
                   );
                 },
               },
               {
-                text: "ملاحظة اليوم",
-                action: function () {
+                text: '<i class="fa-regular fa-comment"></i>',
+                action: async function () {
                   let note = prompt("أكتب ملاحظة:", dayNote);
                   if (note !== null) {
                     if (!project_db) {
@@ -1574,7 +1565,7 @@ async function loadDayStudentsList() {
                     try {
                       project_db.run(
                         "UPDATE education_day SET notes = ? WHERE class_room_id = ? AND date = ?;",
-                        [note, workingClassroomId, currentDay]
+                        [note, workingClassroomId, workingDay]
                       );
                       saveToIndexedDB(project_db.export());
                       dayNoteContainer.style.display = note ? "block" : "none";
@@ -1588,20 +1579,32 @@ async function loadDayStudentsList() {
                 },
               },
               {
-                text: "إلغاء اليوم",
-                action: function () {
+                text: '<i class="fa-solid fa-arrows-rotate"></i>',
+                action: async function () {
+                  await loadDayStudentsList();
+                },
+              },
+              {
+                text: '<i class="fa-solid fa-circle-info"></i>',
+                action: async function (e, dt) {
+                  alert(`وقت بدء الحصة: ${start_time}\n`);
+                },
+              },
+              {
+                text: '<i class="fa-solid fa-calendar-xmark"></i>',
+                action: async function () {
                   if (confirm("هل تريد إلغاء هذا اليوم ؟")) {
                     project_db.run(
                       "DELETE FROM day_evaluations WHERE day_id = ?;",
-                      [currentDay]
+                      [workingDay]
                     );
                     project_db.run(
                       "DELETE FROM day_requirements WHERE day_id = ?;",
-                      [currentDay]
+                      [workingDay]
                     );
                     project_db.run(
                       "DELETE FROM education_day WHERE class_room_id = ? AND date = ?;",
-                      [workingClassroomId, currentDay]
+                      [workingClassroomId, workingDay]
                     );
                     saveToIndexedDB(project_db.export());
                     setIsCustomDate();
@@ -1609,12 +1612,6 @@ async function loadDayStudentsList() {
                   }
                 },
               },
-              {
-                text: "تحديث",
-                action: async function () {
-                  await loadDayStudentsList()
-                }
-              }
             ],
           },
         },
@@ -1626,28 +1623,34 @@ async function loadDayStudentsList() {
   }
 }
 
+async function changeDayDate(date) {
+  workingDay = date;
+  dayDateInput.val(workingDay);
+  dayDateInput.data("daterangepicker").setStartDate(workingDay);
+  dayDateInput.data("daterangepicker").setEndDate(workingDay);
+  await loadDayStudentsList();
+}
+
 async function dayDatePickerInit() {
   // day date picker
   dayDateInput.daterangepicker(
     {
       singleDatePicker: true,
       showDropdowns: true,
-      autoUpdateInput: false,
+      autoUpdateInput: true,
       locale: {
         format: "YYYY-MM-DD",
         daysOfWeek: arabicDays,
         monthNames: arabicMonths,
-        firstDay: 7,
+        firstDay: 6,
         applyLabel: "تأكيد",
         cancelLabel: "إلغاء",
         customRangeLabel: "تخصيص",
       },
-      maxDate: currentDay,
+      maxDate: workingDay,
     },
     async function (start) {
-      currentDay = start.format("YYYY-MM-DD");
-      dayDateInput.val(currentDay);
-      await loadDayStudentsList();
+      changeDayDate(start.format("YYYY-MM-DD"));
     }
   );
 
@@ -1659,12 +1662,12 @@ async function dayDatePickerInit() {
         format: "YYYY-MM-DD",
         daysOfWeek: arabicDays,
         monthNames: arabicMonths,
-        firstDay: 7,
+        firstDay: 6,
         applyLabel: "تأكيد",
         cancelLabel: "إلغاء",
         customRangeLabel: "تخصيص",
       },
-      maxDate: currentDay,
+      maxDate: workingDay,
       ranges: {
         اليوم: [moment(), moment()],
         أمس: [moment().subtract(1, "days"), moment().subtract(1, "days")],
@@ -1895,12 +1898,13 @@ async function showAttendanceStatistics() {
   );
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
+    statisticType.value = "0";
     return;
   }
 
   let datesHeader = "";
   for (d of dates) {
-    datesHeader += `MAX(CASE WHEN de.day_id = '${d}' THEN CASE WHEN de.attendance = 1 THEN 'غ' ELSE 'ح' END
+    datesHeader += `MAX(CASE WHEN de.day_id = '${d}' THEN CASE WHEN de.attendance = 1 THEN 'ح' ELSE 'غ م' END
     ELSE 'غ' END) as "${d}",`;
   }
 

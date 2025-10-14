@@ -1,3 +1,8 @@
+body {
+  font-family: "Noto Sans Arabic", sans-serif;
+  font-optical-sizing: auto;
+}
+
 html,
 body {
   overscroll-behavior: none;
@@ -113,7 +118,7 @@ input {
 
 /* calendar */
 .date-input-container {
-  max-width: 600px;
+  max-width: 94vw;
 }
 
 .date-input-group {

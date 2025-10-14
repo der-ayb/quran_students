@@ -177,9 +177,9 @@
       <h2 class="text-center mb-4">التقييم اليومي</h2>
       <div class="date-input-container">
         <div class="date-input-group">
-          <span class="date-input-label">تاريخ اليوم:</span>
+          <span class="date-input-label">التاريخ:</span>
           <input type="text" id="dayDate" class="date-input-field" readonly>
-          <i class="fas fa-calendar-alt date-icon"></i>
+          <i class="fas fa-calendar-alt date-icon" onclick="changeDayDate(new Date().toISOString().slice(0, 10));"></i>
         </div>
       </div>
       <p id="dayNoteContainer" class="border px-2 py-2 mx-2 my-2"></p>
@@ -259,7 +259,7 @@
                   <option value='"Changa", sans-serif'>Changa</option>
                   <option value='"Readex Pro", sans-serif'>Readex</option>
                   <option value='"Markazi Text", serif'>Markazi</option>
-              </select>
+                </select>
               </div>
 
             </div>
@@ -465,15 +465,15 @@
   <!-- Modal for adding a new student -->
   <div class="modal fade" id="newStudentDayModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
     aria-labelledby="newStudentDayModalLabel" aria-hidden="true" style="z-index: 1101;">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable">
       <div class="modal-content">
-        <form id="studentDayForm">
-          <div class="modal-header">
-            <h5 class="modal-title" id="newStudentDayModalLabel">يوم التلميذ</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-            </button>
-          </div>
-          <div class="modal-body">
+        <div class="modal-header">
+          <h5 class="modal-title" id="newStudentDayModalLabel">يوم التلميذ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="studentDayForm">
             <div class="mb-3">
               <label for="studentName">اسم التلميذ:</label>
               <input type="text" class="form-control" id="studentName" readonly />
@@ -505,7 +505,7 @@
               <div class="row">
                 <div class="col">
                   <div class="mb-3">
-                    <label for="retard">التأخر:</label>
+                    <label for="retard">وقت الحضور:</label>
                     <div class="mb-3 input-group">
                       <input type="number" step="1" min="0" class="form-control" id="retard" />
                       <span class="input-group-text">دقيقة</span>
@@ -685,16 +685,16 @@
                 </div>
               </div>
             </div>
+          </form>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+            onclick="minimizeModal(); return false;">تصغير</button>
+          <div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            <button id="studentDayFormSubmitBtn" type="submit" class="btn btn-primary">حفظ</button>
           </div>
-          <div class="modal-footer d-flex justify-content-between">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-              onclick="minimizeModal(); return false;">تصغير</button>
-            <div>
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
-              <button id="studentDayFormSubmitBtn" type="submit" class="btn btn-primary">حفظ</button>
-            </div>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>
