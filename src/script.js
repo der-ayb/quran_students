@@ -54,18 +54,20 @@ const requirObligation = document.getElementById("requirObligation");
 const saveStateErrorsInput = document.getElementById("saveStateErrors");
 const saveStopErrorsInput = document.getElementById("saveStopErrors");
 
+const studentNameInput = document.getElementById("studentName");
+const clothingInput = document.getElementById("clothing");
+const haircutInput = document.getElementById("haircut");
+const behaviorInput = document.getElementById("behavior");
+const prayerInput = document.getElementById("prayer");
+const addedPointsInput = document.getElementById("addedPoints");
+const evalMoyenne = document.getElementById("evalMoyenne");
+
+const requirMoyenneInput = document.getElementById("requirMoyenne");
 const requirQuantityDetailInput = document.getElementById(
   "requirQuantityDetail"
 );
 const requirQuantityInput = document.getElementById("requirQuantity");
 const requirTypeInput = document.getElementById("requirType");
-
-const requirMoyenneInput = document.getElementById("requirMoyenne");
-const clothingInput = document.getElementById("clothing");
-const haircutInput = document.getElementById("haircut");
-const behaviorInput = document.getElementById("behavior");
-const prayerInput = document.getElementById("prayer");
-const studentNameInput = document.getElementById("studentName");
 
 const classroomIdInput = document.getElementById("classroomId");
 const mosqueInput = document.getElementById("mosque");
@@ -144,6 +146,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   // init Plus Minus buttons
   initPlusMinusButtons(saveStateErrorsInput);
   initPlusMinusButtons(saveStopErrorsInput);
+  initPlusMinusButtons(addedPointsInput);
 
   // theme selector
   themeSelector.onchange = async function () {
@@ -936,7 +939,7 @@ newStudentInfosForm.addEventListener("submit", (e) => {
       window.showToast("success", "تم تعديل الطالب بنجاح.");
     } else {
       project_db.run(
-        "INSERT INTO students (fname,lname, birthyear, parent_phone, class_room_id) VALUES (?, ?, ?,?);",
+        "INSERT INTO students (fname,lname, birthyear, parent_phone, class_room_id) VALUES (?, ?,?, ?,?);",
         [fname, lname, birthyear, parentPhone, workingClassroomId]
       );
       newStudentInfosForm.reset();
@@ -1083,14 +1086,40 @@ function calcRequirementsMoyenne() {
   return moyenne ? moyenne.toFixed(2) : "";
 }
 
-function calcEvaluationMoyenne(retard, clothing, haircut, behavior, prayer) {
+function calcEvaluationMoyenne(
+  retard,
+  clothing,
+  haircut,
+  behavior,
+  prayer,
+  addedPoints
+) {
   let moyenne = 0;
   moyenne += 20 - parseInt(retard > -1 ? retard : 0) / 3;
   moyenne += parseInt(clothing) || 0;
   moyenne += parseInt(haircut) || 0;
   moyenne += parseInt(behavior) || 0;
   moyenne += parseInt(prayer) || 0;
+  moyenne += parseFloat(addedPoints) || 0;
   return moyenne.toFixed(2);
+}
+
+function calcAddedPoints(
+  retard,
+  clothing,
+  haircut,
+  behavior,
+  prayer,
+  evalMoyen
+) {
+  let moyenneWithoutAddedPoints = 0;
+  moyenneWithoutAddedPoints += 20 - parseInt(retard > -1 ? retard : 0) / 3;
+  moyenneWithoutAddedPoints += parseInt(clothing) || 0;
+  moyenneWithoutAddedPoints += parseInt(haircut) || 0;
+  moyenneWithoutAddedPoints += parseInt(behavior) || 0;
+  moyenneWithoutAddedPoints += parseInt(prayer) || 0;
+  const addedPoints = parseFloat(evalMoyen) - moyenneWithoutAddedPoints;
+  return addedPoints.toFixed(2);
 }
 
 function calcRequirementEvaluation(
@@ -1115,32 +1144,35 @@ function calcGlobalEvaluation(requirsMoyenne, evalMoyenne) {
   return globalEvaluation.toFixed(2);
 }
 
-requirTypeInput.onchange = async () => {
-  requirEvaluationInput.value = calcRequirementEvaluation(
-    requirQuantityInput.value,
-    requirTypeInput.value,
-    saveStopErrorsInput.value,
-    saveStateErrorsInput.value
+function setEvalMoyenneInput() {
+  evalMoyenne.value = calcEvaluationMoyenne(
+    retardInput.value,
+    clothingInput.value,
+    haircutInput.value,
+    behaviorInput.value,
+    prayerInput.value,
+    addedPointsInput.value
   );
-};
+}
 
-saveStopErrorsInput.onchange = async () => {
-  requirEvaluationInput.value = calcRequirementEvaluation(
-    requirQuantityInput.value,
-    requirTypeInput.value,
-    saveStopErrorsInput.value,
-    saveStateErrorsInput.value
-  );
-};
+$([retardInput, behaviorInput, prayerInput, haircutInput, addedPointsInput]).on(
+  "change input",
+  setEvalMoyenneInput
+);
 
-saveStateErrorsInput.onchange = async () => {
+function setRequirEvalInput() {
   requirEvaluationInput.value = calcRequirementEvaluation(
     requirQuantityInput.value,
     requirTypeInput.value,
     saveStopErrorsInput.value,
     saveStateErrorsInput.value
   );
-};
+}
+
+$([requirTypeInput, saveStopErrorsInput, saveStateErrorsInput]).on(
+  "change input",
+  setRequirEvalInput
+);
 
 function update_student_day_notes(studentId) {
   if (!project_db) {
@@ -1190,13 +1222,7 @@ function update_student_day_notes(studentId) {
         haircutInput.value,
         behaviorInput.value,
         prayerInput.value,
-        calcEvaluationMoyenne(
-          retardInput.value,
-          clothingInput.value,
-          haircutInput.value,
-          behaviorInput.value,
-          prayerInput.value
-        ),
+        evalMoyenne.value,
       ]
     );
   } else {
@@ -1235,7 +1261,7 @@ async function markPresence(studentId) {
       null,
       null,
       null,
-      calcEvaluationMoyenne(retard_time, null, null, null, null),
+      calcEvaluationMoyenne(retard_time, null, null, null, null, null),
     ]
   );
   saveToIndexedDB(project_db.export());
@@ -1322,7 +1348,7 @@ async function loadDayStudentsList() {
       LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id = '${workingDay}'
       LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id = '${workingDay}'
       WHERE s.class_room_id = ${workingClassroomId}
-      GROUP BY s.id, CONCAT(s.fname,' ',s.lname)
+      GROUP BY s.id, studentFName , studentLName
       ORDER BY s.id
       LIMIT 100`);
 
@@ -1350,9 +1376,26 @@ async function loadDayStudentsList() {
           haircutInput.value = row[result.columns.indexOf("haircut")];
           behaviorInput.value = row[result.columns.indexOf("behavior")];
           prayerInput.value = row[result.columns.indexOf("prayer")];
+          addedPointsInput.value = calcAddedPoints(
+            retardInput.value,
+            clothingInput.value,
+            haircutInput.value,
+            behaviorInput.value,
+            prayerInput.value,
+            row[result.columns.indexOf("evalMoyenne")]
+          );
+          evalMoyenne.value =
+            row[result.columns.indexOf("evalMoyenne")] || "0.00";
 
+
+          // requireBookInput.value = "";
+          requireBookInput.dispatchEvent(new Event("change"));
+          requirEvaluationInput.value = "0";
+          saveStopErrorsInput.value = "0";
+          saveStateErrorsInput.value = "0";
+          requirObligation.checked = true;
           requirMoyenneInput.value =
-            row[result.columns.indexOf("requirsMoyenne")] || "0";
+            row[result.columns.indexOf("requirsMoyenne")] || "0.00";
           requirementsTable.querySelector("tbody").innerHTML = "";
           JSON.parse(row[result.columns.indexOf("detail")] || "[]").forEach(
             (item) => {
@@ -1370,14 +1413,6 @@ async function loadDayStudentsList() {
               requirementsTable.querySelector("tbody").appendChild(row);
             }
           );
-
-          requireBookInput.value = "";
-          requireBookInput.dispatchEvent(new Event("change"));
-          requirQuantityInput.value = "";
-          requirEvaluationInput.value = "";
-          saveStopErrorsInput.value = "0";
-          saveStateErrorsInput.value = "0";
-          requirObligation.checked = true;
 
           studentDayFormSubmitBtn.onclick = async function () {
             if (!project_db) {
@@ -1493,6 +1528,8 @@ async function loadDayStudentsList() {
                 return parseInt(data1.replace("بعد", "").replace("د", ""));
               } else if (data1.includes("قبل")) {
                 return parseInt(data1.replace("قبل", "").replace("د", "")) * -1;
+              } else if (data1.includes("غياب مبرر")) {
+                return "";
               } else {
                 return null;
               }
@@ -1910,13 +1947,14 @@ async function showAttendanceStatistics() {
 
   const result = project_db.exec(
     `SELECT 
-        s.id as "#", CONCAT(s.fname,' ',s.lname) as "اسم الطالب",
+        ROW_NUMBER() OVER (ORDER BY s.id) as "#",
+        s.fname || ' ' || s.lname as "اسم الطالب",
         ${datesHeader.slice(0, -1)}
     FROM students s
     LEFT JOIN day_evaluations de ON s.id = de.student_id
     LEFT JOIN education_day ed ON de.day_id = ed.id
     WHERE s.class_room_id = ${workingClassroomId}
-    GROUP BY s.id, CONCAT(s.fname,' ',s.lname)
+    GROUP BY s.id,  "اسم الطالب"
     ORDER BY s.id;`
   );
   try {
@@ -1933,13 +1971,15 @@ async function showAttendanceStatistics() {
         });
         return rowData;
       });
-      const tableColumns = columns.map((col) => ({
-        data: col,
-        title: col,
-        className: [0, 1].includes(columns.indexOf(col))
-          ? "text-center"
-          : "text-center header-rotated",
-      }));
+      const tableColumns = 
+        columns.map((col) => ({
+          data: col,
+          title: col,
+          className: [0, 1].includes(columns.indexOf(col))
+            ? "text-center"
+            : "text-center header-rotated",
+        }))
+      ;
 
       await initOrReloadDataTable(
         "#statisticsTable",
@@ -1962,7 +2002,6 @@ async function showAttendanceStatistics() {
                 {
                   extend: "pdfHtml5",
                   download: "open",
-
                   text: "انشاء PDF",
                   className: "btn btn-primary",
                   customize: function (doc) {
@@ -2143,6 +2182,7 @@ const checkSecondSurahAyahs = (secondSurahNumber) => {
     for (let i = ll; i <= secondSurahAyahs; i++) {
       secondAyahSelect.appendChild(createOption(i, i));
     }
+    secondAyahSelect.lastChild.selected = true;
     secondAyahSelect.insertBefore(
       createOption("", "--  --"),
       secondAyahSelect.firstChild
@@ -2161,12 +2201,7 @@ function setRequirQuantityDetailInput() {
   } - ${firstAyahSelect.options[firstAyahSelect.selectedIndex].value} إلى ${
     secondSurahSelect.options[secondSurahSelect.selectedIndex].text
   } - ${secondAyahSelect.options[secondAyahSelect.selectedIndex].value}`;
-  requirEvaluationInput.value = calcRequirementEvaluation(
-    requirQuantityInput.value,
-    requirTypeInput.value,
-    saveStopErrorsInput.value,
-    saveStateErrorsInput.value
-  );
+  setRequirEvalInput();
 }
 
 firstSurahSelect.onchange = async function () {
@@ -2292,7 +2327,7 @@ const getAyahDifference = (surahNum1, ayahNum1, surahNum2, ayahNum2) => {
   for (let i = start + 1; i < end; i++) {
     const betweenSurah = surahsData.find((s) => s.number === i);
     if (betweenSurah) {
-      result.splice(result.length - 1, 0, {
+      result.slice(result.length - 1, 0, {
         number: betweenSurah.number,
         ayah: generateAyahRange(1, betweenSurah.numberOfAyahs),
       });

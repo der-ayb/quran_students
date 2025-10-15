@@ -15,11 +15,11 @@ if (workbox) {
     [
       { url: "./", revision: "1" },
       { url: "./favicon.ico", revision: "1" },
-      { url: "./index.html", revision: "4" },
+      { url: "./index.html", revision: "5" },
       { url: "./offline.html", revision: "1" },
       { url: "./manifest.json", revision: "1" },
 
-      { url: "./src/style.css", revision: "4" },
+      { url: "./src/style.css", revision: "5" },
       { url: "./src/fonts.css", revision: "1" },
       { url: "./src/script.js", revision: "4" },
       { url: "./src/auth.js", revision: "1" },
