@@ -35,9 +35,9 @@ if (workbox) {
 
       { url: "./assets/default.sqlite3", revision: "1" },
       { url: "./assets/quran.sqlite", revision: "1" },
-      { url: "./assets/manifest-icon-192.maskable.png", revision: "1" },
-      { url: "./assets/manifest-icon-512.maskable.png", revision: "1" },
-      { url: "./assets/apple-icon-180.png", revision: "1" },
+      { url: "./assets/images/manifest-icon-192.maskable.png", revision: "1" },
+      { url: "./assets/images/manifest-icon-512.maskable.png", revision: "1" },
+      { url: "./assets/images/apple-icon-180.png", revision: "1" },
       // bootstrap
       {
         url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/spacelab/bootstrap.rtl.min.css",

@@ -1307,6 +1307,17 @@ async function addNewDay() {
   await loadDayStudentsList();
 }
 
+function setOptionValueByText(selector, text) {
+  for (let i = 0; i < selector.options.length; i++) {
+    if (selector.options[i].text === text) {
+      selector.selectedIndex = i;
+      selector.dispatchEvent(new Event("change"));
+      return true; // Exit the loop once the option is found and selected
+    }
+  }
+  return false
+}
+
 async function loadDayStudentsList() {
   dayNoteContainer.style.display = "none";
   if (!project_db) {
@@ -1406,21 +1417,11 @@ async function loadDayStudentsList() {
             ORDER BY ed.date DESC
             LIMIT 1;`);
           if (lsR.length) {
-            requireBookInput.value = JSON.parse(lsR[0].values[0][0])[0][
-              "الكتاب"
-            ];
-            requirTypeInput.value = JSON.parse(lsR[0].values[0][0])[0]["النوع"];
-            for (let i = 0; i < firstSurahSelect.options.length; i++) {
-              if (
-                firstSurahSelect.options[i].text ===
-                JSON.parse(lsR[0].values[0][0])[0]["التفاصيل"].split(" ")[0]
-              ) {
-                firstSurahSelect.selectedIndex = i;
-                break; // Exit the loop once the option is found and selected
-              }
-            }
-            firstSurahSelect.dispatchEvent(new Event("change"));
-            firstAyahSelect.value = JSON.parse(lsR[0].values[0][0])[0]["التفاصيل"].split(" ").at(-1)
+            const detail = JSON.parse(lsR[0].values[0][0]).at(-1);
+            requireBookInput.value = detail["الكتاب"];
+            requirTypeInput.value = detail["النوع"];
+            setOptionValueByText(firstSurahSelect,detail["التفاصيل"].split(" ")[0])
+            firstAyahSelect.value = parseInt(detail["التفاصيل"].split(" ").at(-1))+1;
           }
           requireBookInput.dispatchEvent(new Event("change"));
           requirEvaluationInput.value = "0";
