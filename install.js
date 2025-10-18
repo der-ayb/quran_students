@@ -17,7 +17,8 @@ if ("serviceWorker" in navigator) {
                 newWorker.state === "installed" &&
                 navigator.serviceWorker.controller
               ) {
-                window.showToast("info",
+                window.showToast(
+                  "info",
                   "تم التماس تحديث جديد، يرجى تحديث الصفحة."
                 );
               }
@@ -44,27 +45,17 @@ document.addEventListener("DOMContentLoaded", () => {
     installButton2.removeAttribute("hidden");
   });
 
-  installButton1.addEventListener("click", async () => {
-    if (!installPrompt) {
-      return;
-    }
-    const result = await installPrompt.prompt();
-    disableInAppInstallPrompt();
-  });
-  installButton2.addEventListener("click", async () => {
-    if (!installPrompt) {
-      return;
-    }
-    const result = await installPrompt.prompt();
-    disableInAppInstallPrompt();
-  });
-
-  function disableInAppInstallPrompt() {
-    installPrompt = null;
-    installButton1.setAttribute("hidden", "");
-    installButton2.setAttribute("hidden", "");
-  }
+  installButton1.addEventListener("click", installer);
+  installButton2.addEventListener("click", installer);
 });
+
+async function installer() {
+  if (!installPrompt) {
+    return;
+  }
+  await installPrompt.prompt();
+  disableInAppInstallPrompt();
+}
 
 window.addEventListener("appinstalled", () => {
   disableInAppInstallPrompt();

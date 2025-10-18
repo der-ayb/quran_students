@@ -1,4 +1,4 @@
-moment.locale("ar_dz");
+// moment.locale("ar_dz");
 
 const loginStatus = document.getElementById("loginStatus");
 const googleSigninBtn = document.getElementById("googleSigninBtn");

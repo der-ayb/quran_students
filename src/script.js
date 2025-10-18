@@ -9,6 +9,7 @@ if (localStorage.getItem("newUser") == true) {
   init();
 }
 
+moment.updateLocale("ar_dz");
 let project_db, quran_db, SQL;
 const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
@@ -35,6 +36,7 @@ let studentsDayTableDetailIsShow = false;
 let classroomsTableDetailIsShow = false;
 let workingDay = new Date().toISOString().slice(0, 10);
 let loadingModalShowNumber = [];
+let lastRequirements = {};
 
 const workingClassroomSelect = document.getElementById("workingClassroom");
 const dayDateInput = $("#dayDate");
@@ -1197,7 +1199,7 @@ function update_student_day_notes(studentId) {
 
     if (requirList.length) {
       project_db.run(
-        "INSERT OR REPLACE INTO day_requirements (student_id, day_id, detail, moyenne) VALUES (?, ?, ?, ?);",
+        "INSERT OR REPLACE INTO day_requirements (student_id, day_id, detail, moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?, ?);",
         [
           studentId,
           workingDay,
@@ -1207,12 +1209,16 @@ function update_student_day_notes(studentId) {
       );
     } else {
       project_db.run(
-        "DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;",
+        `DELETE FROM day_requirements WHERE student_id = ? AND day_id = (
+                          SELECT id 
+                          FROM education_day
+                          WHERE date = ?
+                      );`,
         [studentId, workingDay]
       );
     }
     project_db.run(
-      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,prayer,moyenne) VALUES (?, ?, ?, ?,?,?,?,?,?);",
+      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,prayer,moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?, ?,?,?,?,?,?);",
       [
         studentId,
         workingDay,
@@ -1227,7 +1233,11 @@ function update_student_day_notes(studentId) {
     );
   } else {
     project_db.run(
-      "DELETE FROM day_evaluations WHERE student_id = ? AND day_id = ?;",
+      `DELETE FROM day_evaluations WHERE student_id = ? AND day_id = (
+                          SELECT id 
+                          FROM education_day
+                          WHERE date = ?
+                      );`,
       [studentId, workingDay]
     );
   }
@@ -1252,7 +1262,7 @@ function checkAuthorizedOut(time, requirMoyenne, minutesToAdd, after = 60) {
 async function markPresence(studentId) {
   const retard_time = calcRetardTime();
   project_db.run(
-    "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,moyenne) VALUES (?, ?, ?,?, ?,?,?,?);",
+    "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?,?, ?,?,?,?);",
     [
       studentId,
       workingDay,
@@ -1330,6 +1340,7 @@ async function loadDayStudentsList() {
 
   try {
     const results = project_db.exec(`
+      WITH day_id AS (SELECT id FROM education_day WHERE date = '${workingDay}')
       SELECT 
           s.id AS studentId,  
           s.fname AS studentFName,
@@ -1345,8 +1356,8 @@ async function loadDayStudentsList() {
           de.prayer AS "prayer",
           de.moyenne AS "evalMoyenne"	
       FROM students s
-      LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id = '${workingDay}'
-      LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id = '${workingDay}'
+      LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id IN day_id
+      LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id IN day_id
       WHERE s.class_room_id = ${workingClassroomId}
       GROUP BY s.id, studentFName , studentLName
       ORDER BY s.id
@@ -1387,8 +1398,30 @@ async function loadDayStudentsList() {
           evalMoyenne.value =
             row[result.columns.indexOf("evalMoyenne")] || "0.00";
 
-
-          // requireBookInput.value = "";
+          const lsR = project_db.exec(`
+            SELECT dr.detail
+            FROM day_requirements dr
+            INNER JOIN education_day ed ON dr.day_id = ed.id
+            WHERE dr.student_id = ${row[result.columns.indexOf("studentId")]}
+            ORDER BY ed.date DESC
+            LIMIT 1;`);
+          if (lsR.length) {
+            requireBookInput.value = JSON.parse(lsR[0].values[0][0])[0][
+              "الكتاب"
+            ];
+            requirTypeInput.value = JSON.parse(lsR[0].values[0][0])[0]["النوع"];
+            for (let i = 0; i < firstSurahSelect.options.length; i++) {
+              if (
+                firstSurahSelect.options[i].text ===
+                JSON.parse(lsR[0].values[0][0])[0]["التفاصيل"].split(" ")[0]
+              ) {
+                firstSurahSelect.selectedIndex = i;
+                break; // Exit the loop once the option is found and selected
+              }
+            }
+            firstSurahSelect.dispatchEvent(new Event("change"));
+            firstAyahSelect.value = JSON.parse(lsR[0].values[0][0])[0]["التفاصيل"].split(" ").at(-1)
+          }
           requireBookInput.dispatchEvent(new Event("change"));
           requirEvaluationInput.value = "0";
           saveStopErrorsInput.value = "0";
@@ -1632,11 +1665,19 @@ async function loadDayStudentsList() {
                 action: async function () {
                   if (confirm("هل تريد إلغاء هذا اليوم ؟")) {
                     project_db.run(
-                      "DELETE FROM day_evaluations WHERE day_id = ?;",
+                      `DELETE FROM day_evaluations WHERE day_id = (
+                          SELECT id 
+                          FROM education_day
+                          WHERE date = ?
+                      );`,
                       [workingDay]
                     );
                     project_db.run(
-                      "DELETE FROM day_requirements WHERE day_id = ?;",
+                      `DELETE FROM day_requirements WHERE day_id = (
+                          SELECT id 
+                          FROM education_day
+                          WHERE date = ?
+                      );`,
                       [workingDay]
                     );
                     project_db.run(
@@ -1708,10 +1749,23 @@ async function dayDatePickerInit() {
       ranges: {
         اليوم: [moment(), moment()],
         أمس: [moment().subtract(1, "days"), moment().subtract(1, "days")],
-        "هذا الأسبوع": [moment().startOf("week"), moment().endOf("week")],
+        "الأسبوع الحالي": [
+          moment()
+            .day(6)
+            .subtract(moment().day() < 6 ? 7 : 0, "days"),
+          moment()
+            .day(6)
+            .subtract(moment().day() < 6 ? 7 : 0, "days")
+            .add(6, "days"),
+        ],
         "الأسبوع الماضي": [
-          moment().subtract(1, "week").startOf("week"),
-          moment().subtract(1, "week").endOf("week"),
+          moment()
+            .day(6)
+            .subtract(moment().day() < 6 ? 14 : 7, "days"),
+          moment()
+            .day(6)
+            .subtract(moment().day() < 6 ? 14 : 7, "days")
+            .add(6, "days"),
         ],
         "هذا الشهر": [moment().startOf("month"), moment().endOf("month")],
         "الشهر الماضي": [
@@ -1922,6 +1976,9 @@ statisticType.onchange = function () {
     case "attendance":
       showAttendanceStatistics();
       break;
+    case "results":
+      showStudentsResultsStatistics();
+      break;
     default:
       if ($.fn.DataTable.isDataTable("#statisticsTable")) {
         $("#statisticsTable").DataTable().destroy();
@@ -1929,6 +1986,116 @@ statisticType.onchange = function () {
       }
   }
 };
+
+async function showStudentsResultsStatistics() {
+  const dates = [...getDatesInRange()].sort(
+    (a, b) => new Date(a) - new Date(b)
+  );
+  if (!dates.length) {
+    window.showToast("warning", "لا توجد أيام في هذا النطاق.");
+    statisticType.value = "0";
+    return;
+  }
+
+  const dateCtes = dates
+    .map(
+      (date, index) =>
+        `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`
+    )
+    .join(", \n");
+
+  // Generate date columns
+  const dateColumns = dates
+    .map(
+      (date, index) =>
+        `COALESCE( ROUND(SUM(CASE WHEN de.day_id IN (SELECT id FROM day_id${index}) AND dr.day_id IN (SELECT id FROM day_id${index}) THEN COALESCE(dr.moyenne, 0) + COALESCE(de.moyenne, 0) ELSE 0 END), 2), 0 ) as '${date}'`
+    )
+    .join(",\n    ");
+
+  // Generate sum expressions for المجموع
+  const sumExpressions = dates
+    .map(
+      (date, index) =>
+        `SUM(CASE WHEN de.day_id IN (SELECT id FROM day_id${index}) AND dr.day_id IN (SELECT id FROM day_id${index}) THEN COALESCE(dr.moyenne, 0) + COALESCE(de.moyenne, 0) ELSE 0 END)`
+    )
+    .join(" +\n        ");
+
+  const query = `
+    WITH ${dateCtes}
+    SELECT 
+        ROW_NUMBER() OVER (ORDER BY s.id) as "#", 
+        s.fname || ' ' || s.lname as "اسم الطالب",
+        ${dateColumns},
+        -- المجموع (Total)
+        COALESCE( ROUND(
+            ${sumExpressions}
+        , 2), 0 ) as "المجموع",
+        -- المعدل (Average)
+        COALESCE( ROUND(
+            (${sumExpressions}) / ${dates.length}
+        , 2), 0 ) as "المعدل"
+    FROM students s 
+    LEFT JOIN day_evaluations de ON s.id = de.student_id 
+    LEFT JOIN day_requirements dr ON dr.student_id = s.id 
+    WHERE s.class_room_id = ${workingClassroomId}
+    GROUP BY s.id, "اسم الطالب" 
+    ORDER BY s.id;
+`;
+
+  const result = project_db.exec(query);
+  try {
+    if (result.length > 0) {
+      const data = result[0];
+      const columns = data.columns;
+      const values = data.values;
+
+      // Prepare data for DataTables
+      const tableData = values.map((row) => {
+        const rowData = {};
+        columns.forEach((column, index) => {
+          rowData[column] = row[index];
+        });
+        return rowData;
+      });
+      const tableColumns = columns.map((col) => ({
+        data: col,
+        title: col,
+        className: [0, 1].includes(columns.indexOf(col))
+          ? "text-center"
+          : "text-center header-rotated",
+      }));
+      await initOrReloadDataTable(
+        "#statisticsTable",
+        tableData,
+        tableColumns,
+        {
+          searching: false,
+          scrollX: true,
+          info: false,
+          oLanguage: {
+            sSearch: "بحث",
+            emptyTable: "لا توجد بيانات في الجدول.",
+          },
+          paging: false,
+          responsive: true,
+
+          layout: {
+            topStart: {
+              buttons: [],
+            },
+          },
+        },
+        false,
+        true
+      );
+    } else {
+      console.log("لاتوجد معلومات");
+    }
+  } catch (error) {
+    console.error("Error executing query:", error);
+  }
+}
+
 async function showAttendanceStatistics() {
   const dates = [...getDatesInRange()].sort(
     (a, b) => new Date(a) - new Date(b)
@@ -1946,7 +2113,7 @@ async function showAttendanceStatistics() {
   }
 
   const result = project_db.exec(
-    `SELECT 
+    `SELECT
         ROW_NUMBER() OVER (ORDER BY s.id) as "#",
         s.fname || ' ' || s.lname as "اسم الطالب",
         ${datesHeader.slice(0, -1)}
@@ -1957,6 +2124,7 @@ async function showAttendanceStatistics() {
     GROUP BY s.id,  "اسم الطالب"
     ORDER BY s.id;`
   );
+
   try {
     if (result.length > 0) {
       const data = result[0];
@@ -1971,16 +2139,13 @@ async function showAttendanceStatistics() {
         });
         return rowData;
       });
-      const tableColumns = 
-        columns.map((col) => ({
-          data: col,
-          title: col,
-          className: [0, 1].includes(columns.indexOf(col))
-            ? "text-center"
-            : "text-center header-rotated",
-        }))
-      ;
-
+      const tableColumns = columns.map((col) => ({
+        data: col,
+        title: col,
+        className: [0, 1].includes(columns.indexOf(col))
+          ? "text-center"
+          : "text-center header-rotated",
+      }));
       await initOrReloadDataTable(
         "#statisticsTable",
         tableData,
@@ -2357,8 +2522,8 @@ const generatelignCount = (ranges) => {
   `;
 };
 
-function deleteTableRow(selector, columnName, columnValue) {
-  const table = $(selector).DataTable();
+function deleteTableRow(tableSelector, columnName, columnValue) {
+  const table = $(tableSelector).DataTable();
   table.rows().every(function () {
     var rowData = this.data();
     if (rowData[columnName] === columnValue) {
@@ -2437,9 +2602,9 @@ function CreateOnClickUndo(button, actionFunction, removeBtn = false) {
 }
 
 // Function to count lines in a given text
-function countLines(text) {
-  const ctx = document.createElement("canvas").getContext("2d");
-  ctx.font = "22.4px Arial";
-  ctx.direction = "rtl";
-  return ctx.measureText(text).width / (10 * 37.8);
-}
+// function countLines(text) {
+//   const ctx = document.createElement("canvas").getContext("2d");
+//   ctx.font = "22.4px Arial";
+//   ctx.direction = "rtl";
+//   return ctx.measureText(text).width / (10 * 37.8);
+// }
