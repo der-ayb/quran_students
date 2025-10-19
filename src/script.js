@@ -1315,7 +1315,7 @@ function setOptionValueByText(selector, text) {
       return true; // Exit the loop once the option is found and selected
     }
   }
-  return false
+  return false;
 }
 
 async function loadDayStudentsList() {
@@ -1420,8 +1420,12 @@ async function loadDayStudentsList() {
             const detail = JSON.parse(lsR[0].values[0][0]).at(-1);
             requireBookInput.value = detail["الكتاب"];
             requirTypeInput.value = detail["النوع"];
-            setOptionValueByText(firstSurahSelect,detail["التفاصيل"].split(" ")[0])
-            firstAyahSelect.value = parseInt(detail["التفاصيل"].split(" ").at(-1))+1;
+            setOptionValueByText(
+              firstSurahSelect,
+              detail["التفاصيل"].split(" ")[0]
+            );
+            firstAyahSelect.value =
+              parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
           }
           requireBookInput.dispatchEvent(new Event("change"));
           requirEvaluationInput.value = "0";
@@ -2009,7 +2013,11 @@ async function showStudentsResultsStatistics() {
   const dateColumns = dates
     .map(
       (date, index) =>
-        `COALESCE( ROUND(SUM(CASE WHEN de.day_id IN (SELECT id FROM day_id${index}) AND dr.day_id IN (SELECT id FROM day_id${index}) THEN COALESCE(dr.moyenne, 0) + COALESCE(de.moyenne, 0) ELSE 0 END), 2), 0 ) as '${date}'`
+        `COALESCE(ROUND(
+              (SELECT COALESCE(SUM(moyenne), 0) FROM day_evaluations WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
+              + 
+              (SELECT COALESCE(SUM(moyenne), 0) FROM day_requirements WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
+          , 2), 0) as '${date}'`
     )
     .join(",\n    ");
 
@@ -2017,7 +2025,12 @@ async function showStudentsResultsStatistics() {
   const sumExpressions = dates
     .map(
       (date, index) =>
-        `SUM(CASE WHEN de.day_id IN (SELECT id FROM day_id${index}) AND dr.day_id IN (SELECT id FROM day_id${index}) THEN COALESCE(dr.moyenne, 0) + COALESCE(de.moyenne, 0) ELSE 0 END)`
+        `(SELECT COALESCE(SUM(de.moyenne), 0) FROM day_evaluations de 
+          WHERE de.student_id = s.id AND de.day_id IN (SELECT id FROM day_id${index}))
+          + 
+          (SELECT COALESCE(SUM(dr.moyenne), 0) FROM day_requirements dr 
+          WHERE dr.student_id = s.id AND dr.day_id IN (SELECT id FROM day_id${index}))
+        `
     )
     .join(" +\n        ");
 
@@ -2034,7 +2047,12 @@ async function showStudentsResultsStatistics() {
         -- المعدل (Average)
         COALESCE( ROUND(
             (${sumExpressions}) / ${dates.length}
-        , 2), 0 ) as "المعدل"
+        , 2), 0 ) as "المعدل",
+        -- الترتيب (order)
+        ROW_NUMBER() OVER (ORDER BY 
+        COALESCE( ROUND(
+            (${sumExpressions}) / ${dates.length}
+        , 2), 0 ) DESC ) as "الترتيب"
     FROM students s 
     LEFT JOIN day_evaluations de ON s.id = de.student_id 
     LEFT JOIN day_requirements dr ON dr.student_id = s.id 
@@ -2042,59 +2060,48 @@ async function showStudentsResultsStatistics() {
     GROUP BY s.id, "اسم الطالب" 
     ORDER BY s.id;
 `;
+  const buttons = [
+    {
+      extend: "pdfHtml5",
+      download: "open",
+      text: "انشاء PDF",
+      className: "btn btn-primary",
+      customize: function (doc) {
+        doc.content[0].text = "نتائج الطلاب";
+        doc.content[0].alignment = "center";
+        doc.content[0].fontSize = 16;
+        doc.content[0].margin = [0, 0, 0, 20];
 
-  const result = project_db.exec(query);
-  try {
-    if (result.length > 0) {
-      const data = result[0];
-      const columns = data.columns;
-      const values = data.values;
+        doc.styles.tableHeader.alignment = "left";
+        doc.content[1].table.widths = Array(
+          doc.content[1].table.body[0].length + 1
+        )
+          .join("*")
+          .split("");
 
-      // Prepare data for DataTables
-      const tableData = values.map((row) => {
-        const rowData = {};
-        columns.forEach((column, index) => {
-          rowData[column] = row[index];
+        if (doc.content[1].table.widths.length > 9) {
+          window.showToast(
+            "warning",
+            "عدد الأعمدة كبير وقد يسبب مشكلة عند الهامش"
+          );
+        }
+
+        doc.content[1].table.widths[
+          doc.content[1].table.body[0].length - 1
+        ] = 15;
+        doc.content[1].table.widths[
+          doc.content[1].table.body[0].length - 2
+        ] = 100;
+        doc.content[1].table.body.forEach((b) => {
+          b.reverse();
+          b.forEach((cell) => {
+            cell.alignment = "center";
+          });
         });
-        return rowData;
-      });
-      const tableColumns = columns.map((col) => ({
-        data: col,
-        title: col,
-        className: [0, 1].includes(columns.indexOf(col))
-          ? "text-center"
-          : "text-center header-rotated",
-      }));
-      await initOrReloadDataTable(
-        "#statisticsTable",
-        tableData,
-        tableColumns,
-        {
-          searching: false,
-          scrollX: true,
-          info: false,
-          oLanguage: {
-            sSearch: "بحث",
-            emptyTable: "لا توجد بيانات في الجدول.",
-          },
-          paging: false,
-          responsive: true,
-
-          layout: {
-            topStart: {
-              buttons: [],
-            },
-          },
-        },
-        false,
-        true
-      );
-    } else {
-      console.log("لاتوجد معلومات");
-    }
-  } catch (error) {
-    console.error("Error executing query:", error);
-  }
+      },
+    },
+  ];
+  setStatisticsTable(query, buttons);
 }
 
 async function showAttendanceStatistics() {
@@ -2107,24 +2114,159 @@ async function showAttendanceStatistics() {
     return;
   }
 
-  let datesHeader = "";
-  for (d of dates) {
-    datesHeader += `MAX(CASE WHEN de.day_id = '${d}' THEN CASE WHEN de.attendance = 1 THEN 'ح' ELSE 'غ م' END
-    ELSE 'غ' END) as "${d}",`;
-  }
+  const dateCtes = dates
+    .map(
+      (date, index) =>
+        `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`
+    )
+    .join(",\n");
 
-  const result = project_db.exec(
-    `SELECT
+  const dateColumns = dates
+    .map(
+      (date, index) =>
+        `CASE 
+        WHEN de${index}.id IS NULL THEN 'غ'
+        WHEN de${index}.attendance = 1 THEN 'ح'
+        WHEN de${index}.attendance = 0 THEN 'غ م'
+        ELSE 'غ'
+    END as '${date}'`
+    )
+    .join(",\n    ");
+
+  const dateJoins = dates
+    .map(
+      (date, index) =>
+        `LEFT JOIN day_evaluations de${index} ON s.id = de${index}.student_id AND de${index}.day_id IN (SELECT id FROM day_id${index})`
+    )
+    .join("\n");
+
+  const query =  `
+    WITH ${dateCtes}
+    SELECT
         ROW_NUMBER() OVER (ORDER BY s.id) as "#",
         s.fname || ' ' || s.lname as "اسم الطالب",
-        ${datesHeader.slice(0, -1)}
+        ${dateColumns}
     FROM students s
-    LEFT JOIN day_evaluations de ON s.id = de.student_id
-    LEFT JOIN education_day ed ON de.day_id = ed.id
+    ${dateJoins}
     WHERE s.class_room_id = ${workingClassroomId}
-    GROUP BY s.id,  "اسم الطالب"
-    ORDER BY s.id;`
-  );
+    ORDER BY s.id;
+`;
+
+  const buttons = [
+    {
+      extend: "pdfHtml5",
+      download: "open",
+      text: "انشاء PDF",
+      className: "btn btn-primary",
+      customize: function (doc) {
+        doc.content[0].text = "جدول حضور الطلاب";
+        doc.content[0].alignment = "center";
+        doc.content[0].fontSize = 16;
+        doc.content[0].margin = [0, 0, 0, 20];
+
+        doc.styles.tableHeader.alignment = "left";
+        doc.content[1].table.widths = Array(
+          doc.content[1].table.body[0].length + 1
+        )
+          .join("*")
+          .split("");
+
+        if (doc.content[1].table.widths.length > 20) {
+          window.showToast(
+            "warning",
+            "عدد الأعمدة كبير وقد يسبب مشكلة عند الهامش"
+          );
+        }
+
+        doc.content[1].table.widths[
+          doc.content[1].table.body[0].length - 1
+        ] = 15;
+        doc.content[1].table.widths[
+          doc.content[1].table.body[0].length - 2
+        ] = 100;
+        doc.content[1].table.body.forEach((b) => {
+          b.reverse();
+          b.forEach((cell) => {
+            cell.alignment = "center";
+          });
+        });
+        // Group table headers (dates) by month and add a header row for each month with colspan
+        const tableBody = doc.content[1].table.body;
+        const headerRow = tableBody[0];
+        const monthMap = {};
+        const monthOrder = [];
+        headerRow.forEach((cell, idx) => {
+          if (
+            typeof cell.text === "string" &&
+            /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
+          ) {
+            const [year, month] = cell.text.split("-").slice(0, 2);
+            const key = `${arabicMonths[Number(month) - 1]} ${year}`;
+            if (!monthMap[key]) {
+              monthMap[key] = { start: idx, count: 1 };
+              monthOrder.push(key);
+            } else {
+              monthMap[key].count++;
+            }
+            cell.text = cell.text.split("-")[2];
+          }
+        });
+        doc.content[1].table.body[0] = headerRow;
+
+        // Build the month header row
+        const monthHeaderRow = [];
+        let colIdx = 0;
+        monthOrder.forEach((key) => {
+          const { start, count } = monthMap[key];
+          // Fill empty cells before this month
+          while (colIdx < start) {
+            monthHeaderRow.push({});
+            colIdx++;
+          }
+          // Add the month header cell
+          monthHeaderRow.push({
+            text: key,
+            style: "tableHeader",
+            colSpan: count,
+            alignment: "center",
+          });
+          colIdx++;
+          // Fill the rest of the colspan with empty cells
+          for (let i = 1; i < count; i++) {
+            monthHeaderRow.push({});
+            colIdx++;
+          }
+        });
+        // Fill any remaining columns
+        while (monthHeaderRow.length < headerRow.length) {
+          monthHeaderRow.push({});
+        }
+        // Insert the month header row above the date header
+        tableBody.unshift(monthHeaderRow);
+
+        // set layout
+        doc.content[1].layout = {
+          hLineWidth: function (i, node) {
+            return i === 0 || i === node.table.body.length ? 2 : 1;
+          },
+          vLineWidth: function (i, node) {
+            return i === 0 || i === node.table.widths.length ? 2 : 1;
+          },
+          hLineColor: function (i, node) {
+            return i === 0 || i === node.table.body.length ? "black" : "gray";
+          },
+          vLineColor: function (i, node) {
+            return i === 0 || i === node.table.widths.length ? "black" : "gray";
+          },
+        };
+      },
+    },
+  ];
+  setStatisticsTable(query, buttons);
+}
+
+async function setStatisticsTable(query, buttons = []) {
+  const result = project_db.exec(query);
 
   try {
     if (result.length > 0) {
@@ -2164,123 +2306,7 @@ async function showAttendanceStatistics() {
 
           layout: {
             topStart: {
-              buttons: [
-                {
-                  extend: "pdfHtml5",
-                  download: "open",
-                  text: "انشاء PDF",
-                  className: "btn btn-primary",
-                  customize: function (doc) {
-                    if (tableColumns.length > 20) {
-                      window.showToast(
-                        "warning",
-                        "عدد الأعمدة كبير وقد يسبب مشكلة عند الهامش"
-                      );
-                    }
-                    doc.content[0].text = "جدول الحضور الشهري للطلاب";
-                    doc.content[0].alignment = "center";
-                    doc.content[0].fontSize = 16;
-                    doc.content[0].margin = [0, 0, 0, 20];
-
-                    doc.styles.tableHeader.alignment = "left";
-                    doc.content[1].table.widths = Array(
-                      doc.content[1].table.body[0].length + 1
-                    )
-                      .join("*")
-                      .split("");
-
-                    doc.content[1].table.widths[
-                      doc.content[1].table.body[0].length - 1
-                    ] = 15;
-                    doc.content[1].table.widths[
-                      doc.content[1].table.body[0].length - 2
-                    ] = 100;
-                    doc.content[1].table.body.forEach((b) => {
-                      b.reverse();
-                      b.forEach((cell) => {
-                        cell.alignment = "center";
-                      });
-                    });
-                    // Group table headers (dates) by month and add a header row for each month with colspan
-                    const tableBody = doc.content[1].table.body;
-                    const headerRow = tableBody[0];
-                    const monthMap = {};
-                    const monthOrder = [];
-                    headerRow.forEach((cell, idx) => {
-                      if (
-                        typeof cell.text === "string" &&
-                        /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
-                      ) {
-                        const [year, month] = cell.text.split("-").slice(0, 2);
-                        const key = `${
-                          arabicMonths[Number(month) - 1]
-                        } ${year}`;
-                        if (!monthMap[key]) {
-                          monthMap[key] = { start: idx, count: 1 };
-                          monthOrder.push(key);
-                        } else {
-                          monthMap[key].count++;
-                        }
-                        cell.text = cell.text.split("-")[2];
-                      }
-                    });
-                    doc.content[1].table.body[0] = headerRow;
-
-                    // Build the month header row
-                    const monthHeaderRow = [];
-                    let colIdx = 0;
-                    monthOrder.forEach((key) => {
-                      const { start, count } = monthMap[key];
-                      // Fill empty cells before this month
-                      while (colIdx < start) {
-                        monthHeaderRow.push({});
-                        colIdx++;
-                      }
-                      // Add the month header cell
-                      monthHeaderRow.push({
-                        text: key,
-                        style: "tableHeader",
-                        colSpan: count,
-                        alignment: "center",
-                      });
-                      colIdx++;
-                      // Fill the rest of the colspan with empty cells
-                      for (let i = 1; i < count; i++) {
-                        monthHeaderRow.push({});
-                        colIdx++;
-                      }
-                    });
-                    // Fill any remaining columns
-                    while (monthHeaderRow.length < headerRow.length) {
-                      monthHeaderRow.push({});
-                    }
-                    // Insert the month header row above the date header
-                    tableBody.unshift(monthHeaderRow);
-
-                    // set layout
-                    doc.content[1].layout = {
-                      hLineWidth: function (i, node) {
-                        return i === 0 || i === node.table.body.length ? 2 : 1;
-                      },
-                      vLineWidth: function (i, node) {
-                        return i === 0 || i === node.table.widths.length
-                          ? 2
-                          : 1;
-                      },
-                      hLineColor: function (i, node) {
-                        return i === 0 || i === node.table.body.length
-                          ? "black"
-                          : "gray";
-                      },
-                      vLineColor: function (i, node) {
-                        return i === 0 || i === node.table.widths.length
-                          ? "black"
-                          : "gray";
-                      },
-                    };
-                  },
-                },
-              ],
+              buttons: buttons,
             },
           },
         },
