@@ -228,6 +228,7 @@ async function saveToIndexedDB(data, db_key = PROJECT_DB_KEY) {
     store.put(data, db_key);
     tx.oncomplete = () => {
       idb.close();
+      localStorage.setItem("lastSaveAt", new Date());
       resolve();
     };
     tx.onerror = (e) => {
@@ -1380,9 +1381,9 @@ async function loadDayStudentsList() {
 
       result.values.forEach((row) => {
         const retardValue = row[result.columns.indexOf("retard")];
-        const editBtn = document.createElement("button");
-        editBtn.className = "btn btn-sm btn-primary";
-        editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+        const editBtn = document.createElement("i");
+        editBtn.className = "fa-solid fa-pen-to-square";
+        editBtn.style.color = "yellow"
         editBtn.onclick = function () {
           newStudentDayModal.show();
           studentNameInput.value =
@@ -1428,7 +1429,7 @@ async function loadDayStudentsList() {
               parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
           }
           requireBookInput.dispatchEvent(new Event("change"));
-          requirEvaluationInput.value = "0";
+          requirEvaluationInput.value = "10.00";
           saveStopErrorsInput.value = "0";
           saveStateErrorsInput.value = "0";
           requirObligation.checked = true;
@@ -1488,7 +1489,7 @@ async function loadDayStudentsList() {
               ? (retardValue < 0
                   ? `قبل ${retardValue * -1} د `
                   : retardValue == 0
-                  ? `حضور كلي `
+                  ? `في الوقت `
                   : `بعد ${retardValue} د `) +
                 (thisDay == workingDay &&
                 checkAuthorizedOut(
@@ -1557,11 +1558,12 @@ async function loadDayStudentsList() {
         { data: "student" },
         {
           data: "attendance",
+          className: "text-start",
           type: "num",
           render: function (data, type, row) {
             if (type === "sort") {
               const data1 = data.replace("🟢", "");
-              if (data1.includes("حضور كلي")) return 0;
+              if (data1.includes("في الوقت")) return 0;
               else if (data1.includes("بعد")) {
                 return parseInt(data1.replace("بعد", "").replace("د", ""));
               } else if (data1.includes("قبل")) {
@@ -1577,6 +1579,7 @@ async function loadDayStudentsList() {
         },
         {
           data: "evaluation",
+          className: "text-center",
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
@@ -2140,7 +2143,7 @@ async function showAttendanceStatistics() {
     )
     .join("\n");
 
-  const query =  `
+  const query = `
     WITH ${dateCtes}
     SELECT
         ROW_NUMBER() OVER (ORDER BY s.id) as "#",

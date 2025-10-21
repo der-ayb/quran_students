@@ -15,12 +15,12 @@ if (workbox) {
     [
       { url: "./", revision: "1" },
       { url: "./favicon.ico", revision: "1" },
-      { url: "./index.html", revision: "1" },
+      { url: "./index.html", revision: "2" },
       { url: "./manifest.json", revision: "1" },
 
       { url: "./src/style.css", revision: "1" },
       { url: "./src/fonts.css", revision: "1" },
-      { url: "./src/script.js", revision: "2" },
+      { url: "./src/script.js", revision: "3" },
       { url: "./src/auth.js", revision: "1" },
       { url: "./src/pdfmake.js", revision: "1" },
       { url: "./src/vfs_fonts.js", revision: "1" },
@@ -73,16 +73,16 @@ if (workbox) {
         revision: "1",
       },
       {
-        url: "https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.css",
-        revision: "1",
+        url: "https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.css",
+        revision: "2",
       },
       {
-        url: "https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.css",
-        revision: "1",
+        url: "https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.css",
+        revision: "2",
       },
       {
-        url: "https://cdn.datatables.net/buttons/3.2.4/css/buttons.bootstrap5.css",
-        revision: "1",
+        url: "https://cdn.datatables.net/buttons/3.2.5/css/buttons.bootstrap5.css",
+        revision: "2",
       },
       {
         url: "https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css",
@@ -117,28 +117,28 @@ if (workbox) {
         revision: "1",
       },
       {
-        url: "https://cdn.datatables.net/2.3.2/js/dataTables.js",
-        revision: "1",
+        url: "https://cdn.datatables.net/2.3.4/js/dataTables.js",
+        revision: "2",
       },
       {
-        url: "https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.js",
-        revision: "1",
+        url: "https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.js",
+        revision: "2",
       },
       {
-        url: "https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js",
-        revision: "1",
+        url: "https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js",
+        revision: "2",
       },
       {
-        url: "https://cdn.datatables.net/buttons/3.2.4/js/buttons.bootstrap5.js",
-        revision: "1",
+        url: "https://cdn.datatables.net/buttons/3.2.5/js/buttons.bootstrap5.js",
+        revision: "2",
       },
       {
-        url: "https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.js",
-        revision: "1",
+        url: "https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.js",
+        revision: "2",
       },
       {
-        url: "https://cdn.datatables.net/buttons/3.2.4/js/buttons.print.js",
-        revision: "1",
+        url: "https://cdn.datatables.net/buttons/3.2.5/js/buttons.print.js",
+        revision: "2",
       },
       {
         url: "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js",
