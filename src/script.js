@@ -472,21 +472,25 @@ async function googleSignin() {
   }
   await showLoadingModal("جاري تسجيل الدخول");
   await initializeGoogleAuth(async (accessToken) => {
-    try {
-      const downloadResult = await downloadDBfromDrive();
-      if (downloadResult == null) {
-        if (confirm(`لاتوجد ملفات سابقة، هل تريد إنشاء قاعدة جديدة؟`)) {
-          await createNewDB();
+    if (project_db) {
+      await asyncDB();
+    } else {
+      try {
+        const downloadResult = await downloadDBfromDrive();
+        if (downloadResult == null) {
+          if (confirm(`لاتوجد ملفات سابقة، هل تريد إنشاء قاعدة جديدة؟`)) {
+            await createNewDB();
+          }
+        } else if (downloadResult == false) {
+          ("pass");
+        } else {
+          await loadDBFromFile(downloadResult);
         }
-      } else if (downloadResult == false) {
-        if (project_db) await asyncDB();
-      } else {
-        await loadDBFromFile(downloadResult);
+      } catch (e) {
+        console.log(e.message);
+        window.showToast("error", e.message);
+        hideLoadingModal();
       }
-    } catch (e) {
-      console.log(e.message);
-      window.showToast("error", e.message);
-      hideLoadingModal();
     }
   });
   hideLoadingModal();
@@ -1383,7 +1387,7 @@ async function loadDayStudentsList() {
         const retardValue = row[result.columns.indexOf("retard")];
         const editBtn = document.createElement("i");
         editBtn.className = "fa-solid fa-pen-to-square";
-        editBtn.style.color = "yellow"
+        editBtn.style.color = "yellow";
         editBtn.onclick = function () {
           newStudentDayModal.show();
           studentNameInput.value =
@@ -1420,6 +1424,7 @@ async function loadDayStudentsList() {
           if (lsR.length) {
             const detail = JSON.parse(lsR[0].values[0][0]).at(-1);
             requireBookInput.value = detail["الكتاب"];
+            requireBookInput.dispatchEvent(new Event("change"));
             requirTypeInput.value = detail["النوع"];
             setOptionValueByText(
               firstSurahSelect,
@@ -1427,8 +1432,10 @@ async function loadDayStudentsList() {
             );
             firstAyahSelect.value =
               parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
+            secondAyahSelect.dispatchEvent(new Event("change"));
+          } else {
+            requireBookInput.dispatchEvent(new Event("change"));
           }
-          requireBookInput.dispatchEvent(new Event("change"));
           requirEvaluationInput.value = "10.00";
           saveStopErrorsInput.value = "0";
           saveStateErrorsInput.value = "0";
@@ -1887,6 +1894,7 @@ function removeRequirItem(button) {
 addQuranSelectionBtn.onclick = function () {
   if (
     !requireBookInput.value ||
+    !requirQuantityDetailInput.value ||
     !requirTypeInput.value ||
     !requirQuantityInput.value ||
     !requirEvaluationInput.value
@@ -2063,31 +2071,30 @@ async function showStudentsResultsStatistics() {
     GROUP BY s.id, "اسم الطالب" 
     ORDER BY s.id;
 `;
-  const buttons = [
+  const buttons = dates.length > 16 ? [] : [
     {
       extend: "pdfHtml5",
       download: "open",
       text: "انشاء PDF",
       className: "btn btn-primary",
-      customize: function (doc) {
-        doc.content[0].text = "نتائج الطلاب";
+      customize: async function (doc) {
+        const daysCount = dates.length;
+        doc.pageOrientation = "landscape";
+        doc.content[0].text = "نتائج  الطلاب";
         doc.content[0].alignment = "center";
         doc.content[0].fontSize = 16;
         doc.content[0].margin = [0, 0, 0, 20];
 
         doc.styles.tableHeader.alignment = "left";
-        doc.content[1].table.widths = Array(
-          doc.content[1].table.body[0].length + 1
-        )
-          .join("*")
-          .split("");
-
-        if (doc.content[1].table.widths.length > 9) {
-          window.showToast(
-            "warning",
-            "عدد الأعمدة كبير وقد يسبب مشكلة عند الهامش"
-          );
-        }
+        doc.content[1].table.widths =
+          daysCount >= 12
+            ? Array(doc.content[1].table.body[0].length + 1)
+                .join("auto,")
+                .split(",")
+                .slice(0, -1)
+            : Array(doc.content[1].table.body[0].length + 1)
+                .join("*")
+                .split("");
 
         doc.content[1].table.widths[
           doc.content[1].table.body[0].length - 1
@@ -2099,8 +2106,83 @@ async function showStudentsResultsStatistics() {
           b.reverse();
           b.forEach((cell) => {
             cell.alignment = "center";
+            cell.marginTop = 3;
+            cell.marginLeft = cell.marginRight = -3;
           });
         });
+        // Group table headers (dates) by month and add a header row for each month with colspan
+        const tableBody = doc.content[1].table.body;
+        const headerRow = tableBody[0];
+        const monthMap = {};
+        const monthOrder = [];
+        headerRow.forEach((cell, idx) => {
+          if (
+            typeof cell.text === "string" &&
+            /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
+          ) {
+            const [year, month] = cell.text.split("-").slice(0, 2);
+            const key = `${arabicMonths[Number(month) - 1]} ${year}`;
+            if (!monthMap[key]) {
+              monthMap[key] = { start: idx, count: 1 };
+              monthOrder.push(key);
+            } else {
+              monthMap[key].count++;
+            }
+            cell.text = `${arabicDays[new Date(cell.text).getDay()]}\n${
+              cell.text.split("-")[2]
+            }`;
+            if (daysCount >= 12) {
+              cell.marginLeft = cell.marginRight = Number((((daysCount - 12) * (-7)) / 4 + 4).toFixed(1));
+            }
+          }
+        });
+        doc.content[1].table.body[0] = headerRow;
+
+        // Build the month header row
+        const monthHeaderRow = [];
+        let colIdx = 0;
+        monthOrder.forEach((key) => {
+          const { start, count } = monthMap[key];
+          // Fill empty cells before this month
+          while (colIdx < start) {
+            monthHeaderRow.push({});
+            colIdx++;
+          }
+          // Add the month header cell
+          monthHeaderRow.push({
+            text: key,
+            style: "tableHeader",
+            colSpan: count,
+            alignment: "center",
+          });
+          colIdx++;
+          // Fill the rest of the colspan with empty cells
+          for (let i = 1; i < count; i++) {
+            monthHeaderRow.push({});
+            colIdx++;
+          }
+        });
+        // Fill any remaining columns
+        while (monthHeaderRow.length < headerRow.length) {
+          monthHeaderRow.push({});
+        }
+        // Insert the month header row above the date header
+        tableBody.unshift(monthHeaderRow);
+        // set layout
+        doc.content[1].layout = {
+          hLineWidth: function (i, node) {
+            return i === 0 || i === node.table.body.length ? 2 : 1;
+          },
+          vLineWidth: function (i, node) {
+            return i === 0 || i === node.table.widths.length ? 2 : 1;
+          },
+          hLineColor: function (i, node) {
+            return i === 0 || i === node.table.body.length ? "black" : "gray";
+          },
+          vLineColor: function (i, node) {
+            return i === 0 || i === node.table.widths.length ? "black" : "gray";
+          },
+        };
       },
     },
   ];
@@ -2143,43 +2225,53 @@ async function showAttendanceStatistics() {
     )
     .join("\n");
 
+    const attendanceSum = dates.map((_, index) => 
+        `CASE WHEN de${index}.attendance = 1 THEN 1 ELSE 0 END`
+    ).join(' +\n        ');
+
   const query = `
     WITH ${dateCtes}
     SELECT
         ROW_NUMBER() OVER (ORDER BY s.id) as "#",
         s.fname || ' ' || s.lname as "اسم الطالب",
-        ${dateColumns}
+        ${dateColumns},
+        -- مجموع الحضور (Total Present Days Count)
+        (${attendanceSum}) as "المجموع",
+        -- نسبة الحضور (Attendance Percentage)
+        ROUND(
+            ((${attendanceSum}) * 100.0 / ${dates.length}), 1
+        ) as "النسبة (%)"
     FROM students s
     ${dateJoins}
     WHERE s.class_room_id = ${workingClassroomId}
+    GROUP BY s.id
     ORDER BY s.id;
 `;
 
-  const buttons = [
+  const buttons = dates.length > 16 ? [] : [
     {
       extend: "pdfHtml5",
       download: "open",
       text: "انشاء PDF",
       className: "btn btn-primary",
-      customize: function (doc) {
+      customize: async function (doc) {
+        const daysCount = dates.length;
+        doc.pageOrientation = "landscape";
         doc.content[0].text = "جدول حضور الطلاب";
         doc.content[0].alignment = "center";
         doc.content[0].fontSize = 16;
         doc.content[0].margin = [0, 0, 0, 20];
 
         doc.styles.tableHeader.alignment = "left";
-        doc.content[1].table.widths = Array(
-          doc.content[1].table.body[0].length + 1
-        )
-          .join("*")
-          .split("");
-
-        if (doc.content[1].table.widths.length > 20) {
-          window.showToast(
-            "warning",
-            "عدد الأعمدة كبير وقد يسبب مشكلة عند الهامش"
-          );
-        }
+        doc.content[1].table.widths =
+          daysCount >= 13
+            ? Array(doc.content[1].table.body[0].length + 1)
+                .join("auto,")
+                .split(",")
+                .slice(0, -1)
+            : Array(doc.content[1].table.body[0].length + 1)
+                .join("*")
+                .split("");
 
         doc.content[1].table.widths[
           doc.content[1].table.body[0].length - 1
@@ -2191,6 +2283,7 @@ async function showAttendanceStatistics() {
           b.reverse();
           b.forEach((cell) => {
             cell.alignment = "center";
+            cell.marginLeft = cell.marginRight = -3;
           });
         });
         // Group table headers (dates) by month and add a header row for each month with colspan
@@ -2211,7 +2304,12 @@ async function showAttendanceStatistics() {
             } else {
               monthMap[key].count++;
             }
-            cell.text = cell.text.split("-")[2];
+            cell.text = `${arabicDays[new Date(cell.text).getDay()]}\n${
+              cell.text.split("-")[2]
+            }`;
+            if (daysCount >= 13) {
+              cell.marginLeft = cell.marginRight = (16 - Math.max(13, Math.min(16, daysCount))) * 3 / 3;
+            }
           }
         });
         doc.content[1].table.body[0] = headerRow;
@@ -2377,11 +2475,11 @@ const checkSecondSurahAyahs = (secondSurahNumber) => {
     for (let i = ll; i <= secondSurahAyahs; i++) {
       secondAyahSelect.appendChild(createOption(i, i));
     }
-    secondAyahSelect.lastChild.selected = true;
     secondAyahSelect.insertBefore(
       createOption("", "--  --"),
       secondAyahSelect.firstChild
     );
+    secondAyahSelect.lastChild.selected = true;
     secondAyahSelect.dispatchEvent(new Event("change"));
   } else {
     secondAyahSelect.disabled = true;
@@ -2437,7 +2535,7 @@ firstSurahSelect.onchange = async function () {
     firstAyahSelect.appendChild(createOption("", "--  --"));
 
     secondSurahSelect.disabled = true;
-    secondSurahSelect.querySelector("option").style.pdisplay = "none";
+    secondSurahSelect.querySelector("option").style.display = "none";
 
     secondAyahSelect.disabled = true;
     secondAyahSelect.innerHTML = "";

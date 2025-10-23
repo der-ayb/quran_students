@@ -186,7 +186,7 @@ th.header-rotated>div>span {
 }
 
 /* google signin button */
-#googleSigninBtn {
+.google_signin_button {
   width: 200px;
   height: 50px;
   display: flex;
@@ -207,12 +207,12 @@ th.header-rotated>div>span {
   transition: all .6s ease;
 }
 
-#googleSigninBtn svg {
+.google_signin_button svg {
   height: 24px;
 }
 
 .good-inputs:hover,
-#googleSigninBtn:hover {
+.google_signin_button:hover {
   transform: scale(1.02);
 }
 

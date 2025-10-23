@@ -304,7 +304,7 @@ async function uploadDBtoDrive(data) {
   // Check if a file named 'quran_students.sqlite3' already exists.
   const [file, updateTime] = await searchFileInDrive(accessToken);
   if (file) {
-    if (!confirm(`سيتم استبدال قاعدة البيانات التي في حسابك , هل أنت موافق؟`)) {
+    if (!confirm(`سيتم استبدال قاعدة البيانات التي في حسابك ⬆️, هل أنت موافق؟`)) {
       return false;
     }
     fileId = file.id;
@@ -383,7 +383,7 @@ async function downloadDBfromDrive() {
 
   if (
     !confirm(
-      `تم العثور على قاعدة بيانات في حسابك ${updateTime}، هل تريد تنزيلها؟`
+      `تم العثور على قاعدة بيانات في حسابك ${updateTime}، هل تريد تنزيلها⬇️؟`
     )
   ) {
     return false;
