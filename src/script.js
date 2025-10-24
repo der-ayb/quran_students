@@ -472,7 +472,7 @@ async function googleSignin() {
   }
   await showLoadingModal("جاري تسجيل الدخول");
   await initializeGoogleAuth(async (accessToken) => {
-    if (project_db) {
+    if (project_db && !workingClassroomId) {
       await asyncDB();
     } else {
       try {
@@ -2079,6 +2079,7 @@ async function showStudentsResultsStatistics() {
       className: "btn btn-primary",
       customize: async function (doc) {
         const daysCount = dates.length;
+        doc.pageSize = "A4"
         doc.pageOrientation = "landscape";
         doc.content[0].text = "نتائج  الطلاب";
         doc.content[0].alignment = "center";
@@ -2168,6 +2169,16 @@ async function showStudentsResultsStatistics() {
         }
         // Insert the month header row above the date header
         tableBody.unshift(monthHeaderRow);
+
+        // Set rowSpan for the first two columns and the last two columns
+        tableBody[0].forEach((cell, idx) => {
+          if (
+            [0,1,2,daysCount+3,daysCount+4].includes(idx) 
+          ) {
+            cell.rowSpan = -2;
+          }
+        });
+
         // set layout
         doc.content[1].layout = {
           hLineWidth: function (i, node) {
@@ -2256,6 +2267,7 @@ async function showAttendanceStatistics() {
       className: "btn btn-primary",
       customize: async function (doc) {
         const daysCount = dates.length;
+        doc.pageSize = "A4"
         doc.pageOrientation = "landscape";
         doc.content[0].text = "جدول حضور الطلاب";
         doc.content[0].alignment = "center";
@@ -2344,6 +2356,15 @@ async function showAttendanceStatistics() {
         }
         // Insert the month header row above the date header
         tableBody.unshift(monthHeaderRow);
+
+        // Set rowSpan for the first two columns and the last two columns
+        tableBody[0].forEach((cell, idx) => {
+          if (
+            [0,1,daysCount+2,daysCount+3].includes(idx) 
+          ) {
+            cell.rowSpan = -2;
+          }
+        });
 
         // set layout
         doc.content[1].layout = {
