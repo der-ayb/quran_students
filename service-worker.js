@@ -20,8 +20,8 @@ if (workbox) {
 
       { url: "./src/style.css", revision: "2" },
       { url: "./src/fonts.css", revision: "1" },
-      { url: "./src/script.js", revision: "5" },
-      { url: "./src/auth.js", revision: "2" },
+      { url: "./src/script.js", revision: "6" },
+      { url: "./src/auth.js", revision: "3" },
       { url: "./src/pdfmake.js", revision: "1" },
       { url: "./src/vfs_fonts.js", revision: "1" },
       { url: "./src/yearpicker.css", revision: "1" },
@@ -33,7 +33,7 @@ if (workbox) {
       { url: "./assets/fonts/raedex/SLXYc1bJ7HE5YDoGPuzj_dh8uc7wUy8ZQQyX2Iw1ZEzMhQ.woff2", revision: "1" },
       { url: "./assets/fonts/rubik/iJWKBXyIfDnIV7nErXyi0A.woff2", revision: "1" },
 
-      { url: "./assets/default.sqlite3", revision: "2" },
+      { url: "./assets/default.sqlite3", revision: "3" },
       { url: "./assets/quran.sqlite", revision: "1" },
       { url: "./assets/images/manifest-icon-192.maskable.png", revision: "1" },
       { url: "./assets/images/manifest-icon-512.maskable.png", revision: "1" },

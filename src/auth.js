@@ -141,23 +141,28 @@ function fromNow(date) {
 //   client.requestAccessToken();
 // }
 
-function profileElement(updateTime) {
-  return `
-        <div class="card mx-auto" style="width: 18rem;">
-          <div class="card-body">
-            <h5 class="card-title">${currentUser.name}</h5>
-            <h6 class="card-subtitle mb-2 text-body-secondary">${
-              currentUser.email
-            }</h6>
-            <p class="card-text">${
-              updateTime ? `آخر تحديث:${updateTime}` : "لم تتم المزامنة بعد"
-            }</p>
-            <button onclick="asyncDB()" class="btn btn-sm btn-secondary">🔄 مزامنة</button>
-            <button onclick="logout()" class="btn btn-sm btn-warning">تسجيل الخروج</button>
+function loginStatusElement(updateTime) {
+        if (!currentUser) {
+          return `
+            <div>
+              ${googleSigninBtn.outerHTML}
+              <p class="card-text">${updateTime ? `آخر تحديث من هذا الجهاز:${updateTime}` : 'لم تتم المزامنة بعد'}</p>
+            </div>
+          `;
+        }
+        
+        return `
+          <div class="card mx-auto" style="width: 18rem;">
+            <div class="card-body">
+              <h5 class="card-title">${currentUser.name}</h5>
+              <h6 class="card-subtitle mb-2 text-body-secondary">${currentUser.email}</h6>
+              <p class="card-text">${updateTime ? `آخر تحديث:${updateTime}` : "لم تتم المزامنة بعد"}</p>
+              <button onclick="asyncDB()" class="btn btn-sm btn-secondary">🔄 مزامنة</button>
+              <button onclick="logout()" class="btn btn-sm btn-warning">تسجيل الخروج</button>
+            </div>
           </div>
-        </div>
-      `;
-}
+        `;
+      }
 async function initAuth() {
   await openAuthDB().then(async (res) => {
     db = res;
@@ -168,16 +173,14 @@ async function initAuth() {
       if (navigator.onLine) {
         searchFileInDrive();
       } else {
-        loginStatus.innerHTML = profileElement(
+        loginStatus.innerHTML = loginStatusElement(
           fromNow(localStorage.getItem("lastUpdateTime"))
         );
       }
     } else {
-      const updateTime = fromNow(localStorage.getItem("lastUpdateTime"));
-      const p = document.createElement("p");
-      p.className = "card-text";
-      p.innerText = updateTime ? `آخر تحديث من هذا الجهاز:${updateTime}` : null;
-      loginStatus.replaceChildren(googleSigninBtn.cloneNode(true), p);
+      loginStatus.innerHTML = loginStatusElement(
+          fromNow(localStorage.getItem("lastUpdateTime"))
+        );
     }
   });
 }
@@ -192,11 +195,7 @@ async function logout() {
   await deleteAccessToken(db);
   currentUser = null;
   userIsAuth = false;
-  const updateTime = fromNow(localStorage.getItem("lastUpdateTime"));
-  const p = document.createElement("p");
-  p.className = "card-text";
-  p.innerText = updateTime ? `آخر تحديث من هذا الجهاز:${updateTime}` : null;
-  loginStatus.replaceChildren(googleSigninBtn.cloneNode(true), p);
+  loginStatus.innerHTML = loginStatusElement(fromNow(localStorage.getItem("lastUpdateTime")));
 }
 
 async function searchFileInDrive(accessToken = null) {
@@ -224,13 +223,12 @@ async function searchFileInDrive(accessToken = null) {
 
   const listResult = await listResponse.json();
   if (!listResult.files || listResult.files.length === 0) {
-    loginStatus.innerHTML = profileElement(null);
+    loginStatus.innerHTML = loginStatusElement(null);
     return [];
   }
   const file = listResult.files[0];
   const date = fromNow(new Date(file.modifiedTime));
-  loginStatus.innerHTML = profileElement(date);
-  localStorage.setItem("lastUpdateTime", new Date(file.modifiedTime));
+  loginStatus.innerHTML = loginStatusElement(date);
   return [file, date];
 }
 
@@ -355,7 +353,7 @@ async function uploadDBtoDrive(data) {
   }
 
   const result = await response.json();
-  loginStatus.innerHTML = profileElement(fromNow(new Date()));
+  loginStatus.innerHTML = loginStatusElement(fromNow(new Date()));
   localStorage.setItem("lastUpdateTime", new Date());
   if (fileId) {
     console.log("📤 DB updated on Google Drive:", result.id);

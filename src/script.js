@@ -462,6 +462,7 @@ async function createNewDB() {
     return;
   }
   window.showToast("success", "تم إنشاء قاعدة بيانات جديدة.");
+  localStorage.removeItem("workingClassroomId");
   window.location.reload();
 }
 
@@ -472,7 +473,7 @@ async function googleSignin() {
   }
   await showLoadingModal("جاري تسجيل الدخول");
   await initializeGoogleAuth(async (accessToken) => {
-    if (project_db && !workingClassroomId) {
+    if (project_db && workingClassroomId) {
       await asyncDB();
     } else {
       try {
@@ -1111,24 +1112,6 @@ function calcEvaluationMoyenne(
   return moyenne.toFixed(2);
 }
 
-function calcAddedPoints(
-  retard,
-  clothing,
-  haircut,
-  behavior,
-  prayer,
-  evalMoyen
-) {
-  let moyenneWithoutAddedPoints = 0;
-  moyenneWithoutAddedPoints += 20 - parseInt(retard > -1 ? retard : 0) / 3;
-  moyenneWithoutAddedPoints += parseInt(clothing) || 0;
-  moyenneWithoutAddedPoints += parseInt(haircut) || 0;
-  moyenneWithoutAddedPoints += parseInt(behavior) || 0;
-  moyenneWithoutAddedPoints += parseInt(prayer) || 0;
-  const addedPoints = parseFloat(evalMoyen) - moyenneWithoutAddedPoints;
-  return addedPoints.toFixed(2);
-}
-
 function calcRequirementEvaluation(
   requirQuantity,
   requirType,
@@ -1162,10 +1145,14 @@ function setEvalMoyenneInput() {
   );
 }
 
-$([retardInput, behaviorInput, prayerInput, haircutInput, addedPointsInput]).on(
-  "change input",
-  setEvalMoyenneInput
-);
+$([
+  retardInput,
+  behaviorInput,
+  prayerInput,
+  clothingInput,
+  haircutInput,
+  addedPointsInput,
+]).on("change input", setEvalMoyenneInput);
 
 function setRequirEvalInput() {
   requirEvaluationInput.value = calcRequirementEvaluation(
@@ -1223,7 +1210,7 @@ function update_student_day_notes(studentId) {
       );
     }
     project_db.run(
-      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,prayer,moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?, ?,?,?,?,?,?);",
+      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,prayer,added_points,moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?, ?,?,?,?,?,?,?);",
       [
         studentId,
         workingDay,
@@ -1233,6 +1220,7 @@ function update_student_day_notes(studentId) {
         haircutInput.value,
         behaviorInput.value,
         prayerInput.value,
+        addedPointsInput.value,
         evalMoyenne.value,
       ]
     );
@@ -1267,12 +1255,13 @@ function checkAuthorizedOut(time, requirMoyenne, minutesToAdd, after = 60) {
 async function markPresence(studentId) {
   const retard_time = calcRetardTime();
   project_db.run(
-    "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?,?, ?,?,?,?);",
+    "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,added_points,moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?,?, ?,?,?,?,?);",
     [
       studentId,
       workingDay,
       1,
       retard_time,
+      null,
       null,
       null,
       null,
@@ -1370,7 +1359,8 @@ async function loadDayStudentsList() {
           de.haircut AS "haircut",
           de.behavior AS "behavior",
           de.prayer AS "prayer",
-          de.moyenne AS "evalMoyenne"	
+          de.added_points AS "added_points",
+          de.moyenne AS "evalMoyenne"
       FROM students s
       LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id IN day_id
       LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id IN day_id
@@ -1403,16 +1393,9 @@ async function loadDayStudentsList() {
           haircutInput.value = row[result.columns.indexOf("haircut")];
           behaviorInput.value = row[result.columns.indexOf("behavior")];
           prayerInput.value = row[result.columns.indexOf("prayer")];
-          addedPointsInput.value = calcAddedPoints(
-            retardInput.value,
-            clothingInput.value,
-            haircutInput.value,
-            behaviorInput.value,
-            prayerInput.value,
-            row[result.columns.indexOf("evalMoyenne")]
-          );
+          addedPointsInput.value = row[result.columns.indexOf("added_points")] || "0.00";
           evalMoyenne.value =
-            row[result.columns.indexOf("evalMoyenne")] || "0.00";
+            row[result.columns.indexOf("evalMoyenne")] || setEvalMoyenneInput();
 
           const lsR = project_db.exec(`
             SELECT dr.detail
@@ -1556,7 +1539,7 @@ async function loadDayStudentsList() {
       showTab("pills-students");
       return;
     }
-    await initOrReloadDataTable(
+    const table = await initOrReloadDataTable(
       "#dayListTable",
       data,
       [
@@ -2071,132 +2054,139 @@ async function showStudentsResultsStatistics() {
     GROUP BY s.id, "اسم الطالب" 
     ORDER BY s.id;
 `;
-  const buttons = dates.length > 16 ? [] : [
-    {
-      extend: "pdfHtml5",
-      download: "open",
-      text: "انشاء PDF",
-      className: "btn btn-primary",
-      customize: async function (doc) {
-        const daysCount = dates.length;
-        doc.pageSize = "A4"
-        doc.pageOrientation = "landscape";
-        doc.content[0].text = "نتائج  الطلاب";
-        doc.content[0].alignment = "center";
-        doc.content[0].fontSize = 16;
-        doc.content[0].margin = [0, 0, 0, 20];
+  const buttons =
+    dates.length > 16
+      ? []
+      : [
+          {
+            extend: "pdfHtml5",
+            download: "open",
+            text: "انشاء PDF",
+            className: "btn btn-primary",
+            customize: async function (doc) {
+              const daysCount = dates.length;
+              doc.pageSize = "A4";
+              doc.pageOrientation = "landscape";
+              doc.content[0].text = "نتائج  الطلاب";
+              doc.content[0].alignment = "center";
+              doc.content[0].fontSize = 16;
+              doc.content[0].margin = [0, 0, 0, 20];
 
-        doc.styles.tableHeader.alignment = "left";
-        doc.content[1].table.widths =
-          daysCount >= 12
-            ? Array(doc.content[1].table.body[0].length + 1)
-                .join("auto,")
-                .split(",")
-                .slice(0, -1)
-            : Array(doc.content[1].table.body[0].length + 1)
-                .join("*")
-                .split("");
+              doc.styles.tableHeader.alignment = "left";
+              doc.content[1].table.widths =
+                daysCount >= 12
+                  ? Array(doc.content[1].table.body[0].length + 1)
+                      .join("auto,")
+                      .split(",")
+                      .slice(0, -1)
+                  : Array(doc.content[1].table.body[0].length + 1)
+                      .join("*")
+                      .split("");
 
-        doc.content[1].table.widths[
-          doc.content[1].table.body[0].length - 1
-        ] = 15;
-        doc.content[1].table.widths[
-          doc.content[1].table.body[0].length - 2
-        ] = 100;
-        doc.content[1].table.body.forEach((b) => {
-          b.reverse();
-          b.forEach((cell) => {
-            cell.alignment = "center";
-            cell.marginTop = 3;
-            cell.marginLeft = cell.marginRight = -3;
-          });
-        });
-        // Group table headers (dates) by month and add a header row for each month with colspan
-        const tableBody = doc.content[1].table.body;
-        const headerRow = tableBody[0];
-        const monthMap = {};
-        const monthOrder = [];
-        headerRow.forEach((cell, idx) => {
-          if (
-            typeof cell.text === "string" &&
-            /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
-          ) {
-            const [year, month] = cell.text.split("-").slice(0, 2);
-            const key = `${arabicMonths[Number(month) - 1]} ${year}`;
-            if (!monthMap[key]) {
-              monthMap[key] = { start: idx, count: 1 };
-              monthOrder.push(key);
-            } else {
-              monthMap[key].count++;
-            }
-            cell.text = `${arabicDays[new Date(cell.text).getDay()]}\n${
-              cell.text.split("-")[2]
-            }`;
-            if (daysCount >= 12) {
-              cell.marginLeft = cell.marginRight = Number((((daysCount - 12) * (-7)) / 4 + 4).toFixed(1));
-            }
-          }
-        });
-        doc.content[1].table.body[0] = headerRow;
+              doc.content[1].table.widths[
+                doc.content[1].table.body[0].length - 1
+              ] = 15;
+              doc.content[1].table.widths[
+                doc.content[1].table.body[0].length - 2
+              ] = 100;
+              doc.content[1].table.body.forEach((b) => {
+                b.reverse();
+                b.forEach((cell) => {
+                  cell.alignment = "center";
+                  cell.marginTop = 3;
+                  cell.marginLeft = cell.marginRight = -3;
+                });
+              });
+              // Group table headers (dates) by month and add a header row for each month with colspan
+              const tableBody = doc.content[1].table.body;
+              const headerRow = tableBody[0];
+              const monthMap = {};
+              const monthOrder = [];
+              headerRow.forEach((cell, idx) => {
+                if (
+                  typeof cell.text === "string" &&
+                  /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
+                ) {
+                  const [year, month] = cell.text.split("-").slice(0, 2);
+                  const key = `${arabicMonths[Number(month) - 1]} ${year}`;
+                  if (!monthMap[key]) {
+                    monthMap[key] = { start: idx, count: 1 };
+                    monthOrder.push(key);
+                  } else {
+                    monthMap[key].count++;
+                  }
+                  cell.text = `${arabicDays[new Date(cell.text).getDay()]}\n${
+                    cell.text.split("-")[2]
+                  }`;
+                  if (daysCount >= 12) {
+                    cell.marginLeft = cell.marginRight = Number(
+                      (((daysCount - 12) * -7) / 4 + 4).toFixed(1)
+                    );
+                  }
+                }
+              });
+              doc.content[1].table.body[0] = headerRow;
 
-        // Build the month header row
-        const monthHeaderRow = [];
-        let colIdx = 0;
-        monthOrder.forEach((key) => {
-          const { start, count } = monthMap[key];
-          // Fill empty cells before this month
-          while (colIdx < start) {
-            monthHeaderRow.push({});
-            colIdx++;
-          }
-          // Add the month header cell
-          monthHeaderRow.push({
-            text: key,
-            style: "tableHeader",
-            colSpan: count,
-            alignment: "center",
-          });
-          colIdx++;
-          // Fill the rest of the colspan with empty cells
-          for (let i = 1; i < count; i++) {
-            monthHeaderRow.push({});
-            colIdx++;
-          }
-        });
-        // Fill any remaining columns
-        while (monthHeaderRow.length < headerRow.length) {
-          monthHeaderRow.push({});
-        }
-        // Insert the month header row above the date header
-        tableBody.unshift(monthHeaderRow);
+              // Build the month header row
+              const monthHeaderRow = [];
+              let colIdx = 0;
+              monthOrder.forEach((key) => {
+                const { start, count } = monthMap[key];
+                // Fill empty cells before this month
+                while (colIdx < start) {
+                  monthHeaderRow.push({});
+                  colIdx++;
+                }
+                // Add the month header cell
+                monthHeaderRow.push({
+                  text: key,
+                  style: "tableHeader",
+                  colSpan: count,
+                  alignment: "center",
+                });
+                colIdx++;
+                // Fill the rest of the colspan with empty cells
+                for (let i = 1; i < count; i++) {
+                  monthHeaderRow.push({});
+                  colIdx++;
+                }
+              });
+              // Fill any remaining columns
+              while (monthHeaderRow.length < headerRow.length) {
+                monthHeaderRow.push({});
+              }
+              // Insert the month header row above the date header
+              tableBody.unshift(monthHeaderRow);
 
-        // Set rowSpan for the first two columns and the last two columns
-        tableBody[0].forEach((cell, idx) => {
-          if (
-            [0,1,2,daysCount+3,daysCount+4].includes(idx) 
-          ) {
-            cell.rowSpan = -2;
-          }
-        });
+              // Set rowSpan for the first two columns and the last two columns
+              tableBody[0].forEach((cell, idx) => {
+                if ([0, 1, 2, daysCount + 3, daysCount + 4].includes(idx)) {
+                  cell.rowSpan = -2;
+                }
+              });
 
-        // set layout
-        doc.content[1].layout = {
-          hLineWidth: function (i, node) {
-            return i === 0 || i === node.table.body.length ? 2 : 1;
+              // set layout
+              doc.content[1].layout = {
+                hLineWidth: function (i, node) {
+                  return i === 0 || i === node.table.body.length ? 2 : 1;
+                },
+                vLineWidth: function (i, node) {
+                  return i === 0 || i === node.table.widths.length ? 2 : 1;
+                },
+                hLineColor: function (i, node) {
+                  return i === 0 || i === node.table.body.length
+                    ? "black"
+                    : "gray";
+                },
+                vLineColor: function (i, node) {
+                  return i === 0 || i === node.table.widths.length
+                    ? "black"
+                    : "gray";
+                },
+              };
+            },
           },
-          vLineWidth: function (i, node) {
-            return i === 0 || i === node.table.widths.length ? 2 : 1;
-          },
-          hLineColor: function (i, node) {
-            return i === 0 || i === node.table.body.length ? "black" : "gray";
-          },
-          vLineColor: function (i, node) {
-            return i === 0 || i === node.table.widths.length ? "black" : "gray";
-          },
-        };
-      },
-    },
-  ];
+        ];
   setStatisticsTable(query, buttons);
 }
 
@@ -2236,9 +2226,9 @@ async function showAttendanceStatistics() {
     )
     .join("\n");
 
-    const attendanceSum = dates.map((_, index) => 
-        `CASE WHEN de${index}.attendance = 1 THEN 1 ELSE 0 END`
-    ).join(' +\n        ');
+  const attendanceSum = dates
+    .map((_, index) => `CASE WHEN de${index}.attendance = 1 THEN 1 ELSE 0 END`)
+    .join(" +\n        ");
 
   const query = `
     WITH ${dateCtes}
@@ -2247,7 +2237,7 @@ async function showAttendanceStatistics() {
         s.fname || ' ' || s.lname as "اسم الطالب",
         ${dateColumns},
         -- مجموع الحضور (Total Present Days Count)
-        (${attendanceSum}) as "المجموع",
+        (${attendanceSum}) as "المجموع (/${dates.length})",
         -- نسبة الحضور (Attendance Percentage)
         ROUND(
             ((${attendanceSum}) * 100.0 / ${dates.length}), 1
@@ -2259,131 +2249,137 @@ async function showAttendanceStatistics() {
     ORDER BY s.id;
 `;
 
-  const buttons = dates.length > 16 ? [] : [
-    {
-      extend: "pdfHtml5",
-      download: "open",
-      text: "انشاء PDF",
-      className: "btn btn-primary",
-      customize: async function (doc) {
-        const daysCount = dates.length;
-        doc.pageSize = "A4"
-        doc.pageOrientation = "landscape";
-        doc.content[0].text = "جدول حضور الطلاب";
-        doc.content[0].alignment = "center";
-        doc.content[0].fontSize = 16;
-        doc.content[0].margin = [0, 0, 0, 20];
+  const buttons =
+    dates.length > 16
+      ? []
+      : [
+          {
+            extend: "pdfHtml5",
+            download: "open",
+            text: "انشاء PDF",
+            className: "btn btn-primary",
+            customize: async function (doc) {
+              const daysCount = dates.length;
+              doc.pageSize = "A4";
+              doc.pageOrientation = "landscape";
+              doc.content[0].text = "جدول حضور الطلاب";
+              doc.content[0].alignment = "center";
+              doc.content[0].fontSize = 16;
+              doc.content[0].margin = [0, 0, 0, 20];
 
-        doc.styles.tableHeader.alignment = "left";
-        doc.content[1].table.widths =
-          daysCount >= 13
-            ? Array(doc.content[1].table.body[0].length + 1)
-                .join("auto,")
-                .split(",")
-                .slice(0, -1)
-            : Array(doc.content[1].table.body[0].length + 1)
-                .join("*")
-                .split("");
+              doc.styles.tableHeader.alignment = "left";
+              doc.content[1].table.widths =
+                daysCount >= 13
+                  ? Array(doc.content[1].table.body[0].length + 1)
+                      .join("auto,")
+                      .split(",")
+                      .slice(0, -1)
+                  : Array(doc.content[1].table.body[0].length + 1)
+                      .join("*")
+                      .split("");
 
-        doc.content[1].table.widths[
-          doc.content[1].table.body[0].length - 1
-        ] = 15;
-        doc.content[1].table.widths[
-          doc.content[1].table.body[0].length - 2
-        ] = 100;
-        doc.content[1].table.body.forEach((b) => {
-          b.reverse();
-          b.forEach((cell) => {
-            cell.alignment = "center";
-            cell.marginLeft = cell.marginRight = -3;
-          });
-        });
-        // Group table headers (dates) by month and add a header row for each month with colspan
-        const tableBody = doc.content[1].table.body;
-        const headerRow = tableBody[0];
-        const monthMap = {};
-        const monthOrder = [];
-        headerRow.forEach((cell, idx) => {
-          if (
-            typeof cell.text === "string" &&
-            /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
-          ) {
-            const [year, month] = cell.text.split("-").slice(0, 2);
-            const key = `${arabicMonths[Number(month) - 1]} ${year}`;
-            if (!monthMap[key]) {
-              monthMap[key] = { start: idx, count: 1 };
-              monthOrder.push(key);
-            } else {
-              monthMap[key].count++;
-            }
-            cell.text = `${arabicDays[new Date(cell.text).getDay()]}\n${
-              cell.text.split("-")[2]
-            }`;
-            if (daysCount >= 13) {
-              cell.marginLeft = cell.marginRight = (16 - Math.max(13, Math.min(16, daysCount))) * 3 / 3;
-            }
-          }
-        });
-        doc.content[1].table.body[0] = headerRow;
+              doc.content[1].table.widths[
+                doc.content[1].table.body[0].length - 1
+              ] = 15;
+              doc.content[1].table.widths[
+                doc.content[1].table.body[0].length - 2
+              ] = 100;
+              doc.content[1].table.body.forEach((b) => {
+                b.reverse();
+                b.forEach((cell) => {
+                  cell.alignment = "center";
+                  cell.marginLeft = cell.marginRight = -3;
+                });
+              });
+              // Group table headers (dates) by month and add a header row for each month with colspan
+              const tableBody = doc.content[1].table.body;
+              const headerRow = tableBody[0];
+              const monthMap = {};
+              const monthOrder = [];
+              headerRow.forEach((cell, idx) => {
+                if (
+                  typeof cell.text === "string" &&
+                  /^\d{4}-\d{2}-\d{2}$/.test(cell.text)
+                ) {
+                  const [year, month] = cell.text.split("-").slice(0, 2);
+                  const key = `${arabicMonths[Number(month) - 1]} ${year}`;
+                  if (!monthMap[key]) {
+                    monthMap[key] = { start: idx, count: 1 };
+                    monthOrder.push(key);
+                  } else {
+                    monthMap[key].count++;
+                  }
+                  cell.text = `${arabicDays[new Date(cell.text).getDay()]}\n${
+                    cell.text.split("-")[2]
+                  }`;
+                  if (daysCount >= 13) {
+                    cell.marginLeft = cell.marginRight =
+                      ((16 - Math.max(13, Math.min(16, daysCount))) * 3) / 3;
+                  }
+                }
+              });
+              doc.content[1].table.body[0] = headerRow;
 
-        // Build the month header row
-        const monthHeaderRow = [];
-        let colIdx = 0;
-        monthOrder.forEach((key) => {
-          const { start, count } = monthMap[key];
-          // Fill empty cells before this month
-          while (colIdx < start) {
-            monthHeaderRow.push({});
-            colIdx++;
-          }
-          // Add the month header cell
-          monthHeaderRow.push({
-            text: key,
-            style: "tableHeader",
-            colSpan: count,
-            alignment: "center",
-          });
-          colIdx++;
-          // Fill the rest of the colspan with empty cells
-          for (let i = 1; i < count; i++) {
-            monthHeaderRow.push({});
-            colIdx++;
-          }
-        });
-        // Fill any remaining columns
-        while (monthHeaderRow.length < headerRow.length) {
-          monthHeaderRow.push({});
-        }
-        // Insert the month header row above the date header
-        tableBody.unshift(monthHeaderRow);
+              // Build the month header row
+              const monthHeaderRow = [];
+              let colIdx = 0;
+              monthOrder.forEach((key) => {
+                const { start, count } = monthMap[key];
+                // Fill empty cells before this month
+                while (colIdx < start) {
+                  monthHeaderRow.push({});
+                  colIdx++;
+                }
+                // Add the month header cell
+                monthHeaderRow.push({
+                  text: key,
+                  style: "tableHeader",
+                  colSpan: count,
+                  alignment: "center",
+                });
+                colIdx++;
+                // Fill the rest of the colspan with empty cells
+                for (let i = 1; i < count; i++) {
+                  monthHeaderRow.push({});
+                  colIdx++;
+                }
+              });
+              // Fill any remaining columns
+              while (monthHeaderRow.length < headerRow.length) {
+                monthHeaderRow.push({});
+              }
+              // Insert the month header row above the date header
+              tableBody.unshift(monthHeaderRow);
 
-        // Set rowSpan for the first two columns and the last two columns
-        tableBody[0].forEach((cell, idx) => {
-          if (
-            [0,1,daysCount+2,daysCount+3].includes(idx) 
-          ) {
-            cell.rowSpan = -2;
-          }
-        });
+              // Set rowSpan for the first two columns and the last two columns
+              tableBody[0].forEach((cell, idx) => {
+                if ([0, 1, daysCount + 2, daysCount + 3].includes(idx)) {
+                  cell.rowSpan = -2;
+                }
+              });
 
-        // set layout
-        doc.content[1].layout = {
-          hLineWidth: function (i, node) {
-            return i === 0 || i === node.table.body.length ? 2 : 1;
+              // set layout
+              doc.content[1].layout = {
+                hLineWidth: function (i, node) {
+                  return i === 0 || i === node.table.body.length ? 2 : 1;
+                },
+                vLineWidth: function (i, node) {
+                  return i === 0 || i === node.table.widths.length ? 2 : 1;
+                },
+                hLineColor: function (i, node) {
+                  return i === 0 || i === node.table.body.length
+                    ? "black"
+                    : "gray";
+                },
+                vLineColor: function (i, node) {
+                  return i === 0 || i === node.table.widths.length
+                    ? "black"
+                    : "gray";
+                },
+              };
+            },
           },
-          vLineWidth: function (i, node) {
-            return i === 0 || i === node.table.widths.length ? 2 : 1;
-          },
-          hLineColor: function (i, node) {
-            return i === 0 || i === node.table.body.length ? "black" : "gray";
-          },
-          vLineColor: function (i, node) {
-            return i === 0 || i === node.table.widths.length ? "black" : "gray";
-          },
-        };
-      },
-    },
-  ];
+        ];
   setStatisticsTable(query, buttons);
 }
 
