@@ -1333,6 +1333,34 @@ function setOptionValueByText(selector, text) {
   return false;
 }
 
+function initRequirementFields(student_idORdetail) {
+  let detail = null;
+
+  if (typeof student_idORdetail === "object") {
+    detail = student_idORdetail;
+  } else {
+    const lsR = project_db.exec(`
+            SELECT dr.detail
+            FROM day_requirements dr
+            INNER JOIN education_day ed ON dr.day_id = ed.id
+            WHERE dr.student_id = ${student_idORdetail}
+            ORDER BY ed.date DESC
+            LIMIT 1;`);
+    if (lsR.length) detail = JSON.parse(lsR[0].values[0][0]).at(-1);
+  }
+
+  if (detail) {
+    requireBookInput.value = detail["الكتاب"];
+    requireBookInput.dispatchEvent(new Event("change"));
+    requirTypeInput.value = detail["النوع"];
+    setOptionValueByText(firstSurahSelect, detail["التفاصيل"].split(" ")[0]);
+    firstAyahSelect.value = parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
+    secondAyahSelect.dispatchEvent(new Event("change"));
+  } else {
+    requireBookInput.dispatchEvent(new Event("change"));
+  }
+}
+
 async function loadDayStudentsList() {
   dayNoteContainer.style.display = "none";
   if (!project_db) {
@@ -1433,28 +1461,8 @@ async function loadDayStudentsList() {
           evalMoyenne.value =
             row[result.columns.indexOf("evalMoyenne")] || setEvalMoyenneInput();
 
-          const lsR = project_db.exec(`
-            SELECT dr.detail
-            FROM day_requirements dr
-            INNER JOIN education_day ed ON dr.day_id = ed.id
-            WHERE dr.student_id = ${student_id}
-            ORDER BY ed.date DESC
-            LIMIT 1;`);
-          if (lsR.length) {
-            const detail = JSON.parse(lsR[0].values[0][0]).at(-1);
-            requireBookInput.value = detail["الكتاب"];
-            requireBookInput.dispatchEvent(new Event("change"));
-            requirTypeInput.value = detail["النوع"];
-            setOptionValueByText(
-              firstSurahSelect,
-              detail["التفاصيل"].split(" ")[0]
-            );
-            firstAyahSelect.value =
-              parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
-            secondAyahSelect.dispatchEvent(new Event("change"));
-          } else {
-            requireBookInput.dispatchEvent(new Event("change"));
-          }
+          initRequirementFields(student_id);
+
           requirEvaluationInput.value = "10.00";
           saveStopErrorsInput.value = "0";
           saveStateErrorsInput.value = "0";
@@ -1954,13 +1962,11 @@ addQuranSelectionBtn.onclick = function () {
   }
 
   requirMoyenneInput.value = calcRequirementsMoyenne();
-  requireBookInput.value = "";
-  requirQuantityInput.value = "";
-  requirEvaluationInput.value = "";
-  requireBookInput.dispatchEvent(new Event("change"));
-  requirTypeInput.dispatchEvent(new Event("change"));
-  requirQuantityInput.dispatchEvent(new Event("change"));
-  requirEvaluationInput.dispatchEvent(new Event("change"));
+  initRequirementFields({
+    الكتاب: requireBookInput.value,
+    النوع: requirTypeInput.value,
+    التفاصيل: requirQuantityDetailInput.value,
+  });
 };
 
 async function showTab(tabId) {
