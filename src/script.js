@@ -55,6 +55,8 @@ const requireBookInput = document.getElementById("requirBook");
 const requirObligation = document.getElementById("requirObligation");
 const saveStateErrorsInput = document.getElementById("saveStateErrors");
 const saveStopErrorsInput = document.getElementById("saveStopErrors");
+const requirTeacherInput = document.getElementById("requirTeacher");
+let teachersPoints = {};
 
 const studentNameInput = document.getElementById("studentName");
 const clothingInput = document.getElementById("clothing");
@@ -542,7 +544,10 @@ workingClassroomSelect.onchange = async function () {
   workingClassroomId = this.value;
   localStorage.setItem("workingClassroomId", workingClassroomId);
   setIsCustomDate();
+  requirTeacherInput.options.length = 0;
+  requirTeacherInput.add(new Option("المعلم", "0", (selected = true)));
 };
+
 newClassroomInfosForm.onsubmit = (e) => {
   e.preventDefault();
   if (!project_db) {
@@ -1234,6 +1239,22 @@ function update_student_day_notes(studentId) {
       [studentId, workingDay]
     );
   }
+
+  Object.keys(teachersPoints).forEach((key) => {
+    project_db.run(
+      `UPDATE day_evaluations SET added_points = added_points + ? ,
+                                  moyenne = moyenne + ?
+                              WHERE student_id = ?  
+                              AND day_id = (
+                                            SELECT id 
+                                            FROM education_day
+                                            WHERE date = ?
+                                            );`,
+      [teachersPoints[key], teachersPoints[key], key, workingDay]
+    );
+  });
+  teachersPoints = {};
+
   saveToIndexedDB(project_db.export());
   loadDayStudentsList();
 }
@@ -1372,20 +1393,34 @@ async function loadDayStudentsList() {
     const data = [];
     if (results.length) {
       const result = results[0];
-
       result.values.forEach((row) => {
+        const student_id = row[result.columns.indexOf("studentId")];
+        const attendance = row[result.columns.indexOf("attendance")];
         const retardValue = row[result.columns.indexOf("retard")];
+        const full_name =
+          row[result.columns.indexOf("studentLName")] +
+          " " +
+          row[result.columns.indexOf("studentFName")];
+
+        // fill teacher options
+        if (
+          attendance == "1" &&
+          !Array.from(requirTeacherInput.options)
+            .map((option) => option.value)
+            .includes(student_id)
+        ) {
+          requirTeacherInput.add(new Option(full_name, student_id));
+        }
+
+        // edit button
         const editBtn = document.createElement("i");
         editBtn.className = "fa-solid fa-pen-to-square";
         editBtn.style.color = "yellow";
         editBtn.onclick = function () {
           newStudentDayModal.show();
-          studentNameInput.value =
-            row[result.columns.indexOf("studentFName")] +
-            " " +
-            row[result.columns.indexOf("studentLName")];
+          studentNameInput.value = full_name;
 
-          setAttendanceValue(row[result.columns.indexOf("attendance")]);
+          setAttendanceValue(attendance);
 
           retardInput.value =
             retardValue !== null ? retardValue : calcRetardTime();
@@ -1393,7 +1428,8 @@ async function loadDayStudentsList() {
           haircutInput.value = row[result.columns.indexOf("haircut")];
           behaviorInput.value = row[result.columns.indexOf("behavior")];
           prayerInput.value = row[result.columns.indexOf("prayer")];
-          addedPointsInput.value = row[result.columns.indexOf("added_points")] || "0.00";
+          addedPointsInput.value =
+            row[result.columns.indexOf("added_points")] || "0.00";
           evalMoyenne.value =
             row[result.columns.indexOf("evalMoyenne")] || setEvalMoyenneInput();
 
@@ -1401,7 +1437,7 @@ async function loadDayStudentsList() {
             SELECT dr.detail
             FROM day_requirements dr
             INNER JOIN education_day ed ON dr.day_id = ed.id
-            WHERE dr.student_id = ${row[result.columns.indexOf("studentId")]}
+            WHERE dr.student_id = ${student_id}
             ORDER BY ed.date DESC
             LIMIT 1;`);
           if (lsR.length) {
@@ -1437,6 +1473,7 @@ async function loadDayStudentsList() {
                 <td>${item["التقدير"]}</td>
                 <td>${item["الأخطاء"] || ""}</td>
                 <td>${item["المعدل"]}</td>
+                <td>${item["المعرض"]}</td>
                 <td>${item["الحالة"] || "إضافي"}</td>
                 <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
               requirementsTable.querySelector("tbody").appendChild(row);
@@ -1448,11 +1485,11 @@ async function loadDayStudentsList() {
               window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
               return;
             }
-            update_student_day_notes(row[result.columns.indexOf("studentId")]);
+            update_student_day_notes(student_id);
             newStudentDayModal.hide();
           };
         };
-        const attendance_value = row[result.columns.indexOf("attendance")];
+        const attendance_value = attendance;
 
         const clothingOption = document.querySelector(
           `#clothing option[value='${row[result.columns.indexOf("clothing")]}']`
@@ -1468,12 +1505,9 @@ async function loadDayStudentsList() {
         );
         const thisDay = new Date().toISOString().slice(0, 10);
         data.push({
-          id: row[result.columns.indexOf("studentId")],
+          id: student_id,
           actions: editBtn,
-          student:
-            row[result.columns.indexOf("studentFName")] +
-            " " +
-            row[result.columns.indexOf("studentLName")],
+          student: full_name,
           attendance:
             attendance_value == 1
               ? (retardValue < 0
@@ -1491,20 +1525,14 @@ async function loadDayStudentsList() {
                   : "")
               : attendance_value == 0
               ? "غياب مبرر"
-              : `<button onclick="markPresence(${
-                  row[result.columns.indexOf("studentId")]
-                })" class="btn fa-solid fa-square-check px-1"></button>` +
+              : `<button onclick="markPresence(${student_id})" class="btn fa-solid fa-square-check px-1"></button>` +
                 (row[result.columns.indexOf("parentPhone")]
-                  ? `<input type="checkbox" id="sms_btn${
-                      row[result.columns.indexOf("studentId")]
-                    }" onclick="window.location.href='sms:${
+                  ? `<input type="checkbox" id="sms_btn${student_id}" onclick="window.location.href='sms:${
                       row[result.columns.indexOf("parentPhone")]
                     }?body=ليكن في علمكم أن إبنكم ${
                       row[result.columns.indexOf("studentFName")]
-                    } غائب اليوم'" class="btn-check" autocomplete="off">
-              <label class="btn fa-solid fa-comment-sms px-2" for="sms_btn${
-                row[result.columns.indexOf("studentId")]
-              }"></label>`
+                    } غائب عن حصة تحفيظ القرآن اليوم'" class="btn-check" autocomplete="off">
+              <label class="btn fa-solid fa-comment-sms px-2" for="sms_btn${student_id}"></label>`
                   : ""),
           evaluation: attendance_value
             ? calcGlobalEvaluation(
@@ -1892,20 +1920,39 @@ addQuranSelectionBtn.onclick = function () {
     <td class="d-none">${requirQuantityInput.value}</td>
     <td style="white-space: normal;">${requirQuantityDetailInput.value}</td>
     <td>${requirEvaluationInput.value}</td>
-    <td>${saveStateErrorsInput.value} في الحفظ + ${
+    <td>
+      ${saveStateErrorsInput.value} في الحفظ + ${
     saveStopErrorsInput.value
-  } في الفتح</td>
-    <td>${calcRequirementMoyenne(
-      requirQuantityInput.value,
-      requirEvaluationInput.value,
-      requirTypeInput.value,
-      requirObligation.checked
-    )}</td>
+  } في الفتح
+    </td>
+    <td>
+      ${calcRequirementMoyenne(
+        requirQuantityInput.value,
+        requirEvaluationInput.value,
+        requirTypeInput.value,
+        requirObligation.checked
+      )}
+    </td>
+    <td>
+      ${requirTeacherInput.options[requirTeacherInput.selectedIndex].text}
+    </td>
     <td>
       ${requirObligation.checked ? "واجب" : "إظافي"}
     </td>
-    <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
+    <td>
+      <button class="btn btn-danger btn-sm" 
+      onclick="teachersPoints[requirTeacherInput.value] = teachersPoints[requirTeacherInput.value] -
+                Math.floor(parseFloat(this.parentNode.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.textContent));
+                removeRequirItem(this);"
+              >X</button>
+    </td>`;
   requirementsTable.querySelector("tbody").appendChild(row);
+  if (requirTeacherInput.value !== "0") {
+    teachersPoints[requirTeacherInput.value] =
+      (teachersPoints[requirTeacherInput.value] || 0) +
+      Math.floor(parseFloat(requirQuantityInput.value));
+  }
+
   requirMoyenneInput.value = calcRequirementsMoyenne();
   requireBookInput.value = "";
   requirQuantityInput.value = "";
