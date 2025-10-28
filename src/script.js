@@ -1453,7 +1453,8 @@ async function loadDayStudentsList() {
           prayerInput.value = row[result.columns.indexOf("prayer")] || "0";
           addedPointsInput.value =
             row[result.columns.indexOf("added_points")] || "0";
-          evalMoyenne.value = setEvalMoyenneInput();
+addedPointsInput.dispatchEvent(new Event("change"))
+          
 
           initRequirementFields(student_id);
 
