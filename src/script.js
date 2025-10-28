@@ -1274,7 +1274,7 @@ async function markPresence(studentId) {
     "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,added_points,moyenne) VALUES (?,?, ?,?, ?,?,?,?,?);",
     [
       studentId,
-      working_day_id,
+      workingDayID,
       1,
       retard_time,
       null,
@@ -1452,9 +1452,8 @@ async function loadDayStudentsList() {
           behaviorInput.value = row[result.columns.indexOf("behavior")] || "0";
           prayerInput.value = row[result.columns.indexOf("prayer")] || "0";
           addedPointsInput.value =
-            row[result.columns.indexOf("added_points")] || "0.00";
-          evalMoyenne.value =
-            row[result.columns.indexOf("evalMoyenne")] || setEvalMoyenneInput();
+            row[result.columns.indexOf("added_points")] || "0";
+          evalMoyenne.value = setEvalMoyenneInput();
 
           initRequirementFields(student_id);
 
