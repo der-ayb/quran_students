@@ -20,7 +20,7 @@ if (workbox) {
 
       { url: "./src/style.css", revision: "2" },
       { url: "./src/fonts.css", revision: "1" },
-      { url: "./src/script.js", revision: "8" },
+      { url: "./src/script.js", revision: "9" },
       { url: "./src/auth.js", revision: "3" },
       { url: "./src/pdfmake.js", revision: "1" },
       { url: "./src/vfs_fonts.js", revision: "1" },
