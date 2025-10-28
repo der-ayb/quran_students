@@ -220,9 +220,11 @@
         <option value="0">-- اختر نوع الإحصاء --</option>
         <option value="attendance">قائمة الغياب</option>
         <option value="results">النتائج</option>
+        <option value="bulletins">كشوف النقاط</option>
       </select>
 
       <table id="statisticsTable" class="display" style="width:100%"></table>
+      <embed style="display:none;" id="statisticsPdfViewer" src="" type="application/pdf" width="95%" height="600px" />
     </div>
 
     <div class="tab-pane fade" id="pills-preferences" role="tabpanel" aria-labelledby="pills-preferences-tab">
@@ -515,9 +517,9 @@
                             <option value="5">ممتاز</option>
                             <option value="4">جيد</option>
                             <option value="3">مقبول</option>
+                            <option value="0">بدون تقييم</option>
                             <option value="-5">سيئ</option>
                             <option value="-10">سيئ جدا</option>
-                            <option value="0">بدون تقييم</option>
                           </select>
                         </div>
                       </div>
@@ -528,8 +530,8 @@
                           <select class="form-control text-center" id="clothing">
                             <option value="3">جيد</option>
                             <option value="2">مقبول</option>
-                            <option value="-1">غير مقبول</option>
                             <option value="0">بدون تقييم</option>
+                            <option value="-1">غير مقبول</option>
                           </select>
                         </div>
                       </div>
@@ -539,8 +541,8 @@
                           <select class="form-control text-center" id="haircut">
                             <option value="5">جيد</option>
                             <option value="2">مقبول</option>
-                            <option value="-5">غير مقبول</option>
                             <option value="0">بدون تقييم</option>
+                            <option value="-5">غير مقبول</option>
                           </select>
                         </div>
                       </div>
@@ -551,8 +553,8 @@
                           <select class="form-control text-center" id="prayer">
                             <option value="10">ممتاز</option>
                             <option value="5">جيد</option>
-                            <option value="-1">غائب</option>
                             <option value="0">بدون تقييم</option>
+                            <option value="-1">غائب</option>
                           </select>
                         </div>
                       </div>

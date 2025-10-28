@@ -35,6 +35,7 @@ let studentsTableDetailIsShow = false;
 let studentsDayTableDetailIsShow = false;
 let classroomsTableDetailIsShow = false;
 let workingDay = new Date().toISOString().slice(0, 10);
+let workingDayID = null;
 let loadingModalShowNumber = [];
 let lastRequirements = {};
 
@@ -546,6 +547,8 @@ workingClassroomSelect.onchange = async function () {
   setIsCustomDate();
   requirTeacherInput.options.length = 0;
   requirTeacherInput.add(new Option("المعلم", "0", (selected = true)));
+  statisticType.value = "0";
+  statisticType.dispatchEvent(new Event("change"));
 };
 
 newClassroomInfosForm.onsubmit = (e) => {
@@ -1022,6 +1025,10 @@ requireBookInput.onchange = function () {
     requirQuantityInput.readOnly = false;
   }
   requirQuantityDetailInput.value = "";
+  requirEvaluationInput.value = "10.00";
+  saveStopErrorsInput.value = "0";
+  saveStateErrorsInput.value = "0";
+  requirObligation.checked = true;
 };
 
 function setAttendanceValue(value) {
@@ -1173,7 +1180,7 @@ $([requirTypeInput, saveStopErrorsInput, saveStateErrorsInput]).on(
   setRequirEvalInput
 );
 
-function update_student_day_notes(studentId) {
+function update_student_day_notes(studentId, working_day_id) {
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
@@ -1196,29 +1203,25 @@ function update_student_day_notes(studentId) {
 
     if (requirList.length) {
       project_db.run(
-        "INSERT OR REPLACE INTO day_requirements (student_id, day_id, detail, moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?, ?);",
+        "INSERT OR REPLACE INTO day_requirements (student_id, day_id, detail, moyenne) VALUES (?, ?, ?, ?);",
         [
           studentId,
-          workingDay,
+          working_day_id,
           JSON.stringify(requirList),
           requirMoyenneInput.value || "0",
         ]
       );
     } else {
       project_db.run(
-        `DELETE FROM day_requirements WHERE student_id = ? AND day_id = (
-                          SELECT id 
-                          FROM education_day
-                          WHERE date = ?
-                      );`,
-        [studentId, workingDay]
+        `DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;`,
+        [studentId, working_day_id]
       );
     }
     project_db.run(
-      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,prayer,added_points,moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?, ?,?,?,?,?,?,?);",
+      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,prayer,added_points,moyenne) VALUES (?, ?, ?, ?,?,?,?,?,?,?);",
       [
         studentId,
-        workingDay,
+        working_day_id,
         getAttendanceValue(),
         retardInput.value,
         clothingInput.value,
@@ -1231,12 +1234,8 @@ function update_student_day_notes(studentId) {
     );
   } else {
     project_db.run(
-      `DELETE FROM day_evaluations WHERE student_id = ? AND day_id = (
-                          SELECT id 
-                          FROM education_day
-                          WHERE date = ?
-                      );`,
-      [studentId, workingDay]
+      `DELETE FROM day_evaluations WHERE student_id = ? AND day_id = ?;`,
+      [studentId, working_day_id]
     );
   }
 
@@ -1245,12 +1244,8 @@ function update_student_day_notes(studentId) {
       `UPDATE day_evaluations SET added_points = added_points + ? ,
                                   moyenne = moyenne + ?
                               WHERE student_id = ?  
-                              AND day_id = (
-                                            SELECT id 
-                                            FROM education_day
-                                            WHERE date = ?
-                                            );`,
-      [teachersPoints[key], teachersPoints[key], key, workingDay]
+                              AND day_id = ?;`,
+      [teachersPoints[key], teachersPoints[key], key, working_day_id]
     );
   });
   teachersPoints = {};
@@ -1276,10 +1271,10 @@ function checkAuthorizedOut(time, requirMoyenne, minutesToAdd, after = 60) {
 async function markPresence(studentId) {
   const retard_time = calcRetardTime();
   project_db.run(
-    "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,added_points,moyenne) VALUES (?, (SELECT id FROM education_day WHERE date = ?), ?,?, ?,?,?,?,?);",
+    "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,added_points,moyenne) VALUES (?,?, ?,?, ?,?,?,?,?);",
     [
       studentId,
-      workingDay,
+      working_day_id,
       1,
       retard_time,
       null,
@@ -1381,6 +1376,7 @@ async function loadDayStudentsList() {
     return;
   }
 
+  workingDayID = dayResult[0].values[0][dayResult[0].columns.indexOf("id")];
   start_time =
     dayResult[0].values[0][dayResult[0].columns.indexOf("time")] || null;
 
@@ -1394,7 +1390,6 @@ async function loadDayStudentsList() {
 
   try {
     const results = project_db.exec(`
-      WITH day_id AS (SELECT id FROM education_day WHERE date = '${workingDay}')
       SELECT 
           s.id AS studentId,  
           s.fname AS studentFName,
@@ -1411,8 +1406,8 @@ async function loadDayStudentsList() {
           de.added_points AS "added_points",
           de.moyenne AS "evalMoyenne"
       FROM students s
-      LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id IN day_id
-      LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id IN day_id
+      LEFT JOIN day_requirements dr ON s.id = dr.student_id AND dr.day_id = '${workingDayID}'
+      LEFT JOIN day_evaluations de ON s.id = de.student_id AND de.day_id = '${workingDayID}'
       WHERE s.class_room_id = ${workingClassroomId}
       GROUP BY s.id, studentFName , studentLName
       ORDER BY s.id
@@ -1452,10 +1447,10 @@ async function loadDayStudentsList() {
 
           retardInput.value =
             retardValue !== null ? retardValue : calcRetardTime();
-          clothingInput.value = row[result.columns.indexOf("clothing")];
-          haircutInput.value = row[result.columns.indexOf("haircut")];
-          behaviorInput.value = row[result.columns.indexOf("behavior")];
-          prayerInput.value = row[result.columns.indexOf("prayer")];
+          clothingInput.value = row[result.columns.indexOf("clothing")] || "0";
+          haircutInput.value = row[result.columns.indexOf("haircut")] || "0";
+          behaviorInput.value = row[result.columns.indexOf("behavior")] || "0";
+          prayerInput.value = row[result.columns.indexOf("prayer")] || "0";
           addedPointsInput.value =
             row[result.columns.indexOf("added_points")] || "0.00";
           evalMoyenne.value =
@@ -1463,10 +1458,6 @@ async function loadDayStudentsList() {
 
           initRequirementFields(student_id);
 
-          requirEvaluationInput.value = "10.00";
-          saveStopErrorsInput.value = "0";
-          saveStateErrorsInput.value = "0";
-          requirObligation.checked = true;
           requirMoyenneInput.value =
             row[result.columns.indexOf("requirsMoyenne")] || "0.00";
           requirementsTable.querySelector("tbody").innerHTML = "";
@@ -1481,7 +1472,7 @@ async function loadDayStudentsList() {
                 <td>${item["التقدير"]}</td>
                 <td>${item["الأخطاء"] || ""}</td>
                 <td>${item["المعدل"]}</td>
-                <td>${item["المعرض"]}</td>
+                <td>${item["المعرض"] || ""}</td>
                 <td>${item["الحالة"] || "إضافي"}</td>
                 <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
               requirementsTable.querySelector("tbody").appendChild(row);
@@ -1493,7 +1484,7 @@ async function loadDayStudentsList() {
               window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
               return;
             }
-            update_student_day_notes(student_id);
+            update_student_day_notes(student_id, workingDayID);
             newStudentDayModal.hide();
           };
         };
@@ -1668,8 +1659,8 @@ async function loadDayStudentsList() {
                     }
                     try {
                       project_db.run(
-                        "UPDATE education_day SET notes = ? WHERE class_room_id = ? AND date = ?;",
-                        [note, workingClassroomId, workingDay]
+                        "UPDATE education_day SET notes = ? WHERE id = ?;",
+                        [note, workingDayID]
                       );
                       saveToIndexedDB(project_db.export());
                       dayNoteContainer.style.display = note ? "block" : "none";
@@ -1699,25 +1690,16 @@ async function loadDayStudentsList() {
                 action: async function () {
                   if (confirm("هل تريد إلغاء هذا اليوم ؟")) {
                     project_db.run(
-                      `DELETE FROM day_evaluations WHERE day_id = (
-                          SELECT id 
-                          FROM education_day
-                          WHERE date = ?
-                      );`,
-                      [workingDay]
+                      `DELETE FROM day_evaluations WHERE day_id = ?;`,
+                      [workingDayID]
                     );
                     project_db.run(
-                      `DELETE FROM day_requirements WHERE day_id = (
-                          SELECT id 
-                          FROM education_day
-                          WHERE date = ?
-                      );`,
-                      [workingDay]
+                      `DELETE FROM day_requirements WHERE day_id = ?;`,
+                      [workingDayID]
                     );
-                    project_db.run(
-                      "DELETE FROM education_day WHERE class_room_id = ? AND date = ?;",
-                      [workingClassroomId, workingDay]
-                    );
+                    project_db.run("DELETE FROM education_day WHERE id = ?;", [
+                      workingDayID,
+                    ]);
                     saveToIndexedDB(project_db.export());
                     setIsCustomDate();
                     loadDayStudentsList();
@@ -2031,6 +2013,9 @@ statisticType.onchange = function () {
     case "results":
       showStudentsResultsStatistics();
       break;
+    case "bulletins":
+      showStudentsBulletins();
+      break;
     default:
       if ($.fn.DataTable.isDataTable("#statisticsTable")) {
         $("#statisticsTable").DataTable().destroy();
@@ -2038,6 +2023,274 @@ statisticType.onchange = function () {
       }
   }
 };
+
+async function showStudentsBulletins() {
+  function generateQuery(dates, studentId) {
+    const dateList = dates.map((date) => `'${date}'`).join(", ");
+
+    return `
+      SELECT 
+          ed.date as day,
+          dr.detail,
+          de.prayer,
+          de.haircut,
+          de.behavior,
+          de.clothing,
+          de.retard,
+          CASE 
+              WHEN de.attendance = 1 THEN 'حاضر'
+              WHEN de.attendance = 0 THEN 'غياب مبرر'
+              ELSE 'غياب'
+          END as attendance,
+          dr.moyenne as requirements_score,
+          de.moyenne as evaluation_score,
+          COALESCE(dr.moyenne, 0) + COALESCE(de.moyenne, 0) as total_score
+      FROM education_day ed
+      LEFT JOIN day_requirements dr ON ed.id = dr.day_id AND dr.student_id = ${studentId}
+      LEFT JOIN day_evaluations de ON ed.id = de.day_id AND de.student_id = ${studentId}
+      LEFT JOIN students s ON s.id = ${studentId}
+      WHERE ed.date IN (${dateList})
+      AND ed.class_room_id = ${workingClassroomId}
+      ORDER BY ed.date DESC;
+    `;
+  }
+
+  // Usage example:
+  const dates = [...getDatesInRange()].sort(
+    (a, b) => new Date(a) - new Date(b)
+  );
+  if (!dates.length) {
+    window.showToast("warning", "لا توجد أيام في هذا النطاق.");
+    statisticType.value = "0";
+    return;
+  }
+  const studentId = 43;
+  console.log(generateQuery(dates, studentId));
+  // Sample data - replace with your actual data
+  const studentResults = [
+    {
+      اليوم: "الإثنين",
+      الصلاة: "ممتاز",
+      السلوك: "جيد",
+      الحلاقة: "مقبول",
+      الهندام: "ممتاز",
+      الحفظ: "جيد جداً",
+      العلامة: "95",
+    },
+    {
+      اليوم: "الثلاثاء",
+      الصلاة: "جيد جداً",
+      السلوك: "ممتاز",
+      الحلاقة: "ممتاز",
+      الهندام: "جيد",
+      الحفظ: "ممتاز",
+      العلامة: "98",
+    },
+    {
+      اليوم: "الأربعاء",
+      الصلاة: "مقبول",
+      السلوك: "جيد",
+      الحلاقة: "جيد",
+      الهندام: "مقبول",
+      الحفظ: "جيد",
+      العلامة: "85",
+    },
+    {
+      اليوم: "الخميس",
+      الصلاة: "ممتاز",
+      السلوك: "ممتاز",
+      الحلاقة: "جيد جداً",
+      الهندام: "ممتاز",
+      الحفظ: "جيد جداً",
+      العلامة: "96",
+    },
+    {
+      اليوم: "الجمعة",
+      الصلاة: "ممتاز",
+      السلوك: "جيد",
+      الحوكة: "ممتاز",
+      الهندام: "جيد",
+      الحفظ: "ممتاز",
+      العلامة: "97",
+    },
+    {
+      اليوم: "السبت",
+      الصلاة: "جيد",
+      السلوك: "مقبول",
+      الحلاقة: "جيد",
+      الهندام: "مقبول",
+      الحفظ: "جيد",
+      العلامة: "82",
+    },
+    {
+      اليوم: "الأحد",
+      الصلاة: "ممتاز",
+      السلوك: "ممتاز",
+      الحلاقة: "ممتاز",
+      الهندام: "ممتاز",
+      الحفظ: "ممتاز",
+      العلامة: "99",
+    },
+    {
+      اليوم: "الإثنين",
+      الصلاة: "ممتاز",
+      السلوك: "جيد",
+      الحلاقة: "مقبول",
+      الهندام: "ممتاز",
+      الحفظ: "جيد جداً",
+      العلامة: "95",
+    },
+    {
+      اليوم: "الثلاثاء",
+      الصلاة: "جيد جداً",
+      السلوك: "ممتاز",
+      الحلاقة: "ممتاز",
+      الهندام: "جيد",
+      الحفظ: "ممتاز",
+      العلامة: "98",
+    },
+    {
+      اليوم: "الأربعاء",
+      الصلاة: "مقبول",
+      السلوك: "جيد",
+      الحلاقة: "جيد",
+      الهندام: "مقبول",
+      الحفظ: "جيد",
+      العلامة: "85",
+    },
+    {
+      اليوم: "الخميس",
+      الصلاة: "ممتاز",
+      السلوك: "ممتاز",
+      الحلاقة: "جيد جداً",
+      الهندام: "ممتاز",
+      الحفظ: "جيد جداً",
+      العلامة: "96",
+    },
+    {
+      اليوم: "الجمعة",
+      الصلاة: "ممتاز",
+      السلوك: "جيد",
+      الحوكة: "ممتاز",
+      الهندام: "جيد",
+      الحفظ: "ممتاز",
+      العلامة: "97",
+    },
+    {
+      اليوم: "السبت",
+      الصلاة: "جيد",
+      السلوك: "مقبول",
+      الحلاقة: "جيد",
+      الهندام: "مقبول",
+      الحفظ: "جيد",
+      العلامة: "82",
+    },
+    {
+      اليوم: "الأحد",
+      الصلاة: "ممتاز",
+      السلوك: "ممتاز",
+      الحلاقة: "ممتاز",
+      الهندام: "ممتاز",
+      الحفظ: "ممتاز",
+      العلامة: "99",
+    },
+    {
+      اليوم: "السبت",
+      الصلاة: "جيد",
+      السلوك: "مقبول",
+      الحلاقة: "جيد",
+      الهندام: "مقبول",
+      الحفظ: "جيد",
+      العلامة: "82",
+    },
+    {
+      اليوم: "الأحد",
+      الصلاة: "ممتاز",
+      السلوك: "ممتاز",
+      الحلاقة: "ممتاز",
+      الهندام: "ممتاز",
+      الحفظ: "ممتاز",
+      العلامة: "99",
+    },
+    // Add more data as needed...
+  ];
+
+  // Column definitions
+  const columns = [
+    "اليوم",
+    "الصلاة",
+    "السلوك",
+    "الحلاقة",
+    "الهندام",
+    "الحفظ",
+    "العلامة",
+  ];
+
+  function generateStudentReport() {
+    const docDefinition = {
+      pageSize: "A5",
+      pageOrientation: "landscape",
+      content: [
+        {
+          text: "التلميذ  نتائج",
+          style: "header",
+          alignment: "center",
+          fontSize: 16,
+          bold: true,
+          margin: [0, 0, 0, 10],
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: ["*", "*", "*", "*", "*", "*", "*"],
+            body: [
+              // Header row
+              columns.map((col) => ({
+                text: col,
+                style: "tableHeader",
+                alignment: "center",
+              })),
+              // Data rows
+              ...studentResults.map((row) =>
+                columns.map((col) => ({
+                  text: row[col] || "",
+                  alignment: "center",
+                }))
+              ),
+            ],
+          },
+        },
+      ],
+      styles: {
+        tableHeader: {
+          bold: true,
+          fontSize: 11,
+          color: "black",
+        },
+      },
+      defaultStyle: {
+        fontSize: 10,
+      },
+    };
+
+    // Generate PDF
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+    pdfDocGenerator.open();
+    // pdfDocGenerator
+    //   .getBlob()
+    //   .then((blob) => {
+    //     const url = URL.createObjectURL(blob);
+    //     document.getElementById("statisticsPdfViewer").src = url;
+    //     document.getElementById("statisticsPdfViewer").style.display = "block";
+    //   })
+    //   .catch((err) => {
+    //     console.error("Error generating PDF Blob:", err);
+    //   });
+  }
+
+  // Event listener for the button
+  generateStudentReport();
+}
 
 async function showStudentsResultsStatistics() {
   const dates = [...getDatesInRange()].sort(
@@ -2535,10 +2788,10 @@ const checkSecondSurahAyahs = (secondSurahNumber) => {
       ll = parseInt(firstAyahSelect.value) || 1;
     }
 
-    const selectedOption =
+    const secondSurahSelectedOption =
       secondSurahSelect.options[secondSurahSelect.selectedIndex];
     let secondSurahAyahs = 0;
-    secondSurahAyahs = parseInt(selectedOption.dataset.ayahs);
+    secondSurahAyahs = parseInt(secondSurahSelectedOption.dataset.ayahs);
     secondAyahSelect.disabled = false;
     secondAyahSelect.innerHTML = "";
 
@@ -2676,11 +2929,21 @@ const getAyahDifference = (surahNum1, ayahNum1, surahNum2, ayahNum2) => {
         number: surah1.number,
         ayah: generateAyahRange(ayahNum1, surah1.numberOfAyahs),
       },
-      {
-        number: surah2.number,
-        ayah: generateAyahRange(1, ayahNum2),
-      },
     ];
+
+    if (surah2.number - surah1.number > 1) {
+      for (let i = surah1.number + 1; i <= surah2.number - 1; i++) {
+        result.push({
+          number: i,
+          ayah: generateAyahRange(),
+        });
+      }
+    }
+
+    result.push({
+      number: surah2.number,
+      ayah: generateAyahRange(1, ayahNum2),
+    });
   }
 
   // Include all surahs between them if they're not consecutive
@@ -2701,14 +2964,19 @@ const getAyahDifference = (surahNum1, ayahNum1, surahNum2, ayahNum2) => {
 };
 
 const generateAyahRange = (start, end) => {
+  if (!end && !start) return "";
   return `${start}-${end}`;
 };
 
 const generatelignCount = (ranges) => {
   const conditions = ranges
     .map((range) => {
-      const [start, end] = range.ayah.split("-").map(Number);
-      return `(sura = ${range.number} AND ayah BETWEEN ${start} AND ${end})`;
+      if (range.ayah) {
+        const [start, end] = range.ayah.split("-").map(Number);
+        return `(sura = ${range.number} AND ayah BETWEEN ${start} AND ${end})`;
+      } else {
+        return `(sura = ${range.number} AND ayah)`;
+      }
     })
     .join(" OR\n  ");
 

@@ -24,7 +24,6 @@ Thumbs.db
 *.so
 *.exe
 
-django/
 utils/
 android/
 node_modules/
