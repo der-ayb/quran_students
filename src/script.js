@@ -1146,7 +1146,14 @@ function calcGlobalEvaluation(requirsMoyenne, evalMoyenne) {
   return globalEvaluation.toFixed(2);
 }
 
-function setEvalMoyenneInput() {
+$([
+  retardInput,
+  behaviorInput,
+  prayerInput,
+  clothingInput,
+  haircutInput,
+  addedPointsInput,
+]).on("change input", () => {
   evalMoyenne.value = calcEvaluationMoyenne(
     retardInput.value,
     clothingInput.value,
@@ -1155,16 +1162,7 @@ function setEvalMoyenneInput() {
     prayerInput.value,
     addedPointsInput.value
   );
-}
-
-$([
-  retardInput,
-  behaviorInput,
-  prayerInput,
-  clothingInput,
-  haircutInput,
-  addedPointsInput,
-]).on("change input", setEvalMoyenneInput);
+});
 
 function setRequirEvalInput() {
   requirEvaluationInput.value = calcRequirementEvaluation(
@@ -1453,8 +1451,16 @@ async function loadDayStudentsList() {
           prayerInput.value = row[result.columns.indexOf("prayer")] || "0";
           addedPointsInput.value =
             row[result.columns.indexOf("added_points")] || "0";
-addedPointsInput.dispatchEvent(new Event("change"))
-          
+          evalMoyenne.value =
+            row[result.columns.indexOf("evalMoyenne")]?.toFixed(2) ||
+            calcEvaluationMoyenne(
+              retardInput.value,
+              clothingInput.value,
+              haircutInput.value,
+              behaviorInput.value,
+              prayerInput.value,
+              addedPointsInput.value
+            );
 
           initRequirementFields(student_id);
 
@@ -2014,7 +2020,7 @@ statisticType.onchange = function () {
       showStudentsResultsStatistics();
       break;
     case "bulletins":
-      showStudentsBulletins();
+      showStudentsBulletins2();
       break;
     default:
       if ($.fn.DataTable.isDataTable("#statisticsTable")) {
@@ -2023,6 +2029,317 @@ statisticType.onchange = function () {
       }
   }
 };
+
+async function showStudentsBulletins2() {
+  // Function to generate student report PDF from sql.js database
+  async function generateStudentPDFFromSQL(studentId, dates) {
+    try {
+      // Build the SQL query for one student
+      const dateList = dates.map((date) => `'${date}'`).join(", ");
+
+      const query = `
+            SELECT 
+                ed.date as day,
+                s.fname || ' ' || s.lname as student_name,
+                dr.detail,
+                de.prayer,
+                de.haircut,
+                de.behavior,
+                de.clothing,
+                de.retard,
+                de.attendance,
+                dr.moyenne as requirements_score,
+                de.moyenne as evaluation_score
+            FROM education_day ed
+            LEFT JOIN day_requirements dr ON ed.id = dr.day_id AND dr.student_id = ${studentId}
+            LEFT JOIN day_evaluations de ON ed.id = de.day_id AND de.student_id = ${studentId}
+            LEFT JOIN students s ON s.id = ${studentId}
+            WHERE ed.date IN (${dateList})
+            AND ed.class_room_id = ${workingClassroomId}
+            ORDER BY ed.date DESC
+        `;
+
+      // Execute query using sql.js
+      const results = project_db.exec(query);
+
+      if (results.length === 0) {
+        alert("لا توجد بيانات للطالب في التواريخ المحددة");
+        return;
+      }
+
+      // Convert sql.js results to JSON
+      const studentData = sqlResultsToJSON(results[0]);
+
+      // Generate PDF
+      createStudentPDF(studentData, dates);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("حدث خطأ في إنشاء التقرير");
+    }
+  }
+
+  generateStudentPDFFromSQL(
+    43,
+    [...getDatesInRange()].sort((a, b) => new Date(a) - new Date(b))
+  );
+
+  // Convert sql.js results to JSON format
+  function sqlResultsToJSON(result) {
+    const columns = result.columns;
+    const values = result.values;
+
+    return values.map((row) => {
+      const obj = {};
+      columns.forEach((col, index) => {
+        obj[col] = row[index];
+      });
+      return obj;
+    });
+  }
+
+  function reverseArabicWords(str) {
+    return str.split(" ").reverse().join(" ");
+  }
+  // Create PDF with the data
+  function createStudentPDF(studentData, dates) {
+    const A5_WIDTH = 419.53;
+    const A5_HEIGHT = 595.28;
+
+    // Arabic headers
+    const headers = [
+      { text: "التاريخ", style: "tableHeader", alignment: "center" },
+      { text: "المتطلبات", style: "tableHeader", alignment: "center" },
+      { text: "الصلاة", style: "tableHeader", alignment: "center" },
+      { text: "الحلاقة", style: "tableHeader", alignment: "center" },
+      { text: "السلوك", style: "tableHeader", alignment: "center" },
+      { text: "المظهر", style: "tableHeader", alignment: "center" },
+    ];
+
+    // Create table body
+    const body = studentData.map((record) => [
+      {
+        text: record.day || "-",
+        style: "tableCell",
+        alignment: "center",
+      },
+      {
+        text: formatDetail(record.detail) || "-",
+        style: "tableCell",
+        alignment: "right",
+      },
+      {
+        text: record.prayer !== null ? record.prayer.toString() : "-",
+        style: "tableCell",
+        alignment: "center",
+      },
+      {
+        text: record.haircut !== null ? record.haircut.toString() : "-",
+        style: "tableCell",
+        alignment: "center",
+      },
+      {
+        text: record.behavior !== null ? record.behavior.toString() : "-",
+        style: "tableCell",
+        alignment: "center",
+      },
+      {
+        text: record.clothing !== null ? record.clothing.toString() : "-",
+        style: "tableCell",
+        alignment: "center",
+      },
+    ]);
+
+    const docDefinition = {
+      pageSize: { width: A5_WIDTH, height: A5_HEIGHT },
+      pageMargins: [10, 15, 10, 15],
+      pageOrientation: "landscape", // Use landscape for better table fit
+      content: [
+        // Header section
+        {
+          stack: [
+            {
+              text: reverseArabicWords("تقرير متابعة الطالب"),
+              style: "header",
+              alignment: "center",
+            },
+            {
+              text: reverseArabicWords(
+                `الطالب: ${studentData[0]?.student_name || "غير معروف"}`
+              ),
+              style: "subheader",
+              alignment: "center",
+            },
+            {
+              text: reverseArabicWords(
+                `الفترة: من ${formatDate(
+                  dates[dates.length - 1]
+                )} إلى ${formatDate(dates[0])}`
+              ),
+              style: "subheader",
+              alignment: "center",
+            },
+            {
+              text: reverseArabicWords(
+                `تاريخ الطباعة: ${new Date().toLocaleDateString("ar-EG")}`
+              ),
+              style: "subheader",
+              alignment: "center",
+            },
+          ],
+          margin: [0, 0, 0, 15],
+        },
+
+        // Table
+        {
+          table: {
+            headerRows: 1,
+            widths: [40, 40, 40, 40, "*", 60], // Adjust widths for A5 landscape
+            body: [headers, ...body],
+          },
+          layout: {
+            hLineWidth: function (i, node) {
+              return 0.5;
+            },
+            vLineWidth: function (i, node) {
+              return 0.5;
+            },
+            hLineColor: function (i, node) {
+              return "#aaaaaa";
+            },
+            vLineColor: function (i, node) {
+              return "#aaaaaa";
+            },
+            fillColor: function (rowIndex, node, columnIndex) {
+              return rowIndex === 0 ? "#f8f9fa" : null;
+            },
+          },
+        },
+
+        // Summary section
+        ...createSummarySection(studentData),
+      ],
+      styles: {
+        header: {
+          fontSize: 16,
+          bold: true,
+          color: "#2c3e50",
+        },
+        subheader: {
+          fontSize: 11,
+          bold: true,
+          color: "#34495e",
+          margin: [0, 2, 0, 2],
+        },
+        tableHeader: {
+          fontSize: 9,
+          bold: true,
+          color: "#2c3e50",
+          fillColor: "#ecf0f1",
+        },
+        tableCell: {
+          fontSize: 10,
+          lineHeight: 1.2,
+        },
+        summary: {
+          fontSize: 10,
+          bold: true,
+          margin: [0, 10, 0, 5],
+          color: "#2c3e50",
+        },
+      },
+      defaultStyle: {
+        // font: "XB Zar",
+        alignment: "right",
+      },
+    };
+
+    docDefinition.content[1].table.body.forEach((b) => {
+      b.reverse();
+    });
+    // Generate PDF
+    pdfMake.createPdf(docDefinition).open();
+  }
+
+  // Helper functions
+  function formatDate(dateString) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ar-EG");
+  }
+
+  function formatDetail(detail) {
+    if (!detail) return "-";
+    detail = JSON.parse(detail).map((item) => {
+      return `* ${item["الكتاب"]} | ${item["النوع"]} | العلامة:${item["التقدير"]}`;
+    }).join("\n\n");
+    return detail;
+  }
+
+  function createSummarySection(studentData) {
+    const validRecords = studentData.filter(
+      (record) => record.attendance !== null
+    );
+    const totalDays = validRecords.length;
+
+    if (totalDays === 0) return [];
+
+    const presentDays = validRecords.filter(
+      (record) => record.attendance === 1
+    ).length;
+    const avgPrayer =
+      validRecords.reduce((sum, record) => sum + (record.prayer || 0), 0) /
+      totalDays;
+    const avgHaircut =
+      validRecords.reduce((sum, record) => sum + (record.haircut || 0), 0) /
+      totalDays;
+    const avgBehavior =
+      validRecords.reduce((sum, record) => sum + (record.behavior || 0), 0) /
+      totalDays;
+
+    return [
+      {
+        text: reverseArabicWords("ملخص التقرير"),
+        style: "summary",
+        margin: [0, 15, 0, 5],
+        alignment: "center",
+      },
+      {
+        table: {
+          widths: ["*", "*", "*", "*"],
+          body: [
+            [
+              {
+                text: `إجمالي  الأيام: ${totalDays}`,
+                style: "tableCell",
+                alignment: "center",
+              },
+              {
+                text: `نسبة  الحضور: ${(
+                  (presentDays / totalDays) *
+                  100
+                ).toFixed(1)}%`,
+                style: "tableCell",
+                alignment: "center",
+              },
+              {
+                text: `متوسط  الصلاة: ${avgPrayer.toFixed(1)}`,
+                style: "tableCell",
+                alignment: "center",
+              },
+              {
+                text: `متوسط  الحلاقة: ${avgHaircut.toFixed(1)}`,
+                style: "tableCell",
+                alignment: "center",
+              },
+            ],
+          ],
+        },
+        layout: "noBorders",
+        margin: [0, 0, 0, 10],
+      },
+    ];
+  }
+}
 
 async function showStudentsBulletins() {
   function generateQuery(dates, studentId) {
@@ -2395,6 +2712,7 @@ async function showStudentsResultsStatistics() {
               doc.content[1].table.widths[
                 doc.content[1].table.body[0].length - 2
               ] = 100;
+              // reverse rows for RTL
               doc.content[1].table.body.forEach((b) => {
                 b.reverse();
                 b.forEach((cell) => {
