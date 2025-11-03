@@ -114,6 +114,10 @@ const newClassroomInfosModal = new bootstrap.Modal(
   document.getElementById("newClassroomInfosModal")
 );
 
+const requirCollapse = new bootstrap.Collapse(
+  document.getElementById("requirCollapse")
+);
+
 document.getElementById("maximizeModalBtn").onclick = async (e) => {
   newStudentDayModal.show();
   document.getElementById("maximizeModalBtn").style.display = "none";
@@ -601,56 +605,58 @@ async function loadClassRoomsList() {
     const data = [];
     if (results.length) {
       const result = results[0];
+      // Cache commonly used references
+      const columns = result.columns;
+      const columnIndexes = {
+        id: columns.indexOf("id"),
+        mosque: columns.indexOf("mosque"),
+        place: columns.indexOf("place"),
+        sex: columns.indexOf("sex"),
+        level: columns.indexOf("level"),
+      };
+
       result.values.forEach((row) => {
+        // Create button group once
         const button_group = document.createElement("div");
         button_group.className = "btn-group";
         button_group.setAttribute("role", "group");
         button_group.setAttribute("aria-label", "Basic example");
 
-        // Edit
+        // Extract values once
+        const classroomId = row[columnIndexes.id];
+        const mosque = row[columnIndexes.mosque];
+        const place = row[columnIndexes.place];
+        const sex = row[columnIndexes.sex];
+        const level = row[columnIndexes.level];
+
+        // Edit button
         const editBtn = document.createElement("button");
         editBtn.className = "btn btn-info btn-sm";
-        editBtn.type = "button";
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
-        editBtn.onclick = function () {
+        editBtn.onclick = () => {
           newClassroomInfosModal.show();
-          const classroomId = row[0];
-          const result = project_db.exec(
-            "SELECT * FROM class_rooms WHERE id = ?;",
-            [classroomId]
-          );
           classroomIdInput.value = classroomId;
-          mosqueInput.value =
-            result[0].values[0][result[0].columns.indexOf("mosque")];
-          placeInput.value =
-            result[0].values[0][result[0].columns.indexOf("place")];
-          sexInput.value =
-            result[0].values[0][result[0].columns.indexOf("sex")];
-          levelInput.value =
-            result[0].values[0][result[0].columns.indexOf("level")];
+          mosqueInput.value = mosque;
+          placeInput.value = place;
+          sexInput.value = sex;
+          levelInput.value = level;
         };
         button_group.appendChild(editBtn);
 
-        // Delete
+        // Delete button
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "btn btn-danger btn-sm";
-        deleteBtn.type = "button";
         deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
-        CreateOnClickUndo(deleteBtn, function () {
-          const studentId = row[0];
-          if (!confirm("هل أنت متأكد أنك تريد حذف هذا القسم؟")) {
-            return;
-          }
-          if (!project_db) {
-            window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+        CreateOnClickUndo(deleteBtn, () => {
+          if (!confirm("هل أنت متأكد أنك تريد حذف هذا القسم؟") || !project_db) {
             return;
           }
           try {
             project_db.run("DELETE FROM class_rooms WHERE id = ?;", [
-              studentId,
+              classroomId,
             ]);
             saveToIndexedDB(project_db.export());
-            deleteTableRow("#classroomsListTable", "id", row[0]);
+            deleteTableRow("#classroomsListTable", "id", classroomId);
             window.showToast("success", "تم حذف الطالب بنجاح.");
           } catch (e) {
             window.showToast("warning", "Error: " + e.message);
@@ -658,25 +664,21 @@ async function loadClassRoomsList() {
         });
         button_group.appendChild(deleteBtn);
 
-        // Prepare classroom display string
-        const displayText = [
-          row[result.columns.indexOf("place")],
-          row[result.columns.indexOf("mosque")],
-          row[result.columns.indexOf("sex")],
-          row[result.columns.indexOf("level")],
-        ];
-
+        // Add data row
         data.push({
-          id: row[0],
-          mosque: displayText[1],
-          place: displayText[0],
-          sex: displayText[2],
-          level: displayText[3],
+          id: classroomId,
+          mosque,
+          place,
+          sex,
+          level,
           actions: button_group,
         });
 
-        // Add option to select efficiently
-        workingClassroomSelect.add(new Option(displayText.join(" - "), row[0]));
+        // Add select option
+        const displayText = [place, mosque, sex, level].join(" - ");
+        const option = new Option(displayText, classroomId);
+        Object.assign(option.dataset, { mosque, place, sex, level });
+        workingClassroomSelect.add(option);
       });
       if (workingClassroomId) {
         workingClassroomSelect.value = workingClassroomId;
@@ -1104,7 +1106,7 @@ function calcRequirementsMoyenne() {
     });
   });
   // moyenne = moyenne / (rows.length || 1);
-  return moyenne ? moyenne.toFixed(2) : "";
+  return moyenne ? moyenne.toFixed(2) : "0.00";
 }
 
 function calcEvaluationMoyenne(
@@ -1155,6 +1157,7 @@ $([
   haircutInput,
   addedPointsInput,
 ]).on("change input", () => {
+  studentDayFormSubmitBtn.disabled = false;
   evalMoyenne.value = calcEvaluationMoyenne(
     retardInput.value,
     clothingInput.value,
@@ -1353,7 +1356,7 @@ function initRequirementFields(student_idORdetail) {
   } else {
     requireBookInput.dispatchEvent(new Event("change"));
   }
-  requirTeacherInput.value = "0"
+  requirTeacherInput.value = "0";
 }
 
 async function loadDayStudentsList() {
@@ -1434,17 +1437,17 @@ async function loadDayStudentsList() {
         ) {
           requirTeacherInput.add(new Option(full_name, student_id));
         }
-
         // edit button
         const editBtn = document.createElement("i");
         editBtn.className = "fa-solid fa-pen-to-square";
         editBtn.style.color = "yellow";
         editBtn.onclick = function () {
+          studentDayFormSubmitBtn.disabled = true;
           newStudentDayModal.show();
+          requirCollapse.show();
+
           studentNameInput.value = full_name;
-
           setAttendanceValue(attendance);
-
           retardInput.value =
             retardValue !== null ? retardValue : calcRetardTime();
           clothingInput.value = row[result.columns.indexOf("clothing")] || "0";
@@ -1620,6 +1623,9 @@ async function loadDayStudentsList() {
         { data: "prayer", defaultContent: "/" },
       ],
       {
+        select: {
+          style: "multi",
+        },
         destroy: true,
         searching: false,
         scrollX: true,
@@ -1726,6 +1732,13 @@ async function loadDayStudentsList() {
 }
 
 async function changeDayDate(date) {
+  if (date == new Date().toISOString().slice(0, 10)) {
+    document
+      .getElementsByClassName("date-icon")[0]
+      .style.removeProperty("color");
+  } else {
+    document.getElementsByClassName("date-icon")[0].style.color = "#00ff4c";
+  }
   workingDay = date;
   dayDateInput.val(workingDay);
   dayDateInput.data("daterangepicker").setStartDate(workingDay);
@@ -1898,6 +1911,7 @@ function removeRequirItem(button) {
   const row = button.closest("tr");
   row.remove();
   requirMoyenneInput.value = calcRequirementsMoyenne();
+  studentDayFormSubmitBtn.disabled = false;
 }
 
 addQuranSelectionBtn.onclick = function () {
@@ -1952,6 +1966,7 @@ addQuranSelectionBtn.onclick = function () {
   }
 
   requirMoyenneInput.value = calcRequirementsMoyenne();
+  studentDayFormSubmitBtn.disabled = false;
   initRequirementFields({
     الكتاب: requireBookInput.value,
     النوع: requirTypeInput.value,
@@ -1977,10 +1992,7 @@ async function showTab(tabId) {
       newStudentInfosForm.reset();
       studentIdInput.value = "";
     } else if (tabId === "pills-new_day") {
-      if (!dayDateInput.val()) {
-        dayDateInput.val(new Date().toISOString().slice(0, 10));
-      }
-      await loadDayStudentsList();
+      changeDayDate(workingDay);
       newStudentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       statisticsPdfViewer.style.display = "none";
@@ -2034,6 +2046,9 @@ statisticType.onchange = function () {
 };
 
 async function showStudentsBulletins() {
+  const isGirls =
+    workingClassroomSelect.options[workingClassroomSelect.selectedIndex].dataset
+      .sex === "إناث";
   try {
     const dates = [...getDatesInRange()].sort(
       (a, b) => new Date(a) - new Date(b)
@@ -2046,26 +2061,24 @@ async function showStudentsBulletins() {
     }
     // Get all student IDs from the table
     const dateCtes = dates
-    .map(
-      (date, index) =>
-        `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`
-    )
-    .join(", \n");
+      .map(
+        (date, index) =>
+          `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`
+      )
+      .join(", \n");
 
-  
-
-  // Generate sum expressions for المجموع
-  const sumExpressions = dates
-    .map(
-      (date, index) =>
-        `(SELECT COALESCE(SUM(de.moyenne), 0) FROM day_evaluations de 
+    // Generate sum expressions for المجموع
+    const sumExpressions = dates
+      .map(
+        (date, index) =>
+          `(SELECT COALESCE(SUM(de.moyenne), 0) FROM day_evaluations de 
           WHERE de.student_id = s.id AND de.day_id IN (SELECT id FROM day_id${index}))
           + 
           (SELECT COALESCE(SUM(dr.moyenne), 0) FROM day_requirements dr 
           WHERE dr.student_id = s.id AND dr.day_id IN (SELECT id FROM day_id${index}))
         `
-    )
-    .join(" +\n        ");
+      )
+      .join(" +\n        ");
 
     const results = project_db.exec(`
       WITH ${dateCtes}
@@ -2094,7 +2107,7 @@ async function showStudentsBulletins() {
       name: `${row[1]} ${row[2]}`,
       order: row[3],
     }));
-    
+
     // Collect data for all students
     const allStudentData = [];
     for (const student of students) {
@@ -2253,7 +2266,7 @@ async function showStudentsBulletins() {
 
   // Create a single student page
   function createStudentPage(studentReport, dates, pageNumber) {
-    const { data, studentName,studentOrder, studentId } = studentReport;
+    const { data, studentName, studentOrder, studentId } = studentReport;
 
     // Arabic headers
     const headers = [
@@ -2280,7 +2293,7 @@ async function showStudentsBulletins() {
           {},
           {},
           {
-            text: "غـــــــــائـــب",
+            text: "غـــــــــائـــب" + (isGirls ? "ة" : ""),
             style: "tableCell",
             alignment: "center",
             bold: true,
@@ -2415,12 +2428,16 @@ async function showStudentsBulletins() {
       {
         stack: [
           {
-            text: reverseArabicWords("تقرير  متابعة الطالب"),
+            text: reverseArabicWords(
+              "تقرير  متابعة الطالب" + (isGirls ? "ة" : "")
+            ),
             style: "header",
             alignment: "center",
           },
           {
-            text: reverseArabicWords(`الطالب: ${studentName}`),
+            text: reverseArabicWords(
+              `الطالب${isGirls ? "ة" : ""}: ${studentName}`
+            ),
             style: "subheader",
             alignment: "right",
             marginTop: -10,
@@ -2469,7 +2486,7 @@ async function showStudentsBulletins() {
       },
 
       // Summary section for each student
-      ...createStudentSummarySection(data,studentOrder),
+      ...createStudentSummarySection(data, studentOrder),
       // {
       //   text: reverseArabicWords(
       //     `بتاريخ: ${arabicDays[new Date().getDay()]} ${new Date()
@@ -2484,7 +2501,7 @@ async function showStudentsBulletins() {
   }
 
   // Create summary section for a single student
-  function createStudentSummarySection(studentData,studentOrder) {
+  function createStudentSummarySection(studentData, studentOrder) {
     const totalDays = studentData.length;
     const validRecords = studentData.filter(
       (record) => record.attendance !== null
@@ -2570,7 +2587,6 @@ async function showStudentsBulletins() {
     return detail;
   }
 }
-
 
 async function showStudentsResultsStatistics() {
   const dates = [...getDatesInRange()].sort(
@@ -3093,12 +3109,16 @@ const checkSecondSurahAyahs = (secondSurahNumber) => {
 };
 
 function setRequirQuantityDetailInput() {
-  requirQuantityDetailInput.value = `${
-    firstSurahSelect.options[firstSurahSelect.selectedIndex].text
-  } - ${firstAyahSelect.options[firstAyahSelect.selectedIndex].value} إلى ${
-    secondSurahSelect.options[secondSurahSelect.selectedIndex].text
-  } - ${secondAyahSelect.options[secondAyahSelect.selectedIndex].value}`;
-  setRequirEvalInput();
+  try {
+    requirQuantityDetailInput.value = `${
+      firstSurahSelect.options[firstSurahSelect.selectedIndex].text
+    } - ${firstAyahSelect.options[firstAyahSelect.selectedIndex].value} إلى ${
+      secondSurahSelect.options[secondSurahSelect.selectedIndex].text
+    } - ${secondAyahSelect.options[secondAyahSelect.selectedIndex].value}`;
+    setRequirEvalInput();
+  } catch (err) {
+    requirQuantityDetailInput.value = "";
+  }
 }
 
 firstSurahSelect.onchange = async function () {
