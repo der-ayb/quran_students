@@ -12,10 +12,7 @@ if ("serviceWorker" in navigator) {
               newWorker.state === "installed" &&
               navigator.serviceWorker.controller
             ) {
-              window.showToast(
-                "info",
-                "تم التماس تحديث جديد، يرجى تحديث الصفحة."
-              );
+              window.showToast("info", "تم التماس تحديث جديد، يرجى <button type='button' class='btn' onclick='window.location.reload()'>تحديث</button> الصفحة.");
             }
           });
         });

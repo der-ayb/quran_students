@@ -552,6 +552,8 @@ workingClassroomSelect.onchange = async function () {
   setIsCustomDate();
   requirTeacherInput.options.length = 0;
   requirTeacherInput.add(new Option("المعلم", "0", (selected = true)));
+  haircutInput.disabled =
+    this.options[this.selectedIndex].dataset.sex === "إناث";
   statisticType.value = "0";
   statisticType.dispatchEvent(new Event("change"));
 };
@@ -682,6 +684,9 @@ async function loadClassRoomsList() {
       });
       if (workingClassroomId) {
         workingClassroomSelect.value = workingClassroomId;
+        haircutInput.disabled =
+          workingClassroomSelect.options[workingClassroomSelect.selectedIndex]
+            .dataset.sex === "إناث";
       } else {
         workingClassroomSelect.options[0].selected = true;
         workingClassroomSelect.dispatchEvent(new Event("change"));
@@ -1490,12 +1495,13 @@ async function loadDayStudentsList() {
             }
           );
 
+          const working_day_id = workingDayID;
           studentDayFormSubmitBtn.onclick = async function () {
             if (!project_db) {
               window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
               return;
             }
-            update_student_day_notes(student_id, workingDayID);
+            update_student_day_notes(student_id, working_day_id);
             newStudentDayModal.hide();
           };
         };
@@ -1577,7 +1583,7 @@ async function loadDayStudentsList() {
       showTab("pills-students");
       return;
     }
-    const table = await initOrReloadDataTable(
+    const dayStudentsTable = await initOrReloadDataTable(
       "#dayListTable",
       data,
       [
@@ -1648,6 +1654,18 @@ async function loadDayStudentsList() {
           topStart: {
             buttons: [
               {
+                text: '<i class="fa-solid fa-check-double"></i>',
+                action: async function (e, dt) {
+                  if (
+                    dt.rows({ selected: true }).count() === dt.rows().count()
+                  ) {
+                    dt.rows().deselect();
+                  } else {
+                    dt.rows().select();
+                  }
+                },
+              },
+              {
                 text: '<i class="fa-solid fa-table-cells"></i>',
                 action: async function (e, dt) {
                   const columns = dt.columns([-4, -3, -2, -1]);
@@ -1663,62 +1681,74 @@ async function loadDayStudentsList() {
                 },
               },
               {
-                text: '<i class="fa-regular fa-comment"></i>',
-                action: async function () {
-                  let note = prompt("أكتب ملاحظة:", dayNote);
-                  if (note !== null) {
-                    if (!project_db) {
-                      window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
-                      return;
-                    }
-                    try {
-                      project_db.run(
-                        "UPDATE education_day SET notes = ? WHERE id = ?;",
-                        [note, workingDayID]
-                      );
-                      saveToIndexedDB(project_db.export());
-                      dayNoteContainer.style.display = note ? "block" : "none";
-                      dayNoteContainer.innerHTML = `<em>${note}</em>`;
-                    } catch (e) {
-                      window.showToast("error", "Error: " + e.message);
-                    }
-                  } else {
-                    window.showToast("error", "لم يتم حفظ الملاحظة.");
-                  }
-                },
-              },
-              {
                 text: '<i class="fa-solid fa-arrows-rotate"></i>',
                 action: async function () {
                   await loadDayStudentsList();
                 },
               },
               {
-                text: '<i class="fa-solid fa-circle-info"></i>',
-                action: async function (e, dt) {
-                  alert(`وقت بدء الحصة: ${start_time}\n`);
-                },
-              },
-              {
-                text: '<i class="fa-solid fa-calendar-xmark"></i>',
-                action: async function () {
-                  if (confirm("هل تريد إلغاء هذا اليوم ؟")) {
-                    project_db.run(
-                      `DELETE FROM day_evaluations WHERE day_id = ?;`,
-                      [workingDayID]
-                    );
-                    project_db.run(
-                      `DELETE FROM day_requirements WHERE day_id = ?;`,
-                      [workingDayID]
-                    );
-                    project_db.run("DELETE FROM education_day WHERE id = ?;", [
-                      workingDayID,
-                    ]);
-                    saveToIndexedDB(project_db.export());
-                    setIsCustomDate();
-                    loadDayStudentsList();
-                  }
-                },
+                extend: "collection",
+                text: "المزيد",
+                buttons: [
+                  {
+                    text: '<i class="fa-regular fa-comment"></i> ملاحظة اليوم',
+                    action: async function () {
+                      let note = prompt("أكتب ملاحظة:", dayNote);
+                      if (note !== null) {
+                        if (!project_db) {
+                          window.showToast(
+                            "info",
+                            "لا يوجد قاعدة بيانات مفتوحة."
+                          );
+                          return;
+                        }
+                        try {
+                          project_db.run(
+                            "UPDATE education_day SET notes = ? WHERE id = ?;",
+                            [note, workingDayID]
+                          );
+                          saveToIndexedDB(project_db.export());
+                          dayNoteContainer.style.display = note
+                            ? "block"
+                            : "none";
+                          dayNoteContainer.innerHTML = `<em>${note}</em>`;
+                        } catch (e) {
+                          window.showToast("error", "Error: " + e.message);
+                        }
+                      } else {
+                        window.showToast("error", "لم يتم حفظ الملاحظة.");
+                      }
+                    },
+                  },
+                  {
+                    text: '<i class="fa-solid fa-circle-info"></i> معلومات الحصة',
+                    action: async function (e, dt) {
+                      alert(`وقت بدء الحصة: ${start_time}\n`);
+                    },
+                  },
+                  {
+                    text: "❌ إلغاء اليوم",
+                    action: async function () {
+                      if (confirm("هل تريد إلغاء هذا اليوم ؟")) {
+                        project_db.run(
+                          `DELETE FROM day_evaluations WHERE day_id = ?;`,
+                          [workingDayID]
+                        );
+                        project_db.run(
+                          `DELETE FROM day_requirements WHERE day_id = ?;`,
+                          [workingDayID]
+                        );
+                        project_db.run(
+                          "DELETE FROM education_day WHERE id = ?;",
+                          [workingDayID]
+                        );
+                        saveToIndexedDB(project_db.export());
+                        setIsCustomDate();
+                        loadDayStudentsList();
+                      }
+                    },
+                  },
+                ],
               },
             ],
           },

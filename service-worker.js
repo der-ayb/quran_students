@@ -18,12 +18,12 @@ if (workbox) {
         ? [
             { url: "./", revision: "1" },
             { url: "./favicon.ico", revision: "1" },
-            { url: "./index.html", revision: "6" },
+            { url: "./index.html", revision: "7" },
             { url: "./manifest.json", revision: "1" },
 
             { url: "./src/style.css", revision: "2" },
             { url: "./src/fonts.css", revision: "1" },
-            { url: "./src/script.js", revision: "13" },
+            { url: "./src/script.js", revision: "14" },
             { url: "./src/auth.js", revision: "3" },
             { url: "./src/pdfmake.js", revision: "1" },
             { url: "./src/vfs_fonts.js", revision: "1" },
@@ -108,6 +108,18 @@ if (workbox) {
         {
           url: "https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.css",
           revision: "2",
+        },
+        {
+          url: "https://cdn.datatables.net/select/3.1.3/js/dataTables.select.min.js",
+          revision: "1",
+        },
+        {
+          url: "https://cdn.datatables.net/select/3.1.3/js/select.bootstrap5.min.js",
+          revision: "1",
+        },
+        {
+          url: "https://cdn.datatables.net/select/3.1.3/css/select.bootstrap5.min.css",
+          revision: "1",
         },
         {
           url: "https://cdn.datatables.net/buttons/3.2.5/css/buttons.bootstrap5.css",
