@@ -92,6 +92,9 @@ const studentDayForm = document.getElementById("studentDayForm");
 const studentDayFormSubmitBtn = document.getElementById(
   "studentDayFormSubmitBtn"
 );
+const newStudentDayModalBody = document.getElementById(
+  "newStudentDayModalBody"
+);
 
 const statisticType = document.getElementById("statisticType");
 const statisticsPdfViewer = document.getElementById("statisticsPdfViewer");
@@ -104,13 +107,13 @@ const fontSelector = document.getElementById("fontSelect");
 const loadingModalText = document.getElementById("loadingText");
 const loadingModalElement = document.getElementById("loadingModal");
 const loadingModal = new bootstrap.Modal(loadingModalElement);
-const newStudentDayModal = new bootstrap.Modal(
+const studentDayModal = new bootstrap.Modal(
   document.getElementById("newStudentDayModal")
 );
 const studentInfosModal = new bootstrap.Modal(
   document.getElementById("newStudentInfosModal")
 );
-const newClassroomInfosModal = new bootstrap.Modal(
+const classroomInfosModal = new bootstrap.Modal(
   document.getElementById("newClassroomInfosModal")
 );
 
@@ -118,8 +121,12 @@ const requirCollapse = new bootstrap.Collapse(
   document.getElementById("requirCollapse")
 );
 
+const evaluationCollapse = new bootstrap.Collapse(
+  document.getElementById("evaluationCollapse")
+);
+
 document.getElementById("maximizeModalBtn").onclick = async (e) => {
-  newStudentDayModal.show();
+  studentDayModal.show();
   document.getElementById("maximizeModalBtn").style.display = "none";
 };
 
@@ -134,7 +141,7 @@ async function initPlusMinusButtons(numberField) {
   minusBtn.addEventListener("click", () => {
     let currentValue = parseInt(numberField.value);
     if (!isNaN(currentValue) && currentValue > parseInt(numberField.min)) {
-      numberField.value = currentValue - 1;
+      numberField.value = currentValue - parseInt(numberField.step);
       numberField.dispatchEvent(new Event("change"));
     }
   });
@@ -142,7 +149,7 @@ async function initPlusMinusButtons(numberField) {
   plusBtn.addEventListener("click", () => {
     let currentValue = parseInt(numberField.value);
     if (!isNaN(currentValue) && currentValue < parseInt(numberField.max)) {
-      numberField.value = currentValue + 1;
+      numberField.value = currentValue + parseInt(numberField.step);
       numberField.dispatchEvent(new Event("change"));
     } else if (isNaN(currentValue)) {
       // Handle empty field case
@@ -157,6 +164,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   initPlusMinusButtons(saveStateErrorsInput);
   initPlusMinusButtons(saveStopErrorsInput);
   initPlusMinusButtons(addedPointsInput);
+  initPlusMinusButtons(prayerInput);
 
   // theme selector
   themeSelector.onchange = async function () {
@@ -589,7 +597,7 @@ newClassroomInfosForm.onsubmit = (e) => {
       window.showToast("success", "تم إضافة الطالب بنجاح.");
     }
     saveToIndexedDB(project_db.export());
-    newClassroomInfosModal.hide();
+    classroomInfosModal.hide();
     loadClassRoomsList();
   } catch (e) {
     window.showToast("error", "Error: " + e.message);
@@ -636,7 +644,7 @@ async function loadClassRoomsList() {
         editBtn.className = "btn btn-info btn-sm";
         editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
         editBtn.onclick = () => {
-          newClassroomInfosModal.show();
+          classroomInfosModal.show();
           classroomIdInput.value = classroomId;
           mosqueInput.value = mosque;
           placeInput.value = place;
@@ -1076,9 +1084,9 @@ function onChangeAttendanceState(radio = null) {
     return;
   }
   if (selectedRadio.id !== "present") {
-    document.getElementById("newStudentDayModalBody").style.display = "none";
+    newStudentDayModalBody.style.display = "none";
   } else {
-    document.getElementById("newStudentDayModalBody").style.display = "block";
+    newStudentDayModalBody.style.display = "block";
   }
 }
 
@@ -1364,6 +1372,22 @@ function initRequirementFields(student_idORdetail) {
   requirTeacherInput.value = "0";
 }
 
+async function showStudentDayModal(isUniqueStudent = true) {
+  studentDayModal.show();
+  studentDayFormSubmitBtn.disabled = true;
+  newStudentDayModalBody.style.display = "block";
+  if (isUniqueStudent) {
+    document.getElementById("present").parentElement.style.removeProperty("display");
+  } else {
+    evaluationCollapse.show();
+    document.getElementById("present").parentElement.style.display = "none";
+  }
+  document.getElementById("requirCollapse").parentElement.style.display =
+    isUniqueStudent ? "block" : "none";
+  evalMoyenne.disabled = !isUniqueStudent;
+  retardInput.disabled = !isUniqueStudent;
+}
+
 async function loadDayStudentsList() {
   dayNoteContainer.style.display = "none";
   if (!project_db) {
@@ -1447,11 +1471,13 @@ async function loadDayStudentsList() {
         editBtn.className = "fa-solid fa-pen-to-square";
         editBtn.style.color = "yellow";
         editBtn.onclick = function () {
-          studentDayFormSubmitBtn.disabled = true;
-          newStudentDayModal.show();
+          showStudentDayModal(true);
+          
+          studentNameInput.value = full_name;
+
+          evaluationCollapse.hide()
           requirCollapse.show();
 
-          studentNameInput.value = full_name;
           setAttendanceValue(attendance);
           retardInput.value =
             retardValue !== null ? retardValue : calcRetardTime();
@@ -1502,7 +1528,7 @@ async function loadDayStudentsList() {
               return;
             }
             update_student_day_notes(student_id, working_day_id);
-            newStudentDayModal.hide();
+            studentDayModal.hide();
           };
         };
         const attendance_value = attendance;
@@ -1515,9 +1541,6 @@ async function loadDayStudentsList() {
         );
         const behaviorOption = document.querySelector(
           `#behavior option[value='${row[result.columns.indexOf("behavior")]}']`
-        );
-        const prayerOption = document.querySelector(
-          `#prayer option[value='${row[result.columns.indexOf("prayer")]}']`
         );
         const thisDay = new Date().toISOString().slice(0, 10);
         data.push({
@@ -1569,11 +1592,6 @@ async function loadDayStudentsList() {
           behavior: attendance_value
             ? behaviorOption
               ? behaviorOption.textContent
-              : ""
-            : null,
-          prayer: attendance_value
-            ? prayerOption
-              ? prayerOption.textContent
               : ""
             : null,
         });
@@ -1654,6 +1672,10 @@ async function loadDayStudentsList() {
           topStart: {
             buttons: [
               {
+                extend: "colvis",
+                text: '<i class="fa-solid fa-table"></i>',
+              },
+              {
                 text: '<i class="fa-solid fa-check-double"></i>',
                 action: async function (e, dt) {
                   if (
@@ -1666,18 +1688,99 @@ async function loadDayStudentsList() {
                 },
               },
               {
-                text: '<i class="fa-solid fa-table-cells"></i>',
+                text: '<i class="fa-solid fa-pen-to-square"></i>',
                 action: async function (e, dt) {
-                  const columns = dt.columns([-4, -3, -2, -1]);
-                  const isVisible = dt.column(columns[0][0]).visible();
+                  const selectedRows = dt
+                    .rows({ selected: true })
+                    .data()
+                    .toArray();
 
-                  columns.visible(!isVisible);
-                  studentsDayTableDetailIsShow = !isVisible;
-                  dt.button(0).text(
-                    isVisible
-                      ? '<i class="fa-solid fa-table-cells"></i>'
-                      : '<i class="fa-solid fa-table"></i>'
-                  );
+                  if (selectedRows.length === 0) {
+                    window.showToast("info", "الرجاء اختيار تلاميذ.");
+                    return;
+                  }
+                  for (let selectedRow of selectedRows) {
+                    if (selectedRow.attendance.includes("markPresence(")) {
+                      window.showToast("info", "الرجاء اختيار تلاميذ حاضرين.");
+                      return;
+                    }
+                  }
+                  
+                  showStudentDayModal(false);
+                  
+                  studentNameInput.value = `${selectedRows.length} طالب`;
+
+                  clothingInput.value = "0";
+                  haircutInput.value = "0";
+                  behaviorInput.value = "0";
+                  prayerInput.value = "0";
+                  addedPointsInput.value = "0";
+
+                  const working_day_id = workingDayID;
+                  studentDayFormSubmitBtn.onclick = async function () {
+                    if (!project_db) {
+                      window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+                      return;
+                    }
+                    selectedRows.forEach((selectedRow) => {
+                      if (!project_db) {
+                        window.showToast(
+                          "info",
+                          "لا يوجد قاعدة بيانات مفتوحة."
+                        );
+                        return;
+                      }
+
+                      // Build UPDATE query dynamically
+                      const updates = [];
+                      const values = {
+                        clothing: parseInt(clothingInput.value) || 0,
+                        haircut: parseInt(haircutInput.value) || 0,
+                        behavior: parseInt(behaviorInput.value) || 0,
+                        prayer: parseInt(prayerInput.value) || 0,
+                        added_points: parseFloat(addedPointsInput.value) || 0,
+                      };
+
+                      // Add non-zero values to update array
+                      if (values.clothing)
+                        updates.push(`clothing = ${values.clothing}`);
+                      if (values.haircut)
+                        updates.push(`haircut = ${values.haircut}`);
+                      if (values.behavior)
+                        updates.push(`behavior = ${values.behavior}`);
+                      if (values.prayer)
+                        updates.push(`prayer = COALESCE(prayer,0) + ${values.prayer}`);
+                      if (values.added_points)
+                        updates.push(
+                          `added_points = COALESCE(added_points,0) + ${values.added_points}`
+                        );
+
+                      // Calculate total moyenne adjustment
+                      const moyenneAdjustment = (
+                        values.clothing +
+                        values.haircut +
+                        values.behavior +
+                        values.prayer +
+                        values.added_points
+                      ).toFixed(2);
+
+                      // Add moyenne update
+                      updates.push(`moyenne = moyenne + ${moyenneAdjustment}`);
+
+                      // Execute update if there are changes
+                      if (updates.length) {
+                        project_db.run(`
+                          UPDATE day_evaluations 
+                          SET ${updates.join(", ")}
+                          WHERE student_id = ${selectedRow.id} 
+                          AND day_id = ${working_day_id}
+                        `);
+                      }
+                    });
+                    saveToIndexedDB(project_db.export());
+                    loadDayStudentsList();
+                    studentDayModal.hide();
+                  };
                 },
               },
               {
@@ -2023,7 +2126,7 @@ async function showTab(tabId) {
       studentIdInput.value = "";
     } else if (tabId === "pills-new_day") {
       changeDayDate(workingDay);
-      newStudentDayModal.hide();
+      studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       statisticsPdfViewer.style.display = "none";
       statisticsPdfViewer.src = "";

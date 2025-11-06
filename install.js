@@ -1,25 +1,33 @@
 //service workers
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("./service-worker.js")
-      .then((registration) => {
-        console.log("Service Worker registered:", registration.scope);
-        registration.addEventListener("updatefound", () => {
-          const newWorker = registration.installing;
-          newWorker.addEventListener("statechange", () => {
-            if (
-              newWorker.state === "installed" &&
-              navigator.serviceWorker.controller
-            ) {
-              window.showToast("info", "تم التماس تحديث جديد، يرجى <button type='button' class='btn' onclick='window.location.reload()'>تحديث</button> الصفحة.");
-            }
+    if (
+      window.location.hostname !== "localhost" &&
+      !window.location.hostname.includes("ngrok-free")
+    ) {
+      navigator.serviceWorker
+        .register("./service-worker.js")
+        .then((registration) => {
+          console.log("Service Worker registered:", registration.scope);
+          registration.addEventListener("updatefound", () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener("statechange", () => {
+              if (
+                newWorker.state === "installed" &&
+                navigator.serviceWorker.controller
+              ) {
+                window.showToast(
+                  "info",
+                  "تم التماس تحديث جديد، يرجى <button type='button' class='btn' onclick='window.location.reload()'>تحديث</button> الصفحة."
+                );
+              }
+            });
           });
+        })
+        .catch((error) => {
+          console.error("Service Worker registration failed:", error);
         });
-      })
-      .catch((error) => {
-        console.error("Service Worker registration failed:", error);
-      });
+    }
   });
 }
 
