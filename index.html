@@ -494,12 +494,13 @@
             <div class="accordion" id="newStudentDayModalBody">
               <div class="accordion-item">
                 <h2 class="accordion-header">
-                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#evaluationCollapse"
-                    aria-expanded="true" aria-controls="evaluationCollapse">
+                  <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#evaluationCollapse" aria-expanded="true" aria-controls="evaluationCollapse">
                     التقييم المستمر
                   </button>
                 </h2>
-                <div id="evaluationCollapse" class="accordion-collapse collapse show" data-bs-parent="#newStudentDayModalBody">
+                <div id="evaluationCollapse" class="accordion-collapse collapse show"
+                  data-bs-parent="#newStudentDayModalBody">
                   <div class="accordion-body">
                     <div class="row">
                       <div class="col">
@@ -642,18 +643,32 @@
                       <div>
                         <textarea type="text" id="requirQuantityDetail" class="form-control mb-3"></textarea>
                       </div>
-                      <div class="input-group mb-3" id="quranSelectionSection" style="display: none;">
-                        <select id="first-surah" class="form-control surah-select text-center px-0">
-                          <option value="" selected disabled>من</option>
-                        </select>
-                        <select id="first-ayah" class="form-control ayah-select text-center px-0" disabled></select>
-                        <select id="second-surah" class="form-control surah-select text-center px-0" disabled>
-                          <option value="" selected disabled>إلى</option>
-                        </select>
-                        <select id="second-ayah" class="form-control ayah-select text-center px-0" disabled></select>
+                      <div id="quranSelectionSection" class="mb-3" style="display: none;">
+                        <div class="row g-0">
+                          <div class="col-4">
+                            <select id="first-surah" class="form-select surah-select px-2">
+                              <option value="" selected disabled>من</option>
+                            </select>
+                          </div>
+                          <div class="col-8">
+                            <select id="first-ayah" class="form-select ayah-select text-truncate px-3"
+                              disabled></select>
+                          </div>
+                        </div>
+                        <div class="row g-0">
+                          <div class="col-4">
+                            <select id="second-surah" class="form-select surah-select px-2" disabled>
+                              <option value="" selected disabled>إلى</option>
+                            </select>
+                          </div>
+                          <div class="col-8">
+                            <select id="second-ayah" style="direction: ltr;" class="form-select ayah-select text-truncate"
+                              disabled></select>
+                          </div>
+                        </div>
                       </div>
                       <div class="w-100"></div>
-                      <div class="col mb-3">
+                      <div class="col">
                         <div class="mb-3">
                           <label for="saveStateErrors">الأخطاء في الحفظ:</label>
                           <div class="input-group mb-3">

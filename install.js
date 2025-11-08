@@ -1,33 +1,36 @@
 //service workers
 if ("serviceWorker" in navigator) {
+  let sw_path = null;
   window.addEventListener("load", () => {
-    if (
-      window.location.hostname !== "localhost" &&
-      !window.location.hostname.includes("ngrok-free")
-    ) {
-      navigator.serviceWorker
-        .register("./service-worker.js")
-        .then((registration) => {
-          console.log("Service Worker registered:", registration.scope);
-          registration.addEventListener("updatefound", () => {
-            const newWorker = registration.installing;
-            newWorker.addEventListener("statechange", () => {
-              if (
-                newWorker.state === "installed" &&
-                navigator.serviceWorker.controller
-              ) {
-                window.showToast(
-                  "info",
-                  "تم التماس تحديث جديد، يرجى <button type='button' class='btn' onclick='window.location.reload()'>تحديث</button> الصفحة."
-                );
-              }
-            });
-          });
-        })
-        .catch((error) => {
-          console.error("Service Worker registration failed:", error);
-        });
+    if (window.location.hostname.includes("ngrok-free")) return;
+
+    if (window.location.hostname !== "localhost") {
+      sw_path = "./service-worker.js";
+    } else {
+      sw_path = "./utils/dev-service-worker.js";
     }
+    navigator.serviceWorker
+      .register(sw_path)
+      .then((registration) => {
+        console.log("Service Worker registered:", registration.scope);
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener("statechange", () => {
+            if (
+              newWorker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
+              window.showToast(
+                "info",
+                "تم التماس تحديث جديد، يرجى <button type='button' class='btn' onclick='window.location.reload()'>تحديث</button> الصفحة."
+              );
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.error("Service Worker registration failed:", error);
+      });
   });
 }
 

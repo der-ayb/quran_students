@@ -1377,7 +1377,9 @@ async function showStudentDayModal(isUniqueStudent = true) {
   studentDayFormSubmitBtn.disabled = true;
   newStudentDayModalBody.style.display = "block";
   if (isUniqueStudent) {
-    document.getElementById("present").parentElement.style.removeProperty("display");
+    document
+      .getElementById("present")
+      .parentElement.style.removeProperty("display");
   } else {
     evaluationCollapse.show();
     document.getElementById("present").parentElement.style.display = "none";
@@ -1472,10 +1474,10 @@ async function loadDayStudentsList() {
         editBtn.style.color = "yellow";
         editBtn.onclick = function () {
           showStudentDayModal(true);
-          
+
           studentNameInput.value = full_name;
 
-          evaluationCollapse.hide()
+          evaluationCollapse.hide();
           requirCollapse.show();
 
           setAttendanceValue(attendance);
@@ -1705,9 +1707,9 @@ async function loadDayStudentsList() {
                       return;
                     }
                   }
-                  
+
                   showStudentDayModal(false);
-                  
+
                   studentNameInput.value = `${selectedRows.length} طالب`;
 
                   clothingInput.value = "0";
@@ -1749,7 +1751,9 @@ async function loadDayStudentsList() {
                       if (values.behavior)
                         updates.push(`behavior = ${values.behavior}`);
                       if (values.prayer)
-                        updates.push(`prayer = COALESCE(prayer,0) + ${values.prayer}`);
+                        updates.push(
+                          `prayer = COALESCE(prayer,0) + ${values.prayer}`
+                        );
                       if (values.added_points)
                         updates.push(
                           `added_points = COALESCE(added_points,0) + ${values.added_points}`
@@ -3176,8 +3180,7 @@ async function setStatisticsTable(query, buttons = []) {
 }
 
 const initializeAyatdata = async (db) => {
-  const results = db.exec("SELECT * FROM quran_index");
-  results[0].values.forEach((row) => {
+  db.exec("SELECT * FROM quran_index")[0].values.forEach((row) => {
     surahsData.push({
       number: row[0],
       name: row[1],
@@ -3192,7 +3195,6 @@ const populateSurahDropdown = async (selectElement) => {
   surahsData.forEach((surah) => {
     selectElement.appendChild(
       createOption(surah.number, `${surah.name}`, {
-        ayahs: surah.numberOfAyahs,
         surahNum: surah.number,
       })
     );
@@ -3206,28 +3208,39 @@ const createOption = (value, text, dataset = {}) => {
   for (const key in dataset) {
     option.dataset[key] = dataset[key];
   }
+  // option.className = "text-truncate"
   return option;
 };
 
 const checkSecondSurahAyahs = (secondSurahNumber) => {
   if (secondSurahNumber) {
     let ll = 1;
+    secondAyahSelect.disabled = false;
+    secondAyahSelect.innerHTML = "";
     if (
       parseInt(firstSurahSelect.value) === parseInt(secondSurahSelect.value)
     ) {
       ll = parseInt(firstAyahSelect.value) || 1;
+      for (let i = ll; i < firstAyahSelect.options.length; i++) {
+        const option = firstAyahSelect.options[i];
+        const clonedOption = option.cloneNode(true);
+        secondAyahSelect.appendChild(clonedOption);
+      }
+    } else {
+      const secondSurahSelectedOption =
+        secondSurahSelect.options[secondSurahSelect.selectedIndex];
+      quran_db
+        .exec(
+          "SELECT * FROM quran_ayat WHERE sura = " +
+            secondSurahSelectedOption.value
+        )[0]
+        .values.forEach((row) => {
+          secondAyahSelect.appendChild(
+            createOption(row[1], `${row[1]}- ${row[2]}`)
+          );
+        });
     }
 
-    const secondSurahSelectedOption =
-      secondSurahSelect.options[secondSurahSelect.selectedIndex];
-    let secondSurahAyahs = 0;
-    secondSurahAyahs = parseInt(secondSurahSelectedOption.dataset.ayahs);
-    secondAyahSelect.disabled = false;
-    secondAyahSelect.innerHTML = "";
-
-    for (let i = ll; i <= secondSurahAyahs; i++) {
-      secondAyahSelect.appendChild(createOption(i, i));
-    }
     secondAyahSelect.insertBefore(
       createOption("", "--  --"),
       secondAyahSelect.firstChild
@@ -3259,14 +3272,17 @@ firstSurahSelect.onchange = async function () {
 
   if (firstSurahNumber) {
     const selectedOption = this.options[this.selectedIndex];
-    let firstSurahAyahs = 0;
-    firstSurahAyahs = parseInt(selectedOption.dataset.ayahs);
     firstAyahSelect.disabled = false;
     firstAyahSelect.innerHTML = "";
 
-    for (let i = 1; i <= firstSurahAyahs; i++) {
-      firstAyahSelect.appendChild(createOption(i, i));
-    }
+    quran_db
+      .exec("SELECT * FROM quran_ayat WHERE sura = " + this.value)[0]
+      .values.forEach((row) => {
+        firstAyahSelect.appendChild(
+          createOption(row[1], `${row[1]}- ${row[2]}`)
+        );
+      });
+
     firstAyahSelect.insertBefore(
       createOption("", "--  --"),
       firstAyahSelect.firstChild
