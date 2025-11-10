@@ -1031,7 +1031,7 @@ requireBookInput.onchange = function () {
     "quranSelectionSection"
   );
 
-  if (this.value === "القرآن") {
+  if (this.value === "القرآن الكريم") {
     quranSelectionSection.style.removeProperty("display");
     requirQuantityDetailInput.style.display = "none";
     requirQuantityInput.readOnly = true;

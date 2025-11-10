@@ -16,12 +16,12 @@ if (workbox) {
     [
       { url: "./", revision: "1" },
       { url: "./favicon.ico", revision: "1" },
-      { url: "./index.html", revision: "1" },
+      { url: "./index.html", revision: "2" },
       { url: "./manifest.json", revision: "1" },
 
       { url: "./src/style.css", revision: "1" },
       { url: "./src/fonts.css", revision: "1" },
-      { url: "./src/script.js", revision: "1" },
+      { url: "./src/script.js", revision: "2" },
       { url: "./src/auth.js", revision: "1" },
       { url: "./src/pdfmake.js", revision: "1" },
       { url: "./src/vfs_fonts.js", revision: "1" },
