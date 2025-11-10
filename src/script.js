@@ -1090,12 +1090,30 @@ function onChangeAttendanceState(radio = null) {
   }
 }
 
+function calcEvaluationMoyenne(
+  retard,
+  clothing,
+  haircut,
+  behavior,
+  prayer,
+  addedPoints
+) {
+  let moyenne = 0;
+  moyenne += 30 - parseInt(retard > -1 ? retard : 0) / 3;
+  moyenne += parseInt(clothing) || 0;
+  moyenne += parseInt(haircut) || 0;
+  moyenne += parseInt(behavior) || 0;
+  moyenne += parseInt(prayer) || 0;
+  moyenne += parseFloat(addedPoints) || 0;
+  return moyenne.toFixed(2);
+}
+
 function calcRequirementMoyenne(quantity, evaluation, type, obligation) {
   let value = 0;
   if (type === "حفظ") {
     value = evaluation * quantity;
   } else if (type === "مراجعة") {
-    value = evaluation * (quantity / 3);
+    value = evaluation * (quantity / 2);
   }
   if (!obligation) {
     value += value * 0.5;
@@ -1122,23 +1140,6 @@ function calcRequirementsMoyenne() {
   return moyenne ? moyenne.toFixed(2) : "0.00";
 }
 
-function calcEvaluationMoyenne(
-  retard,
-  clothing,
-  haircut,
-  behavior,
-  prayer,
-  addedPoints
-) {
-  let moyenne = 0;
-  moyenne += 20 - parseInt(retard > -1 ? retard : 0) / 3;
-  moyenne += parseInt(clothing) || 0;
-  moyenne += parseInt(haircut) || 0;
-  moyenne += parseInt(behavior) || 0;
-  moyenne += parseInt(prayer) || 0;
-  moyenne += parseFloat(addedPoints) || 0;
-  return moyenne.toFixed(2);
-}
 
 function calcRequirementEvaluation(
   requirQuantity,
@@ -1147,7 +1148,7 @@ function calcRequirementEvaluation(
   saveStateErrors
 ) {
   const errorValue = parseFloat(
-    10 / (requirQuantity * (requirType === "حفظ" ? 3 : 1))
+    10 / (requirQuantity * (requirType === "حفظ" ? 2 : 1))
   );
   const result = parseFloat(
     10 - errorValue * (parseFloat(saveStopErrors) + parseFloat(saveStateErrors))
@@ -1155,7 +1156,7 @@ function calcRequirementEvaluation(
   return result ? (result < 0 ? 0 : result.toFixed(2)) : "";
 }
 
-function calcGlobalEvaluation(requirsMoyenne, evalMoyenne) {
+function calcGlobalMoyenne(requirsMoyenne, evalMoyenne) {
   let globalEvaluation = 0;
   globalEvaluation = requirsMoyenne + evalMoyenne;
   globalEvaluation = globalEvaluation > 0 ? globalEvaluation : 0;
@@ -1576,7 +1577,7 @@ async function loadDayStudentsList() {
               <label class="btn fa-solid fa-comment-sms px-2" for="sms_btn${student_id}"></label>`
                   : ""),
           evaluation: attendance_value
-            ? calcGlobalEvaluation(
+            ? calcGlobalMoyenne(
                 row[result.columns.indexOf("requirsMoyenne")],
                 row[result.columns.indexOf("evalMoyenne")]
               )
@@ -1681,7 +1682,7 @@ async function loadDayStudentsList() {
                 text: '<i class="fa-solid fa-check-double"></i>',
                 action: async function (e, dt) {
                   if (
-                    dt.rows({ selected: true }).count() === dt.rows().count()
+                    dt.rows({ selected: true }).count() !== 0
                   ) {
                     dt.rows().deselect();
                   } else {
