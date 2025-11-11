@@ -3,10 +3,6 @@ body {
   font-optical-sizing: auto;
 }
 
-.ayah-select {
-  font-family: sans-serif;
-}
-
 html,
 body {
   overscroll-behavior: none;
@@ -241,4 +237,8 @@ th.header-rotated>div>span {
       padding: 0.25em 0.8em;
     }
   }
+}
+
+.ayah-select {
+  font-family: sans-serif;
 }

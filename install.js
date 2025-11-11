@@ -1,14 +1,16 @@
 //service workers
+let sw_path = null;
 if ("serviceWorker" in navigator) {
-  let sw_path = null;
-  window.addEventListener("load", () => {
-    if (window.location.hostname.includes("ngrok-free")) return;
+  if (window.location.hostname !== "localhost") {
+    sw_path = "./service-worker.js";
+  } else {
+    // sw_path = "./utils/dev-service-worker.js";
+    sw_path = "./service-worker.js";
+  }
+}
 
-    if (window.location.hostname !== "localhost") {
-      sw_path = "./service-worker.js";
-    } else {
-      sw_path = "./utils/dev-service-worker.js";
-    }
+if (sw_path) {
+  window.addEventListener("load", () => {
     navigator.serviceWorker
       .register(sw_path)
       .then((registration) => {
