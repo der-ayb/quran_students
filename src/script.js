@@ -53,7 +53,6 @@ const secondSurahSelect = document.getElementById("second-surah");
 const firstSurahSelect = document.getElementById("first-surah");
 const requirEvaluationInput = document.getElementById("requirEvaluation");
 const requireBookInput = document.getElementById("requirBook");
-const requirObligation = document.getElementById("requirObligation");
 const saveStateErrorsInput = document.getElementById("saveStateErrors");
 const saveStopErrorsInput = document.getElementById("saveStopErrors");
 const requirTeacherInput = document.getElementById("requirTeacher");
@@ -245,6 +244,7 @@ async function saveToIndexedDB(data, db_key = PROJECT_DB_KEY) {
     tx.oncomplete = () => {
       idb.close();
       localStorage.setItem("lastSaveAt", new Date());
+      localStorage.setItem("newSaveExists", true);
       resolve();
     };
     tx.onerror = (e) => {
@@ -299,11 +299,12 @@ async function loadFromIndexedDB(callback) {
 }
 
 // --- File Reading Async ---
-async function loadDBFromFile(file) {
+async function loadDBFromFile(file, downloaded = false) {
   const arrayBuffer = await file.arrayBuffer();
   try {
     project_db = new SQL.Database(new Uint8Array(arrayBuffer));
     await saveToIndexedDB(project_db.export());
+    if (downloaded) localStorage.removeItem("newSaveExists");
     window.showToast("success", "تم تحميل قاعدة البيانات.");
     setTimeout(() => window.location.reload(), 1000);
   } catch (e) {
@@ -366,6 +367,11 @@ async function init() {
       await dayDatePickerInit();
       showTab("pills-home");
       nav_bar.style.removeProperty("display");
+      // display synchronization badge
+      if (localStorage.getItem("newSaveExists"))
+        document.querySelectorAll(".syncBadge").forEach((syncBadge) => {
+          syncBadge.style.removeProperty("display");
+        });
     } else {
       showTab("pills-splash");
     }
@@ -501,7 +507,7 @@ async function googleSignin() {
         } else if (downloadResult == false) {
           ("pass");
         } else {
-          await loadDBFromFile(downloadResult);
+          await loadDBFromFile(downloadResult, (downloaded = true));
         }
       } catch (e) {
         console.log(e.message);
@@ -544,8 +550,13 @@ async function asyncDB() {
   if (project_db) {
     await showLoadingModal("جاري المزامنة");
     try {
-      if (await uploadDBtoDrive(project_db.export()))
+      if (await uploadDBtoDrive(project_db.export())) {
         window.showToast("success", "تمت المزامنة بنجاح.");
+        localStorage.removeItem("newSaveExists");
+        document.querySelectorAll(".syncBadge").forEach((syncBadge) => {
+          syncBadge.style.display = "none";
+        });
+      }
     } catch (e) {
       console.log(e);
       window.showToast("error", e.message);
@@ -1044,7 +1055,6 @@ requireBookInput.onchange = function () {
   requirEvaluationInput.value = "10.00";
   saveStopErrorsInput.value = "0";
   saveStateErrorsInput.value = "0";
-  requirObligation.checked = true;
 };
 
 function setAttendanceValue(value) {
@@ -1108,15 +1118,12 @@ function calcEvaluationMoyenne(
   return moyenne.toFixed(2);
 }
 
-function calcRequirementMoyenne(quantity, evaluation, type, obligation) {
+function calcRequirementMoyenne(quantity, evaluation, type) {
   let value = 0;
   if (type === "حفظ") {
     value = evaluation * quantity;
   } else if (type === "مراجعة") {
     value = evaluation * (quantity / 2);
-  }
-  if (!obligation) {
-    value += value * 0.5;
   }
   return value ? value.toFixed(2) : "";
 }
@@ -1139,7 +1146,6 @@ function calcRequirementsMoyenne() {
   // moyenne = moyenne / (rows.length || 1);
   return moyenne ? moyenne.toFixed(2) : "0.00";
 }
-
 
 function calcRequirementEvaluation(
   requirQuantity,
@@ -1681,9 +1687,7 @@ async function loadDayStudentsList() {
               {
                 text: '<i class="fa-solid fa-check-double"></i>',
                 action: async function (e, dt) {
-                  if (
-                    dt.rows({ selected: true }).count() !== 0
-                  ) {
+                  if (dt.rows({ selected: true }).count() !== 0) {
                     dt.rows().deselect();
                   } else {
                     dt.rows().select();
@@ -2079,15 +2083,11 @@ addQuranSelectionBtn.onclick = function () {
       ${calcRequirementMoyenne(
         requirQuantityInput.value,
         requirEvaluationInput.value,
-        requirTypeInput.value,
-        requirObligation.checked
+        requirTypeInput.value
       )}
     </td>
     <td>
       ${requirTeacherInput.options[requirTeacherInput.selectedIndex].text}
-    </td>
-    <td>
-      ${requirObligation.checked ? "واجب" : "إظافي"}
     </td>
     <td>
       <button class="btn btn-danger btn-sm" 

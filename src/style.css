@@ -242,3 +242,7 @@ th.header-rotated>div>span {
 .ayah-select {
   font-family: sans-serif;
 }
+
+.surah-select{
+  max-width: fit-content;
+}

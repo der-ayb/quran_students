@@ -1,10 +1,9 @@
 //service workers
 let sw_path = null;
 if ("serviceWorker" in navigator) {
-  if (window.location.hostname !== "localhost") {
-    sw_path = "./service-worker.js";
+  if (window.location.hostname == "localhost" || window.location.hostname.includes('ngrok-free')) {
+    sw_path = "./utils/dev-service-worker.js";
   } else {
-    // sw_path = "./utils/dev-service-worker.js";
     sw_path = "./service-worker.js";
   }
 }

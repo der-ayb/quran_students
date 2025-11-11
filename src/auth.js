@@ -142,27 +142,35 @@ function fromNow(date) {
 // }
 
 function loginStatusElement(updateTime) {
-        if (!currentUser) {
-          return `
+  if (!currentUser) {
+    return `
             <div>
               ${googleSigninBtn.outerHTML}
-              <p class="card-text">${updateTime ? `آخر تحديث من هذا الجهاز:${updateTime}` : 'لم تتم المزامنة بعد'}</p>
+              <p class="card-text">${
+                updateTime
+                  ? `آخر تحديث من هذا الجهاز:${updateTime}`
+                  : "لم تتم المزامنة بعد"
+              }</p>
             </div>
           `;
-        }
-        
-        return `
+  }
+
+  return `
           <div class="card mx-auto" style="width: 18rem;">
             <div class="card-body">
               <h5 class="card-title">${currentUser.name}</h5>
-              <h6 class="card-subtitle mb-2 text-body-secondary">${currentUser.email}</h6>
-              <p class="card-text">${updateTime ? `آخر تحديث:${updateTime}` : "لم تتم المزامنة بعد"}</p>
+              <h6 class="card-subtitle mb-2 text-body-secondary">${
+                currentUser.email
+              }</h6>
+              <p class="card-text">${
+                updateTime ? `آخر تحديث:${updateTime}` : "لم تتم المزامنة بعد"
+              }</p>
               <button onclick="asyncDB()" class="btn btn-sm btn-secondary">🔄 مزامنة</button>
               <button onclick="logout()" class="btn btn-sm btn-warning">تسجيل الخروج</button>
             </div>
           </div>
         `;
-      }
+}
 async function initAuth() {
   await openAuthDB().then(async (res) => {
     db = res;
@@ -179,8 +187,8 @@ async function initAuth() {
       }
     } else {
       loginStatus.innerHTML = loginStatusElement(
-          fromNow(localStorage.getItem("lastUpdateTime"))
-        );
+        fromNow(localStorage.getItem("lastUpdateTime"))
+      );
     }
   });
 }
@@ -195,7 +203,9 @@ async function logout() {
   await deleteAccessToken(db);
   currentUser = null;
   userIsAuth = false;
-  loginStatus.innerHTML = loginStatusElement(fromNow(localStorage.getItem("lastUpdateTime")));
+  loginStatus.innerHTML = loginStatusElement(
+    fromNow(localStorage.getItem("lastUpdateTime"))
+  );
 }
 
 async function searchFileInDrive(accessToken = null) {
@@ -275,12 +285,12 @@ async function initializeGoogleAuth(callback) {
       },
       error_callback: async (type) => {
         hideLoadingModal();
-        if(type.type == "popup_failed_to_open"){
-          window.showToast('warning','لاتوجد صلاحية للنوافذ المنبثقة')
-        }else if(type.type == "unknown"){
-          window.showToast('warning','حدث خطأ.')
+        if (type.type == "popup_failed_to_open") {
+          window.showToast("warning", "لاتوجد صلاحية للنوافذ المنبثقة");
+        } else if (type.type == "unknown") {
+          window.showToast("warning", "حدث خطأ.");
         }
-      }
+      },
     });
 
     client.requestAccessToken();
@@ -302,7 +312,9 @@ async function uploadDBtoDrive(data) {
   // Check if a file named 'quran_students.sqlite3' already exists.
   const [file, updateTime] = await searchFileInDrive(accessToken);
   if (file) {
-    if (!confirm(`سيتم استبدال قاعدة البيانات التي في حسابك ⬆️, هل أنت موافق؟`)) {
+    if (
+      !confirm(`سيتم استبدال قاعدة البيانات التي في حسابك ⬆️, هل أنت موافق؟`)
+    ) {
       return false;
     }
     fileId = file.id;
@@ -403,7 +415,6 @@ async function downloadDBfromDrive() {
     }
     throw new Error(`Download failed: ${downloadResponse.statusText}`);
   }
-
   console.log("📥 DB downloaded from Google Drive for", currentUser.sub);
   return downloadResponse;
 }
