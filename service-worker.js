@@ -3,6 +3,9 @@ importScripts(
 );
 
 workbox.setConfig({ debug: false });
+// Force waiting service worker to become active
+self.skipWaiting();
+workbox.core.clientsClaim();
 
 // Precache critical files with revisions (update revisions when files change)
 workbox.precaching.precacheAndRoute(
@@ -10,13 +13,13 @@ workbox.precaching.precacheAndRoute(
     { url: "./", revision: "1" },
     { url: "./favicon.ico", revision: "1" },
     { url: "./index.html", revision: "1" },
-    { url: "./app.html", revision: "3" },
+    { url: "./app.html", revision: "1" },
     { url: "./manifest.json", revision: "1" },
 
-    { url: "./src/style.css", revision: "2" },
+    { url: "./src/style.css", revision: "1" },
     { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "2" },
-    { url: "./src/auth.js", revision: "2" },
+    { url: "./src/script.js", revision: "1" },
+    { url: "./src/auth.js", revision: "1" },
     { url: "./src/pdfmake.js", revision: "1" },
     { url: "./src/vfs_fonts.js", revision: "1" },
     { url: "./src/yearpicker.css", revision: "1" },
@@ -202,37 +205,79 @@ workbox.routing.registerRoute(
     url.origin === "https://www.gstatic.com" ||
     url.origin === "https://cdn.datatables.net" ||
     url.origin === "https://cdn.jsdelivr.net",
-  new workbox.strategies.CacheFirst({
-    cacheName: 'CACHE_NAME',
+  new workbox.strategies.NetworkFirst({
+    cacheName: "core-cache",
     plugins: [
       new workbox.expiration.ExpirationPlugin({
-        maxEntries: 100 // Support large file list
-      })
-    ]
+        maxAgeSeconds: 30 * 24 * 60 * 60,
+        maxEntries: 100,
+      }),
+    ],
   })
 );
 
-// Stale-while-revalidate for other CDN resources
+// Cache images
 workbox.routing.registerRoute(
-  ({ url }) => url.origin !== location.origin,
+  ({ request }) => request.destination === "image",
   new workbox.strategies.StaleWhileRevalidate({
-    cacheName: 'cdn-dynamic-cache'
+    cacheName: "image-cache",
   })
 );
 
-// Offline fallback for navigation
+// Serve Cached Resources
 workbox.routing.registerRoute(
-  ({ request }) => request.mode === 'navigate',
+  ({ url }) => url.origin === self.location.origin,
   new workbox.strategies.CacheFirst({
-    cacheName: 'CACHE_NAME',
+    cacheName: "static-cache",
     plugins: [
-      new workbox.cacheableResponse.CacheableResponsePlugin({
-        statuses: [200]
-      })
-    ]
+      new workbox.expiration.ExpirationPlugin({
+        maxAgeSeconds: 7 * 24 * 60 * 60, // Cache static resources for 7 days
+      }),
+    ],
   })
 );
 
-// Immediate activation
-workbox.core.skipWaiting();
-workbox.core.clientsClaim();
+// Serve HTML pages with Network First and offline fallback
+workbox.routing.registerRoute(
+  ({ request }) => request.mode === "navigate",
+  async ({ event }) => {
+    try {
+      const response = await workbox.strategies
+        .networkFirst({
+          cacheName: "pages-cache",
+          plugins: [
+            new workbox.expiration.ExpirationPlugin({
+              maxEntries: 50,
+            }),
+          ],
+        })
+        .handle({ event });
+      return response || (await caches.match("./index.html"));
+    } catch (error) {
+      return await caches.match("./index.html");
+    }
+  }
+);
+
+// Clean up old/unused caches during activation
+self.addEventListener("activate", (event) => {
+  const currentCaches = [
+    workbox.core.cacheNames.precache,
+    "core-cache",
+    "image-cache",
+    "pages-cache",
+    "static-cache",
+  ];
+
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (!currentCaches.includes(cacheName)) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});

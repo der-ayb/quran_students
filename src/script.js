@@ -38,7 +38,7 @@ let workingDay = new Date().toISOString().slice(0, 10);
 let workingDayID = null;
 let loadingModalShowNumber = [];
 let lastRequirements = {};
-
+let isGirls = null;
 const workingClassroomSelect = document.getElementById("workingClassroom");
 const dayDateInput = $("#dayDate");
 const dayNoteContainer = document.getElementById("dayNoteContainer");
@@ -243,8 +243,10 @@ async function saveToIndexedDB(data, db_key = PROJECT_DB_KEY) {
     store.put(data, db_key);
     tx.oncomplete = () => {
       idb.close();
-      localStorage.setItem("lastSaveAt", new Date());
-      localStorage.setItem("newSaveExists", true);
+      if (db_key == PROJECT_DB_KEY) {
+        localStorage.setItem("lastSaveAt", new Date());
+        localStorage.setItem("newSaveExists", true);
+      }
       resolve();
     };
     tx.onerror = (e) => {
@@ -569,10 +571,8 @@ workingClassroomSelect.onchange = async function () {
   workingClassroomId = this.value;
   localStorage.setItem("workingClassroomId", workingClassroomId);
   setIsCustomDate();
-  requirTeacherInput.options.length = 0;
-  requirTeacherInput.add(new Option("المعلم", "0", (selected = true)));
-  haircutInput.disabled =
-    this.options[this.selectedIndex].dataset.sex === "إناث";
+  isGirls = this.options[this.selectedIndex].dataset.sex === "إناث";
+  haircutInput.disabled = isGirls;
   statisticType.value = "0";
   statisticType.dispatchEvent(new Event("change"));
 };
@@ -698,14 +698,15 @@ async function loadClassRoomsList() {
         // Add select option
         const displayText = [place, mosque, sex, level].join(" - ");
         const option = new Option(displayText, classroomId);
-        Object.assign(option.dataset, { mosque, place, sex, level });
+        Object.assign(option.dataset, { sex });
         workingClassroomSelect.add(option);
       });
       if (workingClassroomId) {
         workingClassroomSelect.value = workingClassroomId;
-        haircutInput.disabled =
+        isGirls =
           workingClassroomSelect.options[workingClassroomSelect.selectedIndex]
             .dataset.sex === "إناث";
+        haircutInput.disabled = isGirls;
       } else {
         workingClassroomSelect.options[0].selected = true;
         workingClassroomSelect.dispatchEvent(new Event("change"));
@@ -1455,6 +1456,8 @@ async function loadDayStudentsList() {
       LIMIT 100`);
 
     const data = [];
+    requirTeacherInput.options.length = 0;
+    requirTeacherInput.add(new Option("المعلم", "0", (selected = true)));
     if (results.length) {
       const result = results[0];
       result.values.forEach((row) => {
@@ -1577,9 +1580,9 @@ async function loadDayStudentsList() {
                 (row[result.columns.indexOf("parentPhone")]
                   ? `<input type="checkbox" id="sms_btn${student_id}" onclick="window.location.href='sms:${
                       row[result.columns.indexOf("parentPhone")]
-                    }?body=ليكن في علمكم أن إبنكم ${
+                    }?body=ليكن في علمكم أن إبن${ isGirls ? "ت" : "" }كم ${
                       row[result.columns.indexOf("studentFName")]
-                    } غائب عن حصة تحفيظ القرآن اليوم'" class="btn-check" autocomplete="off">
+                    } غائب${ isGirls ? "ة" : "" } عن حصة تحفيظ القرآن اليوم'" class="btn-check" autocomplete="off">
               <label class="btn fa-solid fa-comment-sms px-2" for="sms_btn${student_id}"></label>`
                   : ""),
           evaluation: attendance_value
@@ -2184,9 +2187,6 @@ statisticType.onchange = function () {
 };
 
 async function showStudentsBulletins() {
-  const isGirls =
-    workingClassroomSelect.options[workingClassroomSelect.selectedIndex].dataset
-      .sex === "إناث";
   try {
     const dates = [...getDatesInRange()].sort(
       (a, b) => new Date(a) - new Date(b)
