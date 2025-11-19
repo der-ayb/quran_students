@@ -88,8 +88,8 @@ const parentPhoneInput = document.getElementById("parentPhone");
 const newStudentInfosForm = document.getElementById("newStudentInfosForm");
 const newClassroomInfosForm = document.getElementById("newClassroomInfosForm");
 const studentDayForm = document.getElementById("studentDayForm");
-const studentDayFormSubmitBtn = document.getElementById(
-  "studentDayFormSubmitBtn"
+const studentDayFormSubmitBtn = Array.from(
+  document.getElementsByClassName("studentDayFormSubmitBtn")
 );
 const newStudentDayModalBody = document.getElementById(
   "newStudentDayModalBody"
@@ -168,7 +168,7 @@ try {
   }
 } catch (err) {}
 
-window.addEventListener("popstate", function (e) {
+function on_back_function(e) {
   if (!e.state || !e.state.isPWABack) return;
 
   const modalIsShown =
@@ -179,7 +179,9 @@ window.addEventListener("popstate", function (e) {
     history.pushState({ isPWABack: true }, "");
     return;
   }
-});
+  window.addEventListener("popstate", on_back_function);
+}
+window.addEventListener("popstate", on_back_function);
 
 document.addEventListener("DOMContentLoaded", async function () {
   // init Plus Minus buttons
@@ -621,14 +623,19 @@ newClassroomInfosForm.onsubmit = (e) => {
         "UPDATE class_rooms SET mosque = ?, place = ?, sex = ? ,level = ? WHERE id = ?;",
         [mosque, place, sex, level, classroomIdInput.value]
       );
-      window.showToast("success", "تم تعديل الطالب بنجاح.");
+      window.showToast(
+        `success", "تم تعديل الطالب${isGirls ? "ة" : ""} بنجاح.`
+      );
     } else {
       project_db.run(
         "INSERT INTO class_rooms (mosque, place, sex, level) VALUES (?, ?, ?,?);",
         [mosque, place, sex, level]
       );
       newClassroomInfosForm.reset();
-      window.showToast("success", "تم إضافة الطالب بنجاح.");
+      window.showToast(
+        "success",
+        `تم إضافة الطالب${isGirls ? "ة" : ""} بنجاح.`
+      );
     }
     saveToIndexedDB(project_db.export());
     classroomInfosModal.hide();
@@ -701,7 +708,10 @@ async function loadClassRoomsList() {
             ]);
             saveToIndexedDB(project_db.export());
             deleteTableRow("#classroomsListTable", "id", classroomId);
-            window.showToast("success", "تم حذف الطالب بنجاح.");
+            window.showToast(
+              "success",
+              `تم حذف الطالب${isGirls ? "ة" : ""} بنجاح.`
+            );
           } catch (e) {
             window.showToast("warning", "Error: " + e.message);
           }
@@ -849,7 +859,7 @@ async function loadStudentsList() {
         deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
         CreateOnClickUndo(deleteBtn, function () {
           const studentId = row[0];
-          if (!confirm("هل أنت متأكد أنك تريد حذف هذا الطالب؟")) {
+          if (!confirm(`هل أنت متأكد أنك تريد حذف هذا الطالب؟`)) {
             return;
           }
           if (!project_db) {
@@ -860,7 +870,10 @@ async function loadStudentsList() {
             project_db.run("DELETE FROM students WHERE id = ?;", [studentId]);
             saveToIndexedDB(project_db.export());
             deleteTableRow("#studentsListTable", "id", row[0]);
-            window.showToast("success", "تم حذف الطالب بنجاح.");
+            window.showToast(
+              "success",
+              `تم حذف الطالب${isGirls ? "ة" : ""} بنجاح.`
+            );
           } catch (e) {
             window.showToast("warning", "Error: " + e.message);
           }
@@ -1003,7 +1016,10 @@ newStudentInfosForm.addEventListener("submit", (e) => {
         "UPDATE students SET fname = ?,lname = ?, birthyear = ?, parent_phone = ? WHERE id = ?;",
         [fname, lname, birthyear, parentPhone, studentIdInput.value]
       );
-      window.showToast("success", "تم تعديل الطالب بنجاح.");
+      window.showToast(
+        "success",
+        `تم تعديل الالطالب${isGirls ? "ة" : ""} بنجاح.`
+      );
     } else {
       project_db.run(
         "INSERT INTO students (fname,lname, birthyear, parent_phone, class_room_id) VALUES (?, ?,?, ?,?);",
@@ -1011,7 +1027,10 @@ newStudentInfosForm.addEventListener("submit", (e) => {
       );
       newStudentInfosForm.reset();
       studentIdInput.value = "";
-      window.showToast("success", "تم إضافة الطالب بنجاح.");
+      window.showToast(
+        "success",
+        `تم إضافة الالطالب${isGirls ? "ة" : ""} بنجاح.`
+      );
     }
     saveToIndexedDB(project_db.export());
     studentInfosModal.hide();
@@ -1146,6 +1165,8 @@ function calcRequirementMoyenne(quantity, evaluation, type) {
   let value = 0;
   if (type === "حفظ") {
     value = evaluation * quantity;
+  } else if (type === "حصيلة") {
+    value = evaluation * (quantity / 3);
   } else if (type === "مراجعة") {
     value = evaluation * (quantity / 2);
   }
@@ -1178,7 +1199,9 @@ function calcRequirementEvaluation(
   saveStateErrors
 ) {
   const errorValue = parseFloat(
-    10 / (requirQuantity * (requirType === "حفظ" ? 2 : 1))
+    10 /
+      (requirQuantity *
+        (requirType === "حفظ" ? 2 : requirType === "مراجعة" ? 1 : 0.5))
   );
   const result = parseFloat(
     10 - errorValue * (parseFloat(saveStopErrors) + parseFloat(saveStateErrors))
@@ -1201,7 +1224,9 @@ $([
   haircutInput,
   addedPointsInput,
 ]).on("change input", () => {
-  studentDayFormSubmitBtn.disabled = false;
+  studentDayFormSubmitBtn.forEach((element) => {
+    element.disabled = false;
+  });
   evalMoyenne.value = calcEvaluationMoyenne(
     retardInput.value,
     clothingInput.value,
@@ -1368,10 +1393,9 @@ function setOptionValueByText(selector, text) {
     if (selector.options[i].text === text) {
       selector.selectedIndex = i;
       selector.dispatchEvent(new Event("change"));
-      return true; // Exit the loop once the option is found and selected
+      return; // Exit the loop once the option is found and selected
     }
   }
-  return false;
 }
 
 function initRequirementFields(student_idORdetail) {
@@ -1393,10 +1417,25 @@ function initRequirementFields(student_idORdetail) {
   if (detail) {
     requireBookInput.value = detail["الكتاب"];
     requireBookInput.dispatchEvent(new Event("change"));
-    requirTypeInput.value = detail["النوع"];
-    setOptionValueByText(firstSurahSelect, detail["التفاصيل"].split(" ")[0]);
-    firstAyahSelect.value = parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
-    firstAyahSelect.dispatchEvent(new Event("change"));
+    if (detail["الكتاب"] == "القرآن الكريم") {
+      setOptionValueByText(firstSurahSelect, detail["التفاصيل"].split(" ")[0]);
+      firstAyahSelect.value =
+        parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
+      if (!firstAyahSelect.value) {
+        if (detail["النوع"] == "حفظ") {
+          requirTypeInput.value = "حصيلة";
+          firstAyahSelect.value = "1";
+        } else {
+          requirTypeInput.value = detail["النوع"] == "حصيلة" ? "حفظ" : "مراجعة";
+          firstSurahSelect.value =
+            firstSurahSelect.options[firstSurahSelect.selectedIndex - 1].value;
+          firstSurahSelect.dispatchEvent(new Event("change"));
+        }
+      } else {
+        requirTypeInput.value = detail["النوع"];
+      }
+      firstAyahSelect.dispatchEvent(new Event("change"));
+    }
   } else {
     requireBookInput.dispatchEvent(new Event("change"));
   }
@@ -1405,7 +1444,9 @@ function initRequirementFields(student_idORdetail) {
 
 async function showStudentDayModal(isUniqueStudent = true) {
   studentDayModal.show();
-  studentDayFormSubmitBtn.disabled = true;
+  studentDayFormSubmitBtn.forEach((element) => {
+    element.disabled = true;
+  });
   newStudentDayModalBody.style.display = "block";
   if (isUniqueStudent) {
     document
@@ -1424,7 +1465,7 @@ async function showStudentDayModal(isUniqueStudent = true) {
 async function loadDayStudentsList() {
   dayNoteContainer.style.display = "none";
   if (!project_db) {
-    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
+    window.showToast("info", "لا توجد قاعدة بيانات مفتوحة....");
     return;
   }
 
@@ -1550,21 +1591,21 @@ async function loadDayStudentsList() {
                 <td>${item["الأخطاء"] || ""}</td>
                 <td>${item["المعدل"]}</td>
                 <td>${item["المعرض"] || ""}</td>
-                <td>${item["الحالة"] || "إضافي"}</td>
                 <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this)">X</button></td>`;
               requirementsTable.querySelector("tbody").appendChild(row);
             }
           );
 
           const working_day_id = workingDayID;
-          studentDayFormSubmitBtn.onclick = async function () {
-            if (!project_db) {
-              window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
-              return;
-            }
-            update_student_day_notes(student_id, working_day_id);
-            studentDayModal.hide();
-          };
+          studentDayFormSubmitBtn.forEach((element) => {
+            element.onclick = async function () {
+              if (!project_db) {
+                window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+                return;
+              }
+              update_student_day_notes(student_id, working_day_id);
+            };
+          });
         };
         const attendance_value = attendance;
 
@@ -1743,7 +1784,9 @@ async function loadDayStudentsList() {
 
                   showStudentDayModal(false);
 
-                  studentNameInput.value = `${selectedRows.length} طالب`;
+                  studentNameInput.value = `${selectedRows.length} طالب${
+                    isGirls ? "ة" : ""
+                  }`;
 
                   clothingInput.value = "0";
                   haircutInput.value = "0";
@@ -1752,12 +1795,8 @@ async function loadDayStudentsList() {
                   addedPointsInput.value = "0";
 
                   const working_day_id = workingDayID;
-                  studentDayFormSubmitBtn.onclick = async function () {
-                    if (!project_db) {
-                      window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
-                      return;
-                    }
-                    selectedRows.forEach((selectedRow) => {
+                  studentDayFormSubmitBtn.forEach((element) => {
+                    element.onclick = async function () {
                       if (!project_db) {
                         window.showToast(
                           "info",
@@ -1765,59 +1804,70 @@ async function loadDayStudentsList() {
                         );
                         return;
                       }
+                      selectedRows.forEach((selectedRow) => {
+                        if (!project_db) {
+                          window.showToast(
+                            "info",
+                            "لا يوجد قاعدة بيانات مفتوحة."
+                          );
+                          return;
+                        }
 
-                      // Build UPDATE query dynamically
-                      const updates = [];
-                      const values = {
-                        clothing: parseInt(clothingInput.value) || 0,
-                        haircut: parseInt(haircutInput.value) || 0,
-                        behavior: parseInt(behaviorInput.value) || 0,
-                        prayer: parseInt(prayerInput.value) || 0,
-                        added_points: parseFloat(addedPointsInput.value) || 0,
-                      };
+                        // Build UPDATE query dynamically
+                        const updates = [];
+                        const values = {
+                          clothing: parseInt(clothingInput.value) || 0,
+                          haircut: parseInt(haircutInput.value) || 0,
+                          behavior: parseInt(behaviorInput.value) || 0,
+                          prayer: parseInt(prayerInput.value) || 0,
+                          added_points: parseFloat(addedPointsInput.value) || 0,
+                        };
 
-                      // Add non-zero values to update array
-                      if (values.clothing)
-                        updates.push(`clothing = ${values.clothing}`);
-                      if (values.haircut)
-                        updates.push(`haircut = ${values.haircut}`);
-                      if (values.behavior)
-                        updates.push(`behavior = ${values.behavior}`);
-                      if (values.prayer)
+                        // Add non-zero values to update array
+                        if (values.clothing)
+                          updates.push(`clothing = ${values.clothing}`);
+                        if (values.haircut)
+                          updates.push(`haircut = ${values.haircut}`);
+                        if (values.behavior)
+                          updates.push(`behavior = ${values.behavior}`);
+                        if (values.prayer)
+                          updates.push(
+                            `prayer = COALESCE(prayer,0) + ${values.prayer}`
+                          );
+                        if (values.added_points)
+                          updates.push(
+                            `added_points = COALESCE(added_points,0) + ${values.added_points}`
+                          );
+
+                        // Calculate total moyenne adjustment
+                        const moyenneAdjustment = (
+                          values.clothing +
+                          values.haircut +
+                          values.behavior +
+                          values.prayer +
+                          values.added_points
+                        ).toFixed(2);
+
+                        // Add moyenne update
                         updates.push(
-                          `prayer = COALESCE(prayer,0) + ${values.prayer}`
-                        );
-                      if (values.added_points)
-                        updates.push(
-                          `added_points = COALESCE(added_points,0) + ${values.added_points}`
+                          `moyenne = moyenne + ${moyenneAdjustment}`
                         );
 
-                      // Calculate total moyenne adjustment
-                      const moyenneAdjustment = (
-                        values.clothing +
-                        values.haircut +
-                        values.behavior +
-                        values.prayer +
-                        values.added_points
-                      ).toFixed(2);
-
-                      // Add moyenne update
-                      updates.push(`moyenne = moyenne + ${moyenneAdjustment}`);
-
-                      // Execute update if there are changes
-                      if (updates.length) {
-                        project_db.run(`
+                        // Execute update if there are changes
+                        if (updates.length) {
+                          project_db.run(`
                           UPDATE day_evaluations 
                           SET ${updates.join(", ")}
                           WHERE student_id = ${selectedRow.id} 
                           AND day_id = ${working_day_id}
                         `);
-                      }
-                    });
-                    saveToIndexedDB(project_db.export());
-                    loadDayStudentsList();
-                    studentDayModal.hide();
-                  };
+                        }
+                      });
+                      saveToIndexedDB(project_db.export());
+                      loadDayStudentsList();
+                      studentDayModal.hide();
+                    };
+                  });
                 },
               },
               {
@@ -2081,7 +2131,9 @@ function removeRequirItem(button) {
   const row = button.closest("tr");
   row.remove();
   requirMoyenneInput.value = calcRequirementsMoyenne();
-  studentDayFormSubmitBtn.disabled = false;
+  studentDayFormSubmitBtn.forEach((element) => {
+    element.disabled = false;
+  });
 }
 
 addQuranSelectionBtn.onclick = function () {
@@ -2132,7 +2184,9 @@ addQuranSelectionBtn.onclick = function () {
   }
 
   requirMoyenneInput.value = calcRequirementsMoyenne();
-  studentDayFormSubmitBtn.disabled = false;
+  studentDayFormSubmitBtn.forEach((element) => {
+    element.disabled = false;
+  });
   initRequirementFields({
     الكتاب: requireBookInput.value,
     النوع: requirTypeInput.value,
@@ -2367,14 +2421,16 @@ async function showStudentsBulletins() {
         }
 
         // Add student content
-        pageContent.push(
-          ...createStudentContent(
-            studentReport,
-            dates,
-            studentIndex > 0,
-            false
-          )
-        );
+        if (studentReport) {
+          pageContent.push(
+            ...createStudentContent(
+              studentReport,
+              dates,
+              studentIndex > 0,
+              pageStudents.length > 1
+            )
+          );
+        }
       });
 
       content.push(...pageContent);
@@ -2430,8 +2486,11 @@ async function showStudentsBulletins() {
 
     // First pass: categorize all students by their data length
     allStudentData.forEach((studentReport) => {
-      const studentDataLength = studentReport.data.length;
-      if (studentDataLength < 10) {
+      const studentDataLength = studentReport.data
+        .map((i) => JSON.parse(i.detail)?.length ?? 1)
+        .reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+
+      if (studentDataLength < 21) {
         studentsWithFewRecords.push(studentReport);
       } else {
         studentsWithManyRecords.push(studentReport);
@@ -2447,7 +2506,7 @@ async function showStudentsBulletins() {
         pages.push([studentsWithFewRecords[i], studentsWithFewRecords[i + 1]]);
       } else {
         // Last student with few records (odd number)
-        pages.push([studentsWithFewRecords[i]]);
+        pages.push([studentsWithFewRecords[i], null]);
       }
     }
 
@@ -2510,7 +2569,7 @@ async function showStudentsBulletins() {
           ? {
               absolutePosition: {
                 y: 841.89 / 2 + 10,
-                x:18
+                x: 18,
               },
             }
           : {}),
@@ -2744,7 +2803,6 @@ async function showStudentsBulletins() {
 
     const attendanceRate = ((presentDays / totalDays) * 100).toFixed(1);
 
-    
     // Full summary for single student view
     return [
       {
@@ -2753,8 +2811,8 @@ async function showStudentsBulletins() {
         margin: [0, 5, 0, 8],
         alignment: "center",
         absolutePosition: {
-            y: 841.89 / (isSecond ? 2 : 1) - 65,
-          },
+          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 65,
+        },
       },
       {
         table: {
@@ -2803,8 +2861,8 @@ async function showStudentsBulletins() {
           ],
         },
         absolutePosition: {
-            y: 841.89 / (isSecond ? 2 : 1) - 50,
-          },
+          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 50,
+        },
         margin: [0, 0, 0, 5],
       },
     ];

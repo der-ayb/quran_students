@@ -524,10 +524,10 @@
                           <select class="form-control text-center" id="behavior">
                             <option value="5">ممتاز</option>
                             <option value="4">جيد</option>
-                            <option value="3">مقبول</option>
-                            <option value="0">بدون تقييم</option>
+                            <option value="3">متوسط</option>
                             <option value="-5">سيئ</option>
                             <option value="-10">سيئ جدا</option>
+                            <option value="0">بدون تقييم</option>
                           </select>
                         </div>
                       </div>
@@ -537,9 +537,9 @@
                           <label for="clothing">الهندام:</label>
                           <select class="form-control text-center" id="clothing">
                             <option value="3">جيد</option>
-                            <option value="2">حسن</option>
-                            <option value="0">بدون تقييم</option>
+                            <option value="2">متوسط</option>
                             <option value="-1">غير مقبول</option>
+                            <option value="0">بدون تقييم</option>
                           </select>
                         </div>
                       </div>
@@ -548,9 +548,9 @@
                           <label for="haircut">الحلاقة:</label>
                           <select class="form-control text-center" id="haircut">
                             <option value="5">جيد</option>
-                            <option value="2">مقبول</option>
-                            <option value="0">بدون تقييم</option>
+                            <option value="2">متوسط</option>
                             <option value="-5">غير مقبول</option>
+                            <option value="0">بدون تقييم</option>
                           </select>
                         </div>
                       </div>
@@ -645,6 +645,7 @@
                             <label for="requirType">النوع:</label>
                             <select class="form-control text-center" id="requirType">
                               <option value="حفظ">حفظ</option>
+                              <option value="حصيلة">حصيلة</option>
                               <option value="مراجعة">مراجعة</option>
                             </select>
                           </div>
@@ -742,7 +743,8 @@
             onclick="minimizeModal(); return false;">تصغير</button>
           <div>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
-            <button id="studentDayFormSubmitBtn" class="btn btn-primary">حفظ</button>
+            <button  class="btn btn-primary studentDayFormSubmitBtn">حفظ</button>
+            <button  class="btn btn-primary studentDayFormSubmitBtn" data-bs-dismiss="modal">حفظ و إغلاق</button>
           </div>
         </div>
       </div>
