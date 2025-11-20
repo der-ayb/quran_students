@@ -88,9 +88,10 @@ const parentPhoneInput = document.getElementById("parentPhone");
 const newStudentInfosForm = document.getElementById("newStudentInfosForm");
 const newClassroomInfosForm = document.getElementById("newClassroomInfosForm");
 const studentDayForm = document.getElementById("studentDayForm");
-const studentDayFormSubmitBtn = Array.from(
-  document.getElementsByClassName("studentDayFormSubmitBtn")
+const studentDayFormSubmitBtn = document.getElementById(
+  "studentDayFormSubmitBtn"
 );
+
 const newStudentDayModalBody = document.getElementById(
   "newStudentDayModalBody"
 );
@@ -1224,9 +1225,9 @@ $([
   haircutInput,
   addedPointsInput,
 ]).on("change input", () => {
-  studentDayFormSubmitBtn.forEach((element) => {
-    element.disabled = false;
-  });
+  studentDayFormSubmitBtn.disabled = false;
+  studentDayFormSubmitBtn.nextElementSibling.disabled = false;
+  
   evalMoyenne.value = calcEvaluationMoyenne(
     retardInput.value,
     clothingInput.value,
@@ -1444,9 +1445,9 @@ function initRequirementFields(student_idORdetail) {
 
 async function showStudentDayModal(isUniqueStudent = true) {
   studentDayModal.show();
-  studentDayFormSubmitBtn.forEach((element) => {
-    element.disabled = true;
-  });
+  studentDayFormSubmitBtn.disabled = true;
+  studentDayFormSubmitBtn.nextElementSibling.disabled = true;
+
   newStudentDayModalBody.style.display = "block";
   if (isUniqueStudent) {
     document
@@ -1597,15 +1598,14 @@ async function loadDayStudentsList() {
           );
 
           const working_day_id = workingDayID;
-          studentDayFormSubmitBtn.forEach((element) => {
-            element.onclick = async function () {
+          studentDayFormSubmitBtn.onclick = async function () {
               if (!project_db) {
                 window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
                 return;
               }
               update_student_day_notes(student_id, working_day_id);
             };
-          });
+          
         };
         const attendance_value = attendance;
 
@@ -1795,8 +1795,7 @@ async function loadDayStudentsList() {
                   addedPointsInput.value = "0";
 
                   const working_day_id = workingDayID;
-                  studentDayFormSubmitBtn.forEach((element) => {
-                    element.onclick = async function () {
+                  studentDayFormSubmitBtn.onclick = async function () {
                       if (!project_db) {
                         window.showToast(
                           "info",
@@ -1867,7 +1866,7 @@ async function loadDayStudentsList() {
                       loadDayStudentsList();
                       studentDayModal.hide();
                     };
-                  });
+                  
                 },
               },
               {
@@ -2131,9 +2130,9 @@ function removeRequirItem(button) {
   const row = button.closest("tr");
   row.remove();
   requirMoyenneInput.value = calcRequirementsMoyenne();
-  studentDayFormSubmitBtn.forEach((element) => {
-    element.disabled = false;
-  });
+  studentDayFormSubmitBtn.disabled = false;
+  studentDayFormSubmitBtn.nextElementSibling.disabled = false;
+  
 }
 
 addQuranSelectionBtn.onclick = function () {
@@ -2184,9 +2183,8 @@ addQuranSelectionBtn.onclick = function () {
   }
 
   requirMoyenneInput.value = calcRequirementsMoyenne();
-  studentDayFormSubmitBtn.forEach((element) => {
-    element.disabled = false;
-  });
+  studentDayFormSubmitBtn.disabled = false;
+  studentDayFormSubmitBtn.nextElementSibling.disabled = false;
   initRequirementFields({
     الكتاب: requireBookInput.value,
     النوع: requirTypeInput.value,
