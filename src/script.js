@@ -1170,7 +1170,7 @@ function calcRequirementMoyenne(quantity, evaluation, type) {
   if (type === "حفظ") {
     value = evaluation * quantity;
   } else if (type === "حصيلة") {
-    value = evaluation * (quantity / 3);
+    value = evaluation * (quantity / 2.5);
   } else if (type === "مراجعة") {
     value = evaluation * (quantity / 2);
   }
@@ -1364,10 +1364,8 @@ async function markPresence(studentId) {
 }
 
 function showApopintmentTimePicker(initialTime = null) {
-  setApointementTimeToNow()
+  setApointementTimeToNow();
   updateAppointmentTimeDisplay();
-
-  // Show modal
   new bootstrap.Modal(document.getElementById("timeModal")).show();
 }
 
@@ -1378,7 +1376,7 @@ function updateAppointmentTimeDisplay() {
 }
 
 function adjustApointementTimeMinutes(minutes) {
-  currentTime.minutes = Math.round(currentTime.minutes / 30) * 30;
+  currentTime.minutes = Math.floor(currentTime.minutes / 15) * 15;
   if (currentTime.minutes === 60) {
     currentTime.hours++;
     currentTime.minutes = 0;
@@ -1408,7 +1406,6 @@ function setApointementTimeToNow() {
   currentTime.minutes = now.getMinutes();
   updateAppointmentTimeDisplay();
 }
-
 
 async function addNewStudyDay() {
   if (!project_db) {
@@ -1465,25 +1462,28 @@ function initRequirementFields(student_idORdetail) {
   if (detail) {
     requireBookInput.value = detail["الكتاب"];
     requireBookInput.dispatchEvent(new Event("change"));
+    const Type = detail["النوع"];
+    const startSurahName = detail["التفاصيل"].split(" ").at(0);
+    const finishSurahName = detail["التفاصيل"].split(" ").at(-3);
     if (detail["الكتاب"] == "القرآن الكريم") {
-      setOptionValueByText(
-        firstSurahSelect,
-        detail["التفاصيل"].split(" ").at(-3)
-      );
+      setOptionValueByText(firstSurahSelect, finishSurahName);
       firstAyahSelect.value =
         parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
       if (!firstAyahSelect.value) {
-        if (detail["النوع"] == "حفظ") {
+        if (Type == "حفظ") {
           requirTypeInput.value = "حصيلة";
           firstAyahSelect.value = "1";
         } else {
-          requirTypeInput.value = detail["النوع"] == "حصيلة" ? "حفظ" : "مراجعة";
+          requirTypeInput.value = Type == "حصيلة"? "حفظ":"مراجعة";
+          if (Type == "مراجعة" && startSurahName !== finishSurahName) {
+            setOptionValueByText(firstSurahSelect, startSurahName);
+          }
           firstSurahSelect.value =
             firstSurahSelect.options[firstSurahSelect.selectedIndex - 1].value;
           firstSurahSelect.dispatchEvent(new Event("change"));
         }
       } else {
-        requirTypeInput.value = detail["النوع"];
+        requirTypeInput.value = Type;
       }
       firstAyahSelect.dispatchEvent(new Event("change"));
     }
@@ -3855,6 +3855,7 @@ async function showStudentsResultsStatistics() {
   const dates = [...getDatesInRange()].sort(
     (a, b) => new Date(a) - new Date(b)
   );
+
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
     statisticType.value = "0";
@@ -3873,10 +3874,10 @@ async function showStudentsResultsStatistics() {
     .map(
       (date, index) =>
         `COALESCE(ROUND(
-              (SELECT COALESCE(SUM(moyenne), 0) FROM day_evaluations WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
+              (SELECT SUM(moyenne) FROM day_evaluations WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
               + 
               (SELECT COALESCE(SUM(moyenne), 0) FROM day_requirements WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
-          , 2), 0) as '${date}'`
+          , 2), "غ") as '${arabicDays[new Date(date).getDay()]} ${new Date(date).getDate()}'`
     )
     .join(",\n    ");
 
@@ -3893,10 +3894,6 @@ async function showStudentsResultsStatistics() {
     )
     .join(" +\n        ");
 
-  const attendanceSum = dates
-    .map((_, index) => `CASE WHEN de${index}.attendance = 0 THEN 0 ELSE 1 END`)
-    .join(" +\n        ");
-
   const query = `
     WITH ${dateCtes}
     SELECT 
@@ -3909,12 +3906,28 @@ async function showStudentsResultsStatistics() {
         , 2), 0 ) as "المجموع",
         -- المعدل (Average)
         COALESCE( ROUND(
-            (${sumExpressions}) / ${dates.length}
+            (${sumExpressions}) / (${dates.length}-(
+                                    SELECT count(attendance)
+                                    FROM day_evaluations
+                                    WHERE student_id = s.id
+                                    AND attendance = 0
+                                    AND day_id in (SELECT id FROM education_day WHERE date in (${
+                                      '"' + dates.join('","') + '"'
+                                    }))
+                                    ))
         , 2), 0 ) as "المعدل",
         -- الترتيب (order)
         ROW_NUMBER() OVER (ORDER BY 
         COALESCE( ROUND(
-            (${sumExpressions}) / ${dates.length}
+            (${sumExpressions}) / (${dates.length}-(
+                                    SELECT count(attendance)
+                                    FROM day_evaluations
+                                    WHERE student_id = s.id
+                                    AND attendance = 0
+                                    AND day_id in (SELECT id FROM education_day WHERE date in (${
+                                      '"' + dates.join('","') + '"'
+                                    }))
+                                    ))
         , 2), 0 ) DESC ) as "الترتيب"
     FROM students s 
     LEFT JOIN day_evaluations de ON s.id = de.student_id 
@@ -4085,7 +4098,7 @@ async function showAttendanceStatistics() {
         WHEN de${index}.attendance = 1 THEN 'ح'
         WHEN de${index}.attendance = 0 THEN 'غ م'
         ELSE 'غ'
-    END as '${date}'`
+    END as '${arabicDays[new Date(date).getDay()]} ${new Date(date).getDate()}'`
     )
     .join(",\n    ");
 
@@ -4118,7 +4131,6 @@ async function showAttendanceStatistics() {
     GROUP BY s.id
     ORDER BY s.id;
 `;
-console.log(query)
 
   const buttons =
     dates.length > 16
@@ -4283,6 +4295,10 @@ async function setStatisticsTable(query, buttons = []) {
         tableData,
         tableColumns,
         {
+          columnDefs: [
+            { "width": "200px", "targets": 1 }
+          ],
+          autoWidth: false,
           searching: false,
           scrollX: true,
           info: false,

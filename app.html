@@ -74,10 +74,7 @@
     id="themeStylesheet">
   <link type="text/css" rel="stylesheet" href="src/fonts.css" />
   <link type="text/css" rel="stylesheet" href="src/style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
-    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.bootstrap5.css" />
@@ -221,7 +218,7 @@
       <select id="statisticType" onchange="handleStatisticsSelection(this.value)" class="form-select my-2 text-center"
         aria-label="Default select example">
         <option value="0">-- اختر نوع الإحصاء --</option>
-        <option value="attendance">قائمة الغياب</option>
+        <option value="attendance">قائمة الحضور</option>
         <option value="results">النتائج</option>
         <option value="bulletins">كشوف النقاط</option>
       </select>
@@ -409,7 +406,7 @@
     </button>
   </div>
 
-  <!-- Modal for adding a new student -->
+  <!-- Modal for adding a new classroom -->
   <div class="modal fade" id="newClassroomInfosModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
     aria-labelledby="newClassroomInfosModalLabel" aria-hidden="true" style="z-index: 1101;">
     <div class="modal-dialog">
@@ -768,21 +765,18 @@
           <h6 class="modal-title">وقت بدء الحصة</h6>
         </div>
         <div class="modal-body text-center">
-          <!-- Time Display -->
           <p id="timeDisplay" class="fs-1">00:00</p>
 
-          <!-- Control Buttons -->
           <div class="mb-3">
-            <button class="btn btn-outline-primary p-0  border-0" onclick="adjustApointementTimeMinutes(30)">
+            <button class="btn btn-outline-primary p-0  border-0" onclick="adjustApointementTimeMinutes(15)">
               <i class="fa-regular fa-square-plus fa-3x"></i>
             </button>
-            <button class="btn btn-success mx-2" onclick="setApointementTimeToNow()">NOW</button>
-            <button class="btn btn-outline-primary p-0 border-0" onclick="adjustApointementTimeMinutes(-30)">
+            <button class="btn btn-success mx-2" onclick="setApointementTimeToNow()">الآن</button>
+            <button class="btn btn-outline-primary p-0 border-0" onclick="adjustApointementTimeMinutes(-15)">
               <i class="fa-regular fa-square-minus fa-3x"></i>
             </button>
           </div>
 
-          <!-- Action Buttons -->
           <div>
             <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
             <button class="btn btn-primary ms-2" data-bs-dismiss="modal" onclick="addNewStudyDay()">بدء</button>
