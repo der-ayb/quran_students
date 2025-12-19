@@ -39,6 +39,7 @@ let workingDayID = null;
 let loadingModalShowNumber = [];
 let lastRequirements = {};
 let isGirls = null;
+let currentTime = { hours: 0, minutes: 0 };
 const workingClassroomSelect = document.getElementById("workingClassroom");
 const dayDateInput = $("#dayDate");
 const dayNoteContainer = document.getElementById("dayNoteContainer");
@@ -685,7 +686,7 @@ async function loadClassRoomsList() {
         // Edit button
         const editBtn = document.createElement("button");
         editBtn.className = "btn btn-info btn-sm";
-        editBtn.innerHTML = '<i class="fa-solid fa-user-pen"></i> تعديل';
+        editBtn.innerHTML = "تعديل";
         editBtn.onclick = () => {
           classroomInfosModal.show();
           classroomIdInput.value = classroomId;
@@ -699,7 +700,7 @@ async function loadClassRoomsList() {
         // Delete button
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "btn btn-danger btn-sm";
-        deleteBtn.innerHTML = '<i class="fa-solid fa-user-slash"></i> حذف';
+        deleteBtn.innerHTML = "حذف";
         CreateOnClickUndo(deleteBtn, () => {
           if (!confirm("هل أنت متأكد أنك تريد حذف هذا القسم؟") || !project_db) {
             return;
@@ -1362,18 +1363,62 @@ async function markPresence(studentId) {
   await loadDayStudentsList();
 }
 
-async function addNewDay() {
+function showApopintmentTimePicker(initialTime = null) {
+  setApointementTimeToNow()
+  updateAppointmentTimeDisplay();
+
+  // Show modal
+  new bootstrap.Modal(document.getElementById("timeModal")).show();
+}
+
+function updateAppointmentTimeDisplay() {
+  const h = currentTime.hours.toString().padStart(2, "0");
+  const m = currentTime.minutes.toString().padStart(2, "0");
+  document.getElementById("timeDisplay").textContent = `${h}:${m}`;
+}
+
+function adjustApointementTimeMinutes(minutes) {
+  currentTime.minutes = Math.round(currentTime.minutes / 30) * 30;
+  if (currentTime.minutes === 60) {
+    currentTime.hours++;
+    currentTime.minutes = 0;
+  }
+  currentTime.minutes += minutes;
+
+  // Handle overflow/underflow
+  while (currentTime.minutes >= 60) {
+    currentTime.hours++;
+    currentTime.minutes -= 60;
+  }
+  while (currentTime.minutes < 0) {
+    currentTime.hours--;
+    currentTime.minutes += 60;
+  }
+
+  // Wrap hours
+  if (currentTime.hours < 0) currentTime.hours = 23;
+  if (currentTime.hours > 23) currentTime.hours = 0;
+
+  updateAppointmentTimeDisplay();
+}
+
+function setApointementTimeToNow() {
+  const now = new Date();
+  currentTime.hours = now.getHours();
+  currentTime.minutes = now.getMinutes();
+  updateAppointmentTimeDisplay();
+}
+
+
+async function addNewStudyDay() {
   if (!project_db) {
     indow.showToast("info", "لا يوجد قاعدة بيانات مفتوحة....");
     return;
   }
-  const appointment_time = prompt(
-    "وقت بدء الحصة:",
-    `${new Date().getHours()}:${new Date()
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`
-  );
+
+  const h = currentTime.hours.toString().padStart(2, "0");
+  const m = currentTime.minutes.toString().padStart(2, "0");
+  const appointment_time = `${h}:${m}`;
   if (appointment_time == null) {
     window.showToast("error", "يرجى اختيار وقت البدء.");
     return;
@@ -3848,6 +3893,10 @@ async function showStudentsResultsStatistics() {
     )
     .join(" +\n        ");
 
+  const attendanceSum = dates
+    .map((_, index) => `CASE WHEN de${index}.attendance = 0 THEN 0 ELSE 1 END`)
+    .join(" +\n        ");
+
   const query = `
     WITH ${dateCtes}
     SELECT 
@@ -4069,6 +4118,7 @@ async function showAttendanceStatistics() {
     GROUP BY s.id
     ORDER BY s.id;
 `;
+console.log(query)
 
   const buttons =
     dates.length > 16

@@ -74,7 +74,9 @@
     id="themeStylesheet">
   <link type="text/css" rel="stylesheet" href="src/fonts.css" />
   <link type="text/css" rel="stylesheet" href="src/style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
 
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.css" />
@@ -195,7 +197,7 @@
         </thead>
         <tbody></tbody>
       </table>
-      <button id="addNewDayBtn" onclick="addNewDay()" class="btn btn-info mx-auto px-5 my-5"
+      <button id="addNewDayBtn" onclick="showApopintmentTimePicker()" class="btn btn-info mx-auto px-5 my-5"
         style="display: none;">إظافة يوم ✚</button>
     </div>
 
@@ -212,7 +214,7 @@
 
       <div class="dropdown text-center w-100 mt-3">
         <button class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">-- إختر التلاميذ --</button>
-        <div class="dropdown-menu statisticsStudentsMenu p-2" style="max-height: 60vh; overflow-y: auto;">   
+        <div class="dropdown-menu statisticsStudentsMenu p-2" style="max-height: 60vh; overflow-y: auto;">
         </div>
       </div>
 
@@ -474,7 +476,7 @@
     </div>
   </div>
 
-  <!-- Modal for adding a new student -->
+  <!-- Modal for edit students day -->
   <div class="modal fade" id="newStudentDayModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
     aria-labelledby="newStudentDayModalLabel" aria-hidden="true" style="z-index: 1101;">
     <div class="modal-dialog modal-dialog-scrollable">
@@ -753,6 +755,37 @@
             <button id="studentDayFormSubmitBtn" class="btn btn-primary">حفظ</button>
             <button onclick="studentDayFormSubmitBtn.dispatchEvent(new Event('click'))" class="btn btn-primary"
               data-bs-dismiss="modal">حفظ و إغلاق</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="timeModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title">وقت بدء الحصة</h6>
+        </div>
+        <div class="modal-body text-center">
+          <!-- Time Display -->
+          <p id="timeDisplay" class="fs-1">00:00</p>
+
+          <!-- Control Buttons -->
+          <div class="mb-3">
+            <button class="btn btn-outline-primary p-0  border-0" onclick="adjustApointementTimeMinutes(30)">
+              <i class="fa-regular fa-square-plus fa-3x"></i>
+            </button>
+            <button class="btn btn-success mx-2" onclick="setApointementTimeToNow()">NOW</button>
+            <button class="btn btn-outline-primary p-0 border-0" onclick="adjustApointementTimeMinutes(-30)">
+              <i class="fa-regular fa-square-minus fa-3x"></i>
+            </button>
+          </div>
+
+          <!-- Action Buttons -->
+          <div>
+            <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button class="btn btn-primary ms-2" data-bs-dismiss="modal" onclick="addNewStudyDay()">بدء</button>
           </div>
         </div>
       </div>
