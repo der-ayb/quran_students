@@ -99,7 +99,6 @@ const newStudentDayModalBody = document.getElementById(
 
 let statisAllCheckbox = document.getElementById("statisAllCheckbox");
 const statisticType = document.getElementById("statisticType");
-const statisticsPdfViewer = document.getElementById("statisticsPdfViewer");
 
 let start_time = null;
 const themeSelector = document.getElementById("themeSelector");
@@ -1205,7 +1204,7 @@ function calcRequirementEvaluation(
   const errorValue = parseFloat(
     10 /
       (requirQuantity *
-        (requirType === "حفظ" ? 2 : requirType === "مراجعة" ? 1 : 0.5))
+        (requirType === "حفظ" ? 2 : requirType === "مراجعة" ? 1 : 0.8))
   );
   const result = parseFloat(
     10 - errorValue * (parseFloat(saveStopErrors) + parseFloat(saveStateErrors))
@@ -1474,7 +1473,7 @@ function initRequirementFields(student_idORdetail) {
           requirTypeInput.value = "حصيلة";
           firstAyahSelect.value = "1";
         } else {
-          requirTypeInput.value = Type == "حصيلة"? "حفظ":"مراجعة";
+          requirTypeInput.value = Type == "حصيلة" ? "حفظ" : "مراجعة";
           if (Type == "مراجعة" && startSurahName !== finishSurahName) {
             setOptionValueByText(firstSurahSelect, startSurahName);
           }
@@ -2257,8 +2256,6 @@ async function showTab(tabId) {
       studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      statisticsPdfViewer.style.display = "none";
-      statisticsPdfViewer.src = "";
     }
   } else {
     showTab("pills-home");
@@ -2281,7 +2278,7 @@ async function fillStatistiscStudentsList() {
       const result = results[0];
       const dropdown = document.querySelector(".statisticsStudentsMenu");
       dropdown.innerHTML = `
-        <div class="form-check mb-2">
+        <div class="form-check">
             <input class="form-check-input" type="checkbox" id="statisAllCheckbox" onchange="statisStudentToggleAll()" checked>
             <label class="form-check-label">الجميع</label>
         </div>
@@ -2300,7 +2297,7 @@ async function fillStatistiscStudentsList() {
                         row[result.columns.indexOf("lname")]
                       }</label>
                   `;
-        dropdown.insertBefore(newItem, dropdown.lastElementChild);
+        dropdown.append(newItem);
       });
     }
   } catch (e) {
@@ -2337,9 +2334,6 @@ statisticType.onchange = function () {
       break;
     case "results":
       showStudentsResultsStatistics();
-      break;
-    case "bulletins":
-      showStudentsBulletins();
       break;
     default:
       if ($.fn.DataTable.isDataTable("#statisticsTable")) {
@@ -3311,546 +3305,6 @@ async function showStudentsBulletins() {
   }
 }
 
-async function showStudentsBulletins2() {
-  try {
-    const dates = [...getDatesInRange()].sort(
-      (a, b) => new Date(a) - new Date(b)
-    );
-
-    if (!dates.length) {
-      window.showToast("warning", "لا توجد أيام في هذا النطاق.");
-      statisticType.value = "0";
-      return;
-    }
-    // Get all student IDs from the table
-    const dateCtes = dates
-      .map(
-        (date, index) =>
-          `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`
-      )
-      .join(", \n");
-
-    // Generate sum expressions for المجموع
-    const sumExpressions = dates
-      .map(
-        (date, index) =>
-          `(SELECT COALESCE(SUM(de.moyenne), 0) FROM day_evaluations de 
-          WHERE de.student_id = s.id AND de.day_id IN (SELECT id FROM day_id${index}))
-          + 
-          (SELECT COALESCE(SUM(dr.moyenne), 0) FROM day_requirements dr 
-          WHERE dr.student_id = s.id AND dr.day_id IN (SELECT id FROM day_id${index}))
-        `
-      )
-      .join(" +\n        ");
-
-    const results = project_db.exec(`
-      WITH ${dateCtes}
-      SELECT 
-      s.id, s.fname, s.lname,
-          -- الترتيب (order)
-          ROW_NUMBER() OVER (ORDER BY 
-          COALESCE( ROUND(
-              (${sumExpressions}) / ${dates.length}
-          , 2), 0 ) DESC ) as "الترتيب"
-      FROM students s 
-      LEFT JOIN day_evaluations de ON s.id = de.student_id 
-      LEFT JOIN day_requirements dr ON dr.student_id = s.id 
-      WHERE s.class_room_id = ${workingClassroomId}
-      GROUP BY s.id, s.fname, s.lname
-      ORDER BY fname, lname;
-      `);
-
-    if (!results.length || !results[0].values.length) {
-      window.showToast("warning", "لا يوجد طلاب في هذا القسم.");
-      return;
-    }
-
-    const students = results[0].values.map((row) => ({
-      id: row[0],
-      name: `${row[1]} ${row[2]}`,
-      order: row[3],
-    }));
-
-    // Collect data for all students
-    const allStudentData = [];
-    for (const student of students) {
-      const studentData = await getStudentData(student.id, dates);
-      if (studentData.length > 0) {
-        allStudentData.push({
-          studentId: student.id,
-          studentName: student.name,
-          studentOrder: student.order,
-          data: studentData,
-        });
-      }
-    }
-
-    if (allStudentData.length === 0) {
-      window.showToast("warning", "لا توجد بيانات للطلاب في هذه الفترة.");
-      return;
-    }
-
-    // Create single PDF with all students
-    createMultiStudentPDF(allStudentData, dates);
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    window.showToast("warning", "حدث خطأ في إنشاء التقرير");
-  }
-
-  // Get data for a single student
-  async function getStudentData(studentId, dates) {
-    const dateList = dates.map((date) => `'${date}'`).join(", ");
-
-    const query = `
-        SELECT 
-            ed.date as day,
-            s.fname || ' ' || s.lname as student_name,
-            dr.detail,
-            de.prayer,
-            de.haircut,
-            de.behavior,
-            de.clothing,
-            de.retard,
-            de.attendance,
-            dr.moyenne as requirements_score,
-            de.moyenne as evaluation_score
-        FROM education_day ed
-        LEFT JOIN day_requirements dr ON ed.id = dr.day_id AND dr.student_id = ${studentId}
-        LEFT JOIN day_evaluations de ON ed.id = de.day_id AND de.student_id = ${studentId}
-        LEFT JOIN students s ON s.id = ${studentId}
-        WHERE ed.date IN (${dateList})
-        AND ed.class_room_id = ${workingClassroomId}
-        ORDER BY ed.date
-    `;
-
-    const results = project_db.exec(query);
-    if (!results.length) return [];
-
-    const result = results[0];
-    const columns = result.columns;
-    const values = result.values;
-
-    return values.map((row) => {
-      const obj = {};
-      columns.forEach((col, index) => {
-        obj[col] = row[index];
-      });
-      return obj;
-    });
-  }
-
-  // Create multi-student PDF with one student per page
-  function createMultiStudentPDF(allStudentData, dates) {
-    const A5_WIDTH = 419.53;
-    const A5_HEIGHT = 595.28;
-
-    const content = [];
-
-    // Add each student's page
-    allStudentData.forEach((studentReport, index) => {
-      if (index > 0) {
-        content.push({ text: "", pageBreak: "before" });
-      }
-      content.push(...createStudentPage(studentReport, dates, index + 1));
-    });
-
-    const docDefinition = {
-      pageSize: { width: A5_WIDTH, height: A5_HEIGHT },
-      pageMargins: [10, 15, 10, 15],
-      pageOrientation: "landscape",
-      content: content,
-      styles: {
-        header: {
-          fontSize: 16,
-          bold: true,
-          color: "#2c3e50",
-        },
-        subheader: {
-          fontSize: 11,
-          bold: true,
-          color: "#34495e",
-          margin: [0, 2, 0, 2],
-        },
-        tableHeader: {
-          fontSize: 9,
-          bold: true,
-          color: "#2c3e50",
-          fillColor: "#ecf0f1",
-        },
-        tableCell: {
-          fontSize: 10,
-          lineHeight: 1.2,
-        },
-        summary: {
-          fontSize: 10,
-          bold: true,
-          margin: [0, 10, 0, 5],
-          color: "#2c3e50",
-        },
-        coverTitle: {
-          fontSize: 20,
-          bold: true,
-          color: "#2c3e50",
-          margin: [0, 0, 0, 20],
-        },
-        coverSubtitle: {
-          fontSize: 14,
-          color: "#34495e",
-          margin: [0, 0, 0, 10],
-        },
-      },
-      defaultStyle: {
-        alignment: "right",
-      },
-      footer: function (currentPage, pageCount) {
-        return {
-          text: reverseArabicWords(`صفحة ${currentPage} من ${pageCount}`),
-          alignment: "center",
-          fontSize: 9,
-          color: "#666666",
-          margin: [0, 10, 0, 0],
-        };
-      },
-    };
-
-    pdfMake.createPdf(docDefinition).open();
-    // pdfMake
-    //   .createPdf(docDefinition)
-    //   .getBlob()
-    //   .then((blob) => {
-    //     const url = URL.createObjectURL(blob);
-    //     statisticsPdfViewer.src = url;
-    //     statisticsPdfViewer.style.display = "block";
-    //   })
-    //   .catch((err) => {
-    //     console.error("Error generating PDF Blob:", err);
-    //   });
-  }
-
-  // Create a single student page
-  function createStudentPage(studentReport, dates, pageNumber) {
-    const { data, studentName, studentOrder, studentId } = studentReport;
-
-    // Arabic headers
-    const headers = [
-      { text: "التاريخ", style: "tableHeader", alignment: "center" },
-      { text: "الواجبات", style: "tableHeader", alignment: "center" },
-      { text: "الحلاقة", style: "tableHeader", alignment: "center" },
-      { text: "السلوك", style: "tableHeader", alignment: "center" },
-      { text: "اللباس", style: "tableHeader", alignment: "center" },
-    ];
-
-    // Create table body
-    const body = data.map((record) => {
-      if (record.attendance !== 1) {
-        return [
-          {
-            text:
-              `${arabicDays[new Date(record.day).getDay()]} ${record.day}` ||
-              "-",
-            style: "tableCell",
-            alignment: "center",
-            margin: [0, 2, 0, -2],
-          },
-          {},
-          {},
-          {},
-          {
-            text: "غـــــــــائـــب" + (isGirls ? "ة" : ""),
-            style: "tableCell",
-            alignment: "center",
-            bold: true,
-            colSpan: 4,
-            margin: [0, 2, 0, -2],
-          },
-        ];
-      }
-
-      record.detail = formatDetail(record.detail);
-      const clothingOption = document.querySelector(
-        `#clothing option[value='${record.clothing}']`
-      );
-      const haircutOption = document.querySelector(
-        `#haircut option[value='${record.haircut}']`
-      );
-      const behaviorOption = document.querySelector(
-        `#behavior option[value='${record.behavior}']`
-      );
-
-      if (record.detail.length == 1) {
-        return [
-          {
-            text:
-              `${arabicDays[new Date(record.day).getDay()]} ${record.day}` ||
-              "-",
-            style: "tableCell",
-            alignment: "center",
-            margin: [0, 2, 0, -2],
-          },
-          {
-            text: record.detail[0],
-            style: "tableCell",
-            alignment: "right",
-            margin: [0, 2, 0, -2],
-          },
-          {
-            text: haircutOption ? haircutOption.textContent : "-",
-            style: "tableCell",
-            alignment: "center",
-            margin: [0, 2, 0, -2],
-          },
-          {
-            text: behaviorOption ? behaviorOption.textContent : "-",
-            style: "tableCell",
-            alignment: "center",
-            margin: [0, 2, 0, -2],
-          },
-          {
-            text: clothingOption ? clothingOption.textContent : "-",
-            style: "tableCell",
-            alignment: "center",
-            margin: [0, 2, 0, -2],
-          },
-        ];
-      }
-
-      const all = [
-        [
-          {
-            text:
-              `${arabicDays[new Date(record.day).getDay()]} ${record.day}` ||
-              "-",
-            style: "tableCell",
-            alignment: "center",
-            rowSpan: record.detail.length,
-            marginTop: 5 * record.detail.length,
-          },
-          {
-            text: record.detail[0] || "-",
-            style: "tableCell",
-            alignment: "right",
-            margin: [0, 2, 0, -2],
-          },
-          {
-            text: haircutOption ? haircutOption.textContent : "-",
-            style: "tableCell",
-            alignment: "center",
-            rowSpan: record.detail.length,
-            marginTop: 5 * record.detail.length,
-          },
-          {
-            text: behaviorOption ? behaviorOption.textContent : "-",
-            style: "tableCell",
-            alignment: "center",
-            rowSpan: record.detail.length,
-            marginTop: 5 * record.detail.length,
-          },
-          {
-            text: clothingOption ? clothingOption.textContent : "-",
-            style: "tableCell",
-            alignment: "center",
-            rowSpan: record.detail.length,
-            marginTop: 5 * record.detail.length,
-          },
-        ],
-      ];
-
-      for (let i = 1; i < record.detail.length; i++) {
-        all.push([
-          {},
-          {
-            text: record.detail[i] || "-",
-            style: "tableCell",
-            alignment: "right",
-            margin: [0, 2, 0, -2],
-          },
-          {},
-          {},
-          {},
-        ]);
-      }
-      return all;
-    });
-
-    // Flatten the body array and reverse each row for RTL
-    const flattenedBody = [].concat(
-      ...body.map((item) => {
-        if (Array.isArray(item)) {
-          if (item.length > 0 && Array.isArray(item[0])) {
-            return item.map((row) => row.reverse());
-          } else {
-            return [item.reverse()];
-          }
-        }
-        return [];
-      })
-    );
-
-    return [
-      // Header section for each student
-      {
-        stack: [
-          {
-            text: reverseArabicWords(
-              "تقرير  متابعة الطالب" + (isGirls ? "ة" : "")
-            ),
-            style: "header",
-            alignment: "center",
-          },
-          {
-            text: reverseArabicWords(
-              `الطالب${isGirls ? "ة" : ""}: ${studentName}`
-            ),
-            style: "subheader",
-            alignment: "right",
-            marginTop: -10,
-          },
-          {
-            // text: reverseArabicWords(
-            //   `الفترة: من ${dates[0]} إلى ${dates[dates.length - 1]}`
-            // ),
-            text: reverseArabicWords(
-              `الفترة:  ${
-                arabicMonths[new Date(dates[0]).getMonth()]
-              } ${new Date(dates[0]).getFullYear()}`
-            ),
-            style: "subheader",
-            alignment: "left",
-            marginTop: -10,
-          },
-        ],
-        margin: [0, 0, 0, 15],
-      },
-
-      // Table
-      {
-        table: {
-          headerRows: 1,
-          widths: [45, 45, 45, "*", 75],
-          body: [headers.reverse(), ...flattenedBody],
-        },
-        layout: {
-          hLineWidth: function (i, node) {
-            return 0.5;
-          },
-          vLineWidth: function (i, node) {
-            return 0.5;
-          },
-          hLineColor: function (i, node) {
-            return "#aaaaaa";
-          },
-          vLineColor: function (i, node) {
-            return "#aaaaaa";
-          },
-          fillColor: function (rowIndex, node, columnIndex) {
-            return rowIndex === 0 ? "#f8f9fa" : null;
-          },
-        },
-      },
-
-      // Summary section for each student
-      ...createStudentSummarySection(data, studentOrder),
-      // {
-      //   text: reverseArabicWords(
-      //     `بتاريخ: ${arabicDays[new Date().getDay()]} ${new Date()
-      //       .toISOString()
-      //       .slice(0, 10)}`
-      //   ),
-      //   fontSize: 10,
-      //   alignment: "left",
-      //   marginTop: -13,
-      // },
-    ];
-  }
-
-  // Create summary section for a single student
-  function createStudentSummarySection(studentData, studentOrder) {
-    const totalDays = studentData.length;
-    const validRecords = studentData.filter(
-      (record) => record.attendance !== null
-    );
-
-    if (totalDays === 0) return [];
-
-    const presentDays = validRecords.filter(
-      (record) => record.attendance === 1
-    ).length;
-    const total = validRecords.reduce(
-      (sum, record) =>
-        sum + (record.requirements_score || 0) + (record.evaluation_score || 0),
-      0
-    );
-    const totalAvg = total / totalDays;
-
-    return [
-      {
-        text: reverseArabicWords("الملخص"),
-        style: "summary",
-        margin: [0, 5, 0, 15],
-        alignment: "center",
-      },
-      {
-        table: {
-          widths: ["*", "*", "*", "*", "*"],
-          body: [
-            [
-              {
-                text: `الترتيب: ${studentOrder}`,
-                style: "tableCell",
-                bold: true,
-                alignment: "center",
-                border: [false, false, false, false],
-              },
-              {
-                text: `المعدل العام: ${totalAvg.toFixed(2)}`,
-                style: "tableCell",
-                alignment: "center",
-                bold: true,
-                border: [true, false, false, false],
-              },
-              {
-                text: `المجموع العام: ${total.toFixed(2)}`,
-                style: "tableCell",
-                alignment: "center",
-                bold: true,
-                border: [true, false, false, false],
-              },
-              {
-                text: `نسبة الحضور: ${((presentDays / totalDays) * 100).toFixed(
-                  1
-                )}%`,
-                style: "tableCell",
-                alignment: "center",
-                border: [true, false, false, false],
-              },
-              {
-                text: `إجمالي الأيام: ${totalDays}`,
-                style: "tableCell",
-                alignment: "center",
-                border: [true, false, false, false],
-              },
-            ],
-          ],
-        },
-        margin: [0, -10, 0, 20],
-      },
-    ];
-  }
-
-  // Function to reverse words in a string (for Arabic)
-  function reverseArabicWords(str) {
-    return str.split(" ").reverse().join(" ");
-  }
-
-  function formatDetail(detail) {
-    if (!detail) return "-";
-    detail = JSON.parse(detail).map((item) => {
-      return `${item["النوع"]}  ${item["الكتاب"]}] ${item["التفاصيل"]} [   بتقدير: ${item["التقدير"]}/10  بمجموع: ${item["المعدل"]}`;
-    });
-    return detail;
-  }
-}
-
 async function showStudentsResultsStatistics() {
   const dates = [...getDatesInRange()].sort(
     (a, b) => new Date(a) - new Date(b)
@@ -3877,7 +3331,9 @@ async function showStudentsResultsStatistics() {
               (SELECT SUM(moyenne) FROM day_evaluations WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
               + 
               (SELECT COALESCE(SUM(moyenne), 0) FROM day_requirements WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
-          , 2), "غ") as '${arabicDays[new Date(date).getDay()]} ${new Date(date).getDate()}'`
+          , 2), "غ") as '${arabicDays[new Date(date).getDay()]} ${new Date(
+          date
+        ).getDate()}'`
     )
     .join(",\n    ");
 
@@ -4069,6 +3525,12 @@ async function showStudentsResultsStatistics() {
               };
             },
           },
+          {
+            text: "كشوف النقاط",
+            action: async function (e, dt) {
+              showStudentsBulletins();
+            },
+          },
         ];
   setStatisticsTable(query, buttons);
 }
@@ -4077,6 +3539,7 @@ async function showAttendanceStatistics() {
   const dates = [...getDatesInRange()].sort(
     (a, b) => new Date(a) - new Date(b)
   );
+  console.log(new Set(dates.map((d) => new Date(d).getMonth())).size <= 1);
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
     statisticType.value = "0";
@@ -4295,9 +3758,10 @@ async function setStatisticsTable(query, buttons = []) {
         tableData,
         tableColumns,
         {
-          columnDefs: [
-            { "width": "200px", "targets": 1 }
-          ],
+          columnDefs: [{ width: "170px", targets: 1 }],
+          fixedColumns: {
+            start: 2,
+          },
           autoWidth: false,
           searching: false,
           scrollX: true,

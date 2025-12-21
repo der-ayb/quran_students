@@ -79,6 +79,7 @@
   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.bootstrap5.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/select/3.1.3/css/select.bootstrap5.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.5/css/fixedColumns.bootstrap5.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel='stylesheet' href='src/yearpicker.css' />
@@ -134,7 +135,7 @@
           <select id="workingClassroom" class="form-select"></select>
         </div>
       </div>
-      <table id="classroomsListTable" class="display responsive nowrap" width="100%">
+      <table id="classroomsListTable" class="table table-striped table-dark display responsive nowrap" width="100%">
         <thead>
           <tr>
             <th>#</th>
@@ -152,7 +153,7 @@
     <div class="tab-pane fade" id="pills-students" role="tabpanel" aria-labelledby="pills-students-tab">
       <h2 class="text-center mb-4">قائمة التلاميذ</h2>
 
-      <table id="studentsListTable" class="display responsive nowrap" width="100%">
+      <table id="studentsListTable" class="table table-striped table-dark display responsive nowrap" width="100%">
         <thead>
           <tr>
             <th></th>
@@ -178,7 +179,8 @@
       </div>
       <p id="dayNoteContainer" class="border px-2 py-2 mx-2 my-2"></p>
 
-      <table id="dayListTable" style="display: none;" class="display responsive nowrap" width="100%">
+      <table id="dayListTable" style="display: none;" class="table table-striped table-dark display responsive nowrap"
+        width="100%">
         <thead>
           <tr class="text-center">
             <th class=""></th>
@@ -209,23 +211,19 @@
         </div>
       </div>
 
-      <div class="dropdown text-center w-100 mt-3">
-        <button class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">-- إختر التلاميذ --</button>
-        <div class="dropdown-menu statisticsStudentsMenu p-2" style="max-height: 60vh; overflow-y: auto;">
-        </div>
+      <div class="input-group my-2">
+        <button class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">تخصيص التلاميذ</button>
+        <div class="dropdown-menu statisticsStudentsMenu p-2" style="max-height: 60vh; overflow-y: auto;"></div>
+        <select id="statisticType" onchange="handleStatisticsSelection(this.value)" class="form-select text-center"
+          aria-label="Default select example">
+          <option value="0">-- اختر نوع الإحصاء --</option>
+          <option value="attendance">الحضور</option>
+          <option value="results">النتائج</option>
+        </select>
       </div>
 
-      <select id="statisticType" onchange="handleStatisticsSelection(this.value)" class="form-select my-2 text-center"
-        aria-label="Default select example">
-        <option value="0">-- اختر نوع الإحصاء --</option>
-        <option value="attendance">قائمة الحضور</option>
-        <option value="results">النتائج</option>
-        <option value="bulletins">كشوف النقاط</option>
-      </select>
+      <table id="statisticsTable" class="table table-striped table-dark display" style="width:100%"></table>
 
-
-      <table id="statisticsTable" class="display" style="width:100%"></table>
-      <embed style="display:none;" id="statisticsPdfViewer" src="" type="application/pdf" width="99%" height="500px" />
     </div>
 
     <div class="tab-pane fade" id="pills-preferences" role="tabpanel" aria-labelledby="pills-preferences-tab">
@@ -823,6 +821,8 @@
 <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.print.js"></script>
+<script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/dataTables.fixedColumns.min.js"></script>
+<script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/fixedColumns.bootstrap5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/locale/ar-dz.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
