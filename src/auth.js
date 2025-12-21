@@ -228,7 +228,6 @@ async function searchFileInDrive(accessToken = null) {
 
   if (!listResponse.ok) {
     await logout();
-    throw new Error(`Failed to list files: ${listResponse.statusText}`);
   }
 
   const listResult = await listResponse.json();

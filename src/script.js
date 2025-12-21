@@ -2317,23 +2317,34 @@ function getDatesInRange() {
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
-    return result[0].values
-      .map((row) => row[0])
-      .filter((dateStr) => {
-        const currentDate = new Date(dateStr);
-        return currentDate >= startDate && currentDate <= endDate;
-      });
+    return [
+      result[0].values
+        .map((row) => row[0])
+        .filter((dateStr) => {
+          const currentDate = new Date(dateStr);
+          return currentDate >= startDate && currentDate <= endDate;
+        }),
+      startDate.getMonth() == endDate.getMonth() &&
+        startDate.getFullYear() == endDate.getFullYear() &&
+        startDate.getDate() == 1 &&
+        endDate.getDate() ==
+          new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0).getDate(),
+    ];
   }
-  return [];
+  return [[], null];
 }
 
-statisticType.onchange = function () {
+statisticType.onchange = async function () {
   switch (this.value) {
     case "attendance":
+      await showLoadingModal("جاري تحميل الإحصائيات...");
       showAttendanceStatistics();
+      hideLoadingModal();
       break;
     case "results":
+      await showLoadingModal("جاري تحميل الإحصائيات...");
       showStudentsResultsStatistics();
+      hideLoadingModal();
       break;
     default:
       if ($.fn.DataTable.isDataTable("#statisticsTable")) {
@@ -2365,18 +2376,8 @@ function getStatisticsSelectedStudentsId() {
   return selected.join(", ");
 }
 
-async function showStudentsBulletins() {
+async function showStudentsBulletins(dates) {
   try {
-    const dates = [...getDatesInRange()].sort(
-      (a, b) => new Date(a) - new Date(b)
-    );
-
-    if (!dates.length) {
-      window.showToast("warning", "لا توجد أيام في هذا النطاق.");
-      statisticType.value = "0";
-      return;
-    }
-
     const attendanceRes = {};
     project_db
       .exec(
@@ -3306,9 +3307,8 @@ async function showStudentsBulletins() {
 }
 
 async function showStudentsResultsStatistics() {
-  const dates = [...getDatesInRange()].sort(
-    (a, b) => new Date(a) - new Date(b)
-  );
+  let [dates, isFullMonth] = getDatesInRange();
+  dates = dates.sort((a, b) => new Date(a) - new Date(b));
 
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
@@ -3528,7 +3528,9 @@ async function showStudentsResultsStatistics() {
           {
             text: "كشوف النقاط",
             action: async function (e, dt) {
-              showStudentsBulletins();
+              await showLoadingModal("جاري تحميل الإحصائيات...");
+              showStudentsBulletins(dates);
+              hideLoadingModal();
             },
           },
         ];
@@ -3536,10 +3538,9 @@ async function showStudentsResultsStatistics() {
 }
 
 async function showAttendanceStatistics() {
-  const dates = [...getDatesInRange()].sort(
-    (a, b) => new Date(a) - new Date(b)
-  );
-  console.log(new Set(dates.map((d) => new Date(d).getMonth())).size <= 1);
+  let [dates, isFullMonth] = getDatesInRange();
+  dates = dates.sort((a, b) => new Date(a) - new Date(b));
+
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
     statisticType.value = "0";
@@ -3774,7 +3775,7 @@ async function setStatisticsTable(query, buttons = []) {
           responsive: true,
 
           layout: {
-            topStart: {
+            bottomStart: {
               buttons: buttons,
             },
           },
