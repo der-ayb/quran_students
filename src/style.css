@@ -51,7 +51,10 @@ input {
   cursor: pointer;
   transition: all .6s ease;
 }
-
+/* Apply to the table cells */
+table.dataTable td, table.dataTable th {
+    white-space: nowrap;
+}
 /* nav bar */
 .nav-bar {
   position: fixed;

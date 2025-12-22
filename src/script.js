@@ -199,25 +199,42 @@ document.addEventListener("DOMContentLoaded", async function () {
     localStorage.setItem("selectedTheme", theme);
 
     // Optimize theme-specific style injection/removal
-    const styleId = "slateThemeStyle";
+    const styleId = "darkThemeStyle";
     let styleNode = document.getElementById(styleId);
 
-    if (theme === "slate") {
+    if (
+      themeSelector.options[themeSelector.selectedIndex].text.includes("(dark)")
+    ) {
       if (!styleNode) {
         styleNode = document.createElement("style");
         styleNode.id = styleId;
         styleNode.textContent = `
         .btn, .form-select,.form-control, .input-group-text {
-          padding-bottom: 4px !important;
-          padding-top: 4px !important;
+          padding-bottom: 5px !important;
+          padding-top: 5px !important;
         }
       `;
         document.head.appendChild(styleNode);
       }
-    } else if (styleNode) {
-      styleNode.remove();
+      document
+        .getElementById("classroomsListTable")
+        .classList.add("table-dark");
+      document.getElementById("studentsListTable").classList.add("table-dark");
+      document.getElementById("dayListTable").classList.add("table-dark");
+      document.getElementById("statisticsTable").classList.add("table-dark");
+    } else {
+      if (styleNode) styleNode.remove();
+      document
+        .getElementById("classroomsListTable")
+        .classList.remove("table-dark");
+      document
+        .getElementById("studentsListTable")
+        .classList.remove("table-dark");
+      document.getElementById("dayListTable").classList.remove("table-dark");
+      document.getElementById("statisticsTable").classList.remove("table-dark");
     }
   };
+
   const savedTheme = localStorage.getItem("selectedTheme");
   if (savedTheme) {
     themeSelector.value = savedTheme;
@@ -904,6 +921,7 @@ async function loadStudentsList() {
         }
 
         data.push({
+          select: "",
           id: row[0],
           num: data.length + 1,
           name:
@@ -926,19 +944,30 @@ async function loadStudentsList() {
       "#studentsListTable",
       data,
       [
+        { data: "select" },
         { data: "id" },
         { data: "num" },
         { data: "name" },
-        { data: "age" },
-        { data: "parentPhone" },
-        { data: "actions" },
+        { data: "age",  className: 'text-center' },
+        { data: "parentPhone" ,className: 'py-1'},
+        { data: "actions" ,className: 'py-1'},
       ],
       {
+        select: {
+          style: "multi",
+          selector: "td:first-child",
+          headerCheckbox: "select-page",
+        },
         destroy: true,
+        order: [[2, "asc"]],
         columnDefs: [
-          { visible: false, targets: [0, 5] },
           {
-            targets: [4, 5],
+            targets: 0,
+            render: DataTable.render.select(),
+          },
+          { visible: false, targets: [1, 6] },
+          {
+            targets: [0, 5,6],
             orderable: false,
           },
         ],
@@ -958,7 +987,7 @@ async function loadStudentsList() {
               {
                 text: '<i class="fa-solid fa-table-cells">',
                 action: async function (e, dt) {
-                  const columns = dt.columns([5]);
+                  const columns = dt.columns([6]);
                   const isVisible = dt.column(columns[0][0]).visible();
 
                   columns.visible(!isVisible);
@@ -968,6 +997,28 @@ async function loadStudentsList() {
                       ? '<i class="fa-solid fa-table-cells">'
                       : '<i class="fa-solid fa-table"></i>'
                   );
+                },
+              },
+              {
+                text: '<i class="fa-solid fa-comment-sms">',
+                action: async function (e, dt) {
+                  const selectedRows = dt
+                    .rows({ selected: true })
+                    .data()
+                    .toArray();
+                  if (selectedRows.length === 0) {
+                    window.showToast("info", "الرجاء اختيار طلاب أولاً.");
+                    return;
+                  }
+                  const phones = selectedRows
+                    .map((row) => row.parentPhone)
+                    .filter((row) => typeof row !== "string")
+                    .map((row) =>
+                      row.querySelector("a").href.replace("tel:", "")
+                    )
+                    .toString();
+
+                  window.location.href = `sms:${phones}`;
                 },
               },
               {
@@ -1669,6 +1720,7 @@ async function loadDayStudentsList() {
         );
         const thisDay = new Date().toISOString().slice(0, 10);
         data.push({
+          select: "",
           id: student_id,
           actions: editBtn,
           student: full_name,
@@ -1732,6 +1784,7 @@ async function loadDayStudentsList() {
       "#dayListTable",
       data,
       [
+        { data: "select" },
         { data: "id", visible: false },
         { data: "actions" },
         { data: "student" },
@@ -1776,6 +1829,8 @@ async function loadDayStudentsList() {
       {
         select: {
           style: "multi",
+          selector: "td:first-child",
+          headerCheckbox: "select-page",
         },
         destroy: true,
         searching: false,
@@ -1787,13 +1842,14 @@ async function loadDayStudentsList() {
         },
         paging: false,
         responsive: true,
-
+        order: [[1, "asc"]],
         columnDefs: [
-          { visible: false, targets: [-4, -3, -2, -1] },
           {
-            targets: 1,
-            orderable: false,
+            targets: 0,
+            render: DataTable.render.select(),
           },
+          { visible: false, targets: [-4, -3, -2, -1] },
+          { targets: [0,1, 2], orderable: false },
         ],
         layout: {
           topStart: {
@@ -1801,16 +1857,6 @@ async function loadDayStudentsList() {
               {
                 extend: "colvis",
                 text: '<i class="fa-solid fa-table"></i>',
-              },
-              {
-                text: '<i class="fa-solid fa-check-double"></i>',
-                action: async function (e, dt) {
-                  if (dt.rows({ selected: true }).count() !== 0) {
-                    dt.rows().deselect();
-                  } else {
-                    dt.rows().select();
-                  }
-                },
               },
               {
                 text: '<i class="fa-solid fa-pen-to-square"></i>',
@@ -2337,12 +2383,12 @@ function getDatesInRange() {
 statisticType.onchange = async function () {
   switch (this.value) {
     case "attendance":
-      await showLoadingModal("جاري تحميل الإحصائيات...");
+      await showLoadingModal("جاري تحميل الإحصائيات");
       showAttendanceStatistics();
       hideLoadingModal();
       break;
     case "results":
-      await showLoadingModal("جاري تحميل الإحصائيات...");
+      await showLoadingModal("جاري تحميل الإحصائيات");
       showStudentsResultsStatistics();
       hideLoadingModal();
       break;
@@ -3528,7 +3574,7 @@ async function showStudentsResultsStatistics() {
           {
             text: "كشوف النقاط",
             action: async function (e, dt) {
-              await showLoadingModal("جاري تحميل الإحصائيات...");
+              await showLoadingModal("جاري تحميل الإحصائيات");
               showStudentsBulletins(dates);
               hideLoadingModal();
             },
@@ -3759,11 +3805,9 @@ async function setStatisticsTable(query, buttons = []) {
         tableData,
         tableColumns,
         {
-          columnDefs: [{ width: "170px", targets: 1 }],
           fixedColumns: {
             start: 2,
           },
-          autoWidth: false,
           searching: false,
           scrollX: true,
           info: false,
