@@ -23,7 +23,7 @@ if (sw_path) {
             ) {
               window.showToast(
                 "info",
-                "تم التماس تحديث جديد، يرجى <button type='button' class='btn' onclick='window.location.reload()'>تحديث</button> الصفحة."
+                "تم التماس تحديث جديد، يرجى <button type='button' class='btn btn-dark' onclick='window.location.reload()'>تحديث</button> الصفحة."
               );
             }
           });

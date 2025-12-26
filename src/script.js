@@ -688,7 +688,7 @@ async function loadClassRoomsList() {
       result.values.forEach((row) => {
         // Create button group once
         const button_group = document.createElement("div");
-        button_group.className = "btn-group";
+        button_group.className = "btn-group btn-group-sm";
         button_group.setAttribute("role", "group");
         button_group.setAttribute("aria-label", "Basic example");
 
@@ -773,7 +773,7 @@ async function loadClassRoomsList() {
         { data: "place" },
         { data: "sex" },
         { data: "level" },
-        { data: "actions" },
+        { data: "actions", className: "py-1" },
       ],
       {
         destroy: true,
@@ -847,7 +847,7 @@ async function loadStudentsList() {
       result.values.forEach((row) => {
         // action buttons
         const action_button_group = document.createElement("div");
-        action_button_group.className = "btn-group";
+        action_button_group.className = "btn-group btn-group-sm";
         action_button_group.setAttribute("role", "group");
         action_button_group.setAttribute("aria-label", "Basic example");
         // Edit
@@ -903,7 +903,7 @@ async function loadStudentsList() {
         let phone_button_group = "غير متوفر";
         if (row[result.columns.indexOf("parent_phone")]) {
           phone_button_group = document.createElement("div");
-          phone_button_group.className = "btn-group";
+          phone_button_group.className = "btn-group btn-group-sm";
           phone_button_group.setAttribute("role", "group");
           phone_button_group.setAttribute("aria-label", "Basic example");
           // call
@@ -948,9 +948,9 @@ async function loadStudentsList() {
         { data: "id" },
         { data: "num" },
         { data: "name" },
-        { data: "age",  className: 'text-center' },
-        { data: "parentPhone" ,className: 'py-1'},
-        { data: "actions" ,className: 'py-1'},
+        { data: "age", className: "text-center" },
+        { data: "parentPhone", className: "py-1" },
+        { data: "actions", className: "py-1" },
       ],
       {
         select: {
@@ -967,7 +967,7 @@ async function loadStudentsList() {
           },
           { visible: false, targets: [1, 6] },
           {
-            targets: [0, 5,6],
+            targets: [0, 5, 6],
             orderable: false,
           },
         ],
@@ -1642,17 +1642,17 @@ async function loadDayStudentsList() {
         ) {
           requirTeacherInput.add(new Option(full_name, student_id));
         }
-        // edit button
-        const editBtn = document.createElement("i");
-        editBtn.className = "fa-solid fa-pen-to-square";
-        editBtn.style.color = "yellow";
-        editBtn.onclick = function () {
+        function editStudentDay(isEvaluation= true) {
           showStudentDayModal(true);
 
           studentNameInput.value = full_name;
 
+          if(isEvaluation){
+            evaluationCollapse.show();
+          requirCollapse.hide();
+          }else{
           evaluationCollapse.hide();
-          requirCollapse.show();
+          requirCollapse.show();}
 
           setAttendanceValue(attendance);
           retardInput.value =
@@ -1707,17 +1707,26 @@ async function loadDayStudentsList() {
             this.nextElementSibling.disabled = true;
           };
         };
+        // edit button
+        const editBtn = document.createElement("i");
+        editBtn.className = "fa-solid fa-circle-plus";
+        editBtn.style.cssText ="transform: scale(1.5); cursor: pointer;";
+        editBtn.onclick = ()=> editStudentDay(false)
+
+        let editEvaluationDayBtn;
+        if(row[result.columns.indexOf("clothing")] == null &&
+          row[result.columns.indexOf("haircut")] == null &&
+          row[result.columns.indexOf("behavior")] == null){
+        editEvaluationDayBtn = document.createElement("i");
+        editEvaluationDayBtn.className = "fa-solid fa-pen-to-square mt-2";
+        editEvaluationDayBtn.textContent = "   "+row[result.columns.indexOf("evalMoyenne")];
+        editEvaluationDayBtn.onclick = ()=> editStudentDay(true)}
+        else{
+          editEvaluationDayBtn = row[result.columns.indexOf("evalMoyenne")];
+        }
+
         const attendance_value = attendance;
 
-        const clothingOption = document.querySelector(
-          `#clothing option[value='${row[result.columns.indexOf("clothing")]}']`
-        );
-        const haircutOption = document.querySelector(
-          `#haircut option[value='${row[result.columns.indexOf("haircut")]}']`
-        );
-        const behaviorOption = document.querySelector(
-          `#behavior option[value='${row[result.columns.indexOf("behavior")]}']`
-        );
         const thisDay = new Date().toISOString().slice(0, 10);
         data.push({
           select: "",
@@ -1741,7 +1750,7 @@ async function loadDayStudentsList() {
                   : "")
               : attendance_value == 0
               ? "غياب مبرر"
-              : `<button onclick="markPresence(${student_id})" class="btn fa-solid fa-square-check px-1"></button>` +
+              : `<button onclick="markPresence(${student_id})" class="btn fa-solid fa-square-check px-1" style="transform: scale(1.3); cursor: pointer;"></button>` +
                 (row[result.columns.indexOf("parentPhone")]
                   ? `<input type="checkbox" id="sms_btn${student_id}" onclick="window.location.href='sms:${
                       row[result.columns.indexOf("parentPhone")]
@@ -1758,20 +1767,11 @@ async function loadDayStudentsList() {
                 row[result.columns.indexOf("evalMoyenne")]
               )
             : null,
-          clothing: attendance_value
-            ? clothingOption
-              ? clothingOption.textContent
-              : ""
+          evalMoyenne: attendance_value
+            ?  editEvaluationDayBtn
             : null,
-          haircut: attendance_value
-            ? haircutOption
-              ? haircutOption.textContent
-              : ""
-            : null,
-          behavior: attendance_value
-            ? behaviorOption
-              ? behaviorOption.textContent
-              : ""
+          requirsMoyenne: attendance_value
+            ? row[result.columns.indexOf("requirsMoyenne")]
             : null,
         });
       });
@@ -1786,7 +1786,7 @@ async function loadDayStudentsList() {
       [
         { data: "select" },
         { data: "id", visible: false },
-        { data: "actions" },
+        { data: "actions", className: "px-0" },
         { data: "student" },
         {
           data: "attendance",
@@ -1821,10 +1821,45 @@ async function loadDayStudentsList() {
             return data;
           },
         },
-        { data: "clothing", defaultContent: "/" },
-        { data: "haircut", defaultContent: "/" },
-        { data: "behavior", defaultContent: "/" },
-        { data: "prayer", defaultContent: "/" },
+        {
+          data: "evalMoyenne",
+          className: "text-center d-flex justify-content-around",
+          type: "num",
+          defaultContent: "/",
+          render: function (data, type, row) {
+            if (type === "sort" && !data) {
+              return 0;
+            }
+            return data;
+          },
+          // render: function (data, type, row) {
+          //   if (type === "sort") {
+          //     if (!data) {
+          //       return 0;
+          //     } else if (
+          //       typeof data === "string" && data.includes('<i')
+          //     ) {
+          //       return data.substring(
+          //         0,
+          //         data.indexOf('<i')
+          //       );
+          //     }
+          //   }
+          //   return data;
+          // },
+        },
+        {
+          data: "requirsMoyenne",
+          className: "text-center",
+          type: "num",
+          defaultContent: "/",
+          render: function (data, type, row) {
+            if (type === "sort" && !data) {
+              return 0;
+            }
+            return data;
+          },
+        },
       ],
       {
         select: {
@@ -1848,8 +1883,8 @@ async function loadDayStudentsList() {
             targets: 0,
             render: DataTable.render.select(),
           },
-          { visible: false, targets: [-4, -3, -2, -1] },
-          { targets: [0,1, 2], orderable: false },
+          // { visible: false, targets: [-4, -3, -2, -1] },
+          { targets: [0, 1, 2], orderable: false },
         ],
         layout: {
           topStart: {
@@ -3806,8 +3841,11 @@ async function setStatisticsTable(query, buttons = []) {
         tableColumns,
         {
           fixedColumns: {
-            start: 2,
+            start: 1,
           },
+          columnDefs : [
+            {targets:0,visible:false}
+          ],  
           searching: false,
           scrollX: true,
           info: false,
