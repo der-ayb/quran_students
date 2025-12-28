@@ -1864,7 +1864,7 @@ async function loadDayStudentsList() {
           emptyTable: "لا توجد بيانات في الجدول.",
         },
         fixedColumns: {
-          start:0,
+          start: 0,
           end: 1,
         },
         paging: false,
@@ -1875,8 +1875,8 @@ async function loadDayStudentsList() {
             targets: 0,
             render: DataTable.render.select(),
           },
-          // { visible: false, targets: [-4, -3, -2, -1] },
-          { targets: [0, 1,-1], orderable: false },
+          { visible: false, targets: [-3, -2] },
+          { targets: [0, 1, -1], orderable: false },
         ],
         layout: {
           topStart: {
@@ -2329,6 +2329,22 @@ async function showTab(tabId) {
       studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
+      showStudentsBulletins([
+        "2025-12-01",
+        "2025-12-02",
+        "2025-12-12",
+        "2025-12-13",
+        "2025-12-15",
+        "2025-12-16",
+        "2025-12-17",
+        "2025-12-19",
+        "2025-12-20",
+        "2025-12-21",
+        "2025-12-22",
+        "2025-12-23",
+        "2025-12-27",
+        "2025-12-28",
+      ]);
     }
   } else {
     showTab("pills-home");
@@ -2752,6 +2768,11 @@ async function showStudentsBulletins(dates) {
     isStacked = false
   ) {
     const { data, studentName, studentOrder, studentId } = studentReport;
+    const dataLength = data
+      .map((i) => {
+        return i.detail ? JSON.parse(i.detail).length : 1;
+      })
+      .reduce((accumulator, current) => accumulator + current, 0);
 
     const recordCounts =
       data
@@ -2789,7 +2810,7 @@ async function showStudentsBulletins(dates) {
       },
       {
         text: reverseArabicWords(
-          `حرر في: ${new Date().getDay()}  ${
+          `حرر في: ${new Date().getDate()}  ${
             arabicMonths[new Date().getMonth()]
           } ${new Date(dates[0]).getFullYear()}`
         ),
@@ -2823,7 +2844,7 @@ async function showStudentsBulletins(dates) {
             (isStacked
               ? 841.89 / 4 + (isSecond ? 841.89 / 2 : 0)
               : 841.89 / 2) -
-            ((data.length + 1) * (isStacked ? 14 : 30)) / 2,
+            ((dataLength + 1) / 2) * (isStacked ? 13 : 25),
           x: 18,
         },
         layout: {
@@ -3465,8 +3486,8 @@ async function showStudentsResultsStatistics() {
     GROUP BY s.id, "اسم الطالب" 
     ORDER BY s.id;
 `;
-  const buttons =
-    dates.length > 16
+  const buttons = [
+    ...(dates.length > 16
       ? []
       : [
           {
@@ -3598,6 +3619,10 @@ async function showStudentsResultsStatistics() {
               };
             },
           },
+        ]),
+    ...(dates.length > 25
+      ? []
+      : [
           {
             text: "كشوف النقاط",
             action: async function (e, dt) {
@@ -3606,7 +3631,8 @@ async function showStudentsResultsStatistics() {
               hideLoadingModal();
             },
           },
-        ];
+        ]),
+  ];
   setStatisticsTable(query, buttons);
 }
 
