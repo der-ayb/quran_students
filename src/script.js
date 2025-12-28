@@ -1710,7 +1710,7 @@ async function loadDayStudentsList() {
         }
         // edit button
         const editBtn = document.createElement("i");
-        editBtn.className = "fa-solid fa-circle-plus";
+        editBtn.className = "fa-solid fa-square-plus";
         editBtn.style.cssText = "transform: scale(1.5); cursor: pointer;";
         editBtn.onclick = () => editStudentDay(false);
 
@@ -1846,7 +1846,7 @@ async function loadDayStudentsList() {
             return data;
           },
         },
-        { data: "actions", className: "px-1" },
+        { data: "actions" },
       ],
       {
         select: {
