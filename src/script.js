@@ -1642,17 +1642,18 @@ async function loadDayStudentsList() {
         ) {
           requirTeacherInput.add(new Option(full_name, student_id));
         }
-        function editStudentDay(isEvaluation= true) {
+        function editStudentDay(isEvaluation = true) {
           showStudentDayModal(true);
 
           studentNameInput.value = full_name;
 
-          if(isEvaluation){
+          if (isEvaluation) {
             evaluationCollapse.show();
-          requirCollapse.hide();
-          }else{
-          evaluationCollapse.hide();
-          requirCollapse.show();}
+            requirCollapse.hide();
+          } else {
+            evaluationCollapse.hide();
+            requirCollapse.show();
+          }
 
           setAttendanceValue(attendance);
           retardInput.value =
@@ -1706,22 +1707,25 @@ async function loadDayStudentsList() {
             this.disabled = true;
             this.nextElementSibling.disabled = true;
           };
-        };
+        }
         // edit button
         const editBtn = document.createElement("i");
         editBtn.className = "fa-solid fa-circle-plus";
-        editBtn.style.cssText ="transform: scale(1.5); cursor: pointer;";
-        editBtn.onclick = ()=> editStudentDay(false)
+        editBtn.style.cssText = "transform: scale(1.5); cursor: pointer;";
+        editBtn.onclick = () => editStudentDay(false);
 
         let editEvaluationDayBtn;
-        if(row[result.columns.indexOf("clothing")] == null &&
+        if (
+          row[result.columns.indexOf("clothing")] == null &&
           row[result.columns.indexOf("haircut")] == null &&
-          row[result.columns.indexOf("behavior")] == null){
-        editEvaluationDayBtn = document.createElement("i");
-        editEvaluationDayBtn.className = "fa-solid fa-pen-to-square mt-2";
-        editEvaluationDayBtn.textContent = "   "+row[result.columns.indexOf("evalMoyenne")];
-        editEvaluationDayBtn.onclick = ()=> editStudentDay(true)}
-        else{
+          row[result.columns.indexOf("behavior")] == null
+        ) {
+          editEvaluationDayBtn = document.createElement("i");
+          editEvaluationDayBtn.className = "fa-solid fa-pen-to-square mt-2";
+          editEvaluationDayBtn.textContent =
+            "   " + row[result.columns.indexOf("evalMoyenne")];
+          editEvaluationDayBtn.onclick = () => editStudentDay(true);
+        } else {
           editEvaluationDayBtn = row[result.columns.indexOf("evalMoyenne")];
         }
 
@@ -1731,7 +1735,6 @@ async function loadDayStudentsList() {
         data.push({
           select: "",
           id: student_id,
-          actions: editBtn,
           student: full_name,
           attendance:
             attendance_value == 1
@@ -1767,12 +1770,11 @@ async function loadDayStudentsList() {
                 row[result.columns.indexOf("evalMoyenne")]
               )
             : null,
-          evalMoyenne: attendance_value
-            ?  editEvaluationDayBtn
-            : null,
+          evalMoyenne: attendance_value ? editEvaluationDayBtn : null,
           requirsMoyenne: attendance_value
             ? row[result.columns.indexOf("requirsMoyenne")]
             : null,
+          actions: editBtn,
         });
       });
     } else {
@@ -1786,7 +1788,6 @@ async function loadDayStudentsList() {
       [
         { data: "select" },
         { data: "id", visible: false },
-        { data: "actions", className: "px-0" },
         { data: "student" },
         {
           data: "attendance",
@@ -1811,7 +1812,7 @@ async function loadDayStudentsList() {
         },
         {
           data: "evaluation",
-          className: "text-center",
+          className: "text-center fw-bold fs-5 py-1",
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
@@ -1823,7 +1824,7 @@ async function loadDayStudentsList() {
         },
         {
           data: "evalMoyenne",
-          className: "text-center d-flex justify-content-around",
+          className: "text-center",
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
@@ -1832,21 +1833,6 @@ async function loadDayStudentsList() {
             }
             return data;
           },
-          // render: function (data, type, row) {
-          //   if (type === "sort") {
-          //     if (!data) {
-          //       return 0;
-          //     } else if (
-          //       typeof data === "string" && data.includes('<i')
-          //     ) {
-          //       return data.substring(
-          //         0,
-          //         data.indexOf('<i')
-          //       );
-          //     }
-          //   }
-          //   return data;
-          // },
         },
         {
           data: "requirsMoyenne",
@@ -1860,6 +1846,7 @@ async function loadDayStudentsList() {
             return data;
           },
         },
+        { data: "actions", className: "px-1" },
       ],
       {
         select: {
@@ -1867,6 +1854,7 @@ async function loadDayStudentsList() {
           selector: "td:first-child",
           headerCheckbox: "select-page",
         },
+        fixedHeader: true,
         destroy: true,
         searching: false,
         scrollX: true,
@@ -1874,6 +1862,10 @@ async function loadDayStudentsList() {
         oLanguage: {
           sSearch: "بحث",
           emptyTable: "لا توجد بيانات في الجدول.",
+        },
+        fixedColumns: {
+          start:0,
+          end: 1,
         },
         paging: false,
         responsive: true,
@@ -1884,7 +1876,7 @@ async function loadDayStudentsList() {
             render: DataTable.render.select(),
           },
           // { visible: false, targets: [-4, -3, -2, -1] },
-          { targets: [0, 1, 2], orderable: false },
+          { targets: [0, 1,-1], orderable: false },
         ],
         layout: {
           topStart: {
@@ -3840,12 +3832,11 @@ async function setStatisticsTable(query, buttons = []) {
         tableData,
         tableColumns,
         {
+          fixedHeader: true,
           fixedColumns: {
             start: 1,
           },
-          columnDefs : [
-            {targets:0,visible:false}
-          ],  
+          columnDefs: [{ targets: 0, visible: false }],
           searching: false,
           scrollX: true,
           info: false,
@@ -3857,8 +3848,18 @@ async function setStatisticsTable(query, buttons = []) {
           responsive: true,
 
           layout: {
-            bottomStart: {
-              buttons: buttons,
+            topStart: {
+              buttons: [
+                ...[
+                  {
+                    text: '<i class="fa-solid fa-arrows-rotate"></i>',
+                    action: async function () {
+                      statisticType.dispatchEvent(new Event("change"));
+                    },
+                  },
+                ],
+                ...buttons,
+              ],
             },
           },
         },

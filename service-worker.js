@@ -10,54 +10,54 @@ workbox.core.clientsClaim();
 // Precache critical files with revisions (update revisions when files change)
 workbox.precaching.precacheAndRoute(
   [
-    { url: "./", revision: "1" },
-    { url: "./favicon.ico", revision: "1" },
-    { url: "./index.html", revision: "1" },
-    { url: "./app.html", revision: "12" },
-    { url: "./manifest.json", revision: "1" },
+    { url: "/", revision: "1" },
+    { url: "/favicon.ico", revision: "1" },
+    { url: "/index.html", revision: "1" },
+    { url: "/app.html", revision: "12" },
+    { url: "/manifest.json", revision: "1" },
 
-    { url: "./src/style.css", revision: "2" },
-    { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "12" },
-    { url: "./src/auth.js", revision: "1" },
-    { url: "./src/pdfmake.js", revision: "1" },
-    { url: "./src/vfs_fonts.js", revision: "1" },
-    { url: "./src/yearpicker.css", revision: "1" },
-    { url: "./src/yearpicker.js", revision: "1" },
+    { url: "/src/style.css", revision: "2" },
+    { url: "/src/fonts.css", revision: "1" },
+    { url: "/src/script.js", revision: "12" },
+    { url: "/src/auth.js", revision: "1" },
+    { url: "/src/pdfmake.js", revision: "1" },
+    { url: "/src/vfs_fonts.js", revision: "1" },
+    { url: "/src/yearpicker.css", revision: "1" },
+    { url: "/src/yearpicker.js", revision: "1" },
 
-    { url: "./assets/default.sqlite3", revision: "1" },
-    { url: "./assets/quran.sqlite", revision: "1" },
-
-    {
-      url: "./assets/fonts/changa/2-cm9JNi2YuVOUckY5y-au8.woff2",
-      revision: "1",
-    },
-    {
-      url: "./assets/fonts/markazi/syk0-ydym6AtQaiEtX7yhqbVpHWVF1E.woff2",
-      revision: "1",
-    },
-    {
-      url: "./assets/fonts/noto-sans/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj4wv4r4xA.woff2",
-      revision: "1",
-    },
-    {
-      url: "./assets/fonts/raedex/SLXYc1bJ7HE5YDoGPuzj_dh8uc7wUy8ZQQyX2Iw1ZEzMhQ.woff2",
-      revision: "1",
-    },
-    {
-      url: "./assets/fonts/rubik/iJWKBXyIfDnIV7nErXyi0A.woff2",
-      revision: "1",
-    },
+    { url: "/assets/default.sqlite3", revision: "1" },
+    { url: "/assets/quran.sqlite", revision: "1" },
 
     {
-      url: "./assets/images/manifest-icon-192.maskable.png",
+      url: "/assets/fonts/changa/2-cm9JNi2YuVOUckY5y-au8.woff2",
       revision: "1",
     },
     {
-      url: "./assets/images/manifest-icon-512.maskable.png",
+      url: "/assets/fonts/markazi/syk0-ydym6AtQaiEtX7yhqbVpHWVF1E.woff2",
       revision: "1",
     },
-    { url: "./assets/images/apple-icon-180.png", revision: "1" },
+    {
+      url: "/assets/fonts/noto-sans/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj4wv4r4xA.woff2",
+      revision: "1",
+    },
+    {
+      url: "/assets/fonts/raedex/SLXYc1bJ7HE5YDoGPuzj_dh8uc7wUy8ZQQyX2Iw1ZEzMhQ.woff2",
+      revision: "1",
+    },
+    {
+      url: "/assets/fonts/rubik/iJWKBXyIfDnIV7nErXyi0A.woff2",
+      revision: "1",
+    },
+
+    {
+      url: "/assets/images/manifest-icon-192.maskable.png",
+      revision: "1",
+    },
+    {
+      url: "/assets/images/manifest-icon-512.maskable.png",
+      revision: "1",
+    },
+    { url: "/assets/images/apple-icon-180.png", revision: "1" },
 
     // bootstrap
     {
@@ -252,9 +252,9 @@ workbox.routing.registerRoute(
           ],
         })
         .handle({ event });
-      return response || (await caches.match("./index.html"));
+      return response || (await caches.match("/index.html"));
     } catch (error) {
-      return await caches.match("./index.html");
+      return await caches.match("/index.html");
     }
   }
 );
