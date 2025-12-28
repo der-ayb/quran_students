@@ -1,8 +1,8 @@
 {
   "name": "متابعة",
   "short_name": "متابعة",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/quran_students/index.html",
+  "scope": "/quran_students/",
   "display": "standalone",
   "display_override": [
     "window-controls-overlay"
@@ -19,25 +19,25 @@
   "description": "تطبيق لمتابعة طلاب القرآن الكريم",
   "icons": [
     {
-      "src": "assets/images/manifest-icon-192.maskable.png",
+      "src": "/quran_students/assets/images/manifest-icon-192.maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/images/manifest-icon-192.maskable.png",
+      "src": "/quran_students/assets/images/manifest-icon-192.maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "assets/images/manifest-icon-512.maskable.png",
+      "src": "/quran_students/assets/images/manifest-icon-512.maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/images/manifest-icon-512.maskable.png",
+      "src": "/quran_students/assets/images/manifest-icon-512.maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -45,18 +45,18 @@
   ],
   "screenshots": [
     {
-      "src": "assets/images/manifest-icon-512.maskable.png",
+      "src": "/quran_students/assets/images/manifest-icon-512.maskable.png",
       "sizes": "1617x1012",
       "type": "image/png"
     },
     {
-      "src": "assets/images/manifest-icon-512.maskable.png",
+      "src": "/quran_students/assets/images/manifest-icon-512.maskable.png",
       "sizes": "720x1280",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "assets/images/manifest-icon-512.maskable.png",
+      "src": "/quran_students/assets/images/manifest-icon-512.maskable.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide"
