@@ -55,7 +55,6 @@ const firstSurahSelect = document.getElementById("first-surah");
 const requirEvaluationInput = document.getElementById("requirEvaluation");
 const requireBookInput = document.getElementById("requirBook");
 const saveStateErrorsInput = document.getElementById("saveStateErrors");
-const saveStopErrorsInput = document.getElementById("saveStopErrors");
 const requirTeacherInput = document.getElementById("requirTeacher");
 let teachersPoints = {};
 
@@ -188,7 +187,6 @@ window.addEventListener("popstate", on_back_function);
 document.addEventListener("DOMContentLoaded", async function () {
   // init Plus Minus buttons
   initPlusMinusButtons(saveStateErrorsInput);
-  initPlusMinusButtons(saveStopErrorsInput);
   initPlusMinusButtons(addedPointsInput);
   initPlusMinusButtons(prayerInput);
 
@@ -1149,7 +1147,6 @@ requireBookInput.onchange = function () {
   }
   requirQuantityDetailInput.value = "";
   requirEvaluationInput.value = "10.00";
-  saveStopErrorsInput.value = "0";
   saveStateErrorsInput.value = "0";
 };
 
@@ -1249,7 +1246,6 @@ function calcRequirementsMoyenne() {
 function calcRequirementEvaluation(
   requirQuantity,
   requirType,
-  saveStopErrors,
   saveStateErrors
 ) {
   const errorValue = parseFloat(
@@ -1257,9 +1253,7 @@ function calcRequirementEvaluation(
       (requirQuantity *
         (requirType === "حفظ" ? 2 : requirType === "مراجعة" ? 1 : 0.8))
   );
-  const result = parseFloat(
-    10 - errorValue * (parseFloat(saveStopErrors) + parseFloat(saveStateErrors))
-  );
+  const result = parseFloat(10 - errorValue * parseFloat(saveStateErrors));
   return result ? (result < 0 ? 0 : result.toFixed(2)) : "";
 }
 
@@ -1295,12 +1289,11 @@ function setRequirEvalInput() {
   requirEvaluationInput.value = calcRequirementEvaluation(
     requirQuantityInput.value,
     requirTypeInput.value,
-    saveStopErrorsInput.value,
     saveStateErrorsInput.value
   );
 }
 
-$([requirTypeInput, saveStopErrorsInput, saveStateErrorsInput]).on(
+$([requirTypeInput, saveStateErrorsInput]).on(
   "change input",
   setRequirEvalInput
 );
@@ -1391,6 +1384,24 @@ function checkAuthorizedOut(time, requirMoyenne, minutesToAdd, after = 60) {
   const newTimeObj = h * 60 + m + (minutesToAdd + after);
   const difference = newTimeObj - currentTotalMinutes;
   return requirMoyenne && difference < 0;
+}
+async function showOffCanvas(title, body,side=null) {
+  const bsOffcanvas = new bootstrap.Offcanvas("#offcanvasTop");
+  if(side){
+    document.getElementById("offcanvasTop").classList.remove(`offcanvas-top`);
+    document.getElementById("offcanvasTop").classList.remove(`offcanvas-end`);
+    document.getElementById("offcanvasTop").classList.remove(`offcanvas-start`);
+    document.getElementById("offcanvasTop").classList.remove(`offcanvas-bottom`);
+    document.getElementById("offcanvasTop").classList.add(`offcanvas-${side}`);
+  }else{
+    document.getElementById("offcanvasTop").classList.add(`offcanvas-top`);
+    document.getElementById("offcanvasTop").classList.remove(`offcanvas-end`);
+    document.getElementById("offcanvasTop").classList.remove(`offcanvas-start`);
+    document.getElementById("offcanvasTop").classList.remove(`offcanvas-bottom`);
+  }
+  document.getElementById("offcanvasTopLabel").innerText = `${title}:`;
+  document.getElementById("offcanvas-body").innerHTML = body;
+  bsOffcanvas.show();
 }
 
 async function markPresence(studentId) {
@@ -1714,22 +1725,61 @@ async function loadDayStudentsList() {
         editBtn.style.cssText = "transform: scale(1.5); cursor: pointer;";
         editBtn.onclick = () => editStudentDay(false);
 
-        let editEvaluationDayBtn;
+        const attendance_value = attendance;
+
+        let evaluationDayValue;
         if (
           row[result.columns.indexOf("clothing")] == null &&
           row[result.columns.indexOf("haircut")] == null &&
           row[result.columns.indexOf("behavior")] == null
         ) {
-          editEvaluationDayBtn = document.createElement("i");
-          editEvaluationDayBtn.className = "fa-solid fa-pen-to-square mt-2";
-          editEvaluationDayBtn.textContent =
+          evaluationDayValue = document.createElement("i");
+          evaluationDayValue.className = "fa-solid fa-pen-to-square mt-2";
+          evaluationDayValue.textContent =
             "   " + row[result.columns.indexOf("evalMoyenne")];
-          editEvaluationDayBtn.onclick = () => editStudentDay(true);
+          evaluationDayValue.onclick = () => editStudentDay(true);
         } else {
-          editEvaluationDayBtn = row[result.columns.indexOf("evalMoyenne")];
+          evaluationDayValue = row[result.columns.indexOf("evalMoyenne")];
         }
 
-        const attendance_value = attendance;
+        let requirmentsDayValue;
+        if (attendance_value) {
+          requirmentsDayValue = document.createElement("i");
+          requirmentsDayValue.className = "fa-solid fa-clock-rotate-left mt-2";
+          requirmentsDayValue.textContent =
+            "   " + (row[result.columns.indexOf("requirsMoyenne")] || "0.00");
+          requirmentsDayValue.onclick = function () {
+            let requirs = [];
+            project_db
+              .exec(
+                `
+                        SELECT detail,day_id FROM day_requirements
+                        WHERE student_id = ${student_id} ORDER BY day_id DESC
+                        LIMIT 3`
+              )[0]
+              .values.forEach((row) => {
+                requirs.push(row[0]);
+              });
+            showOffCanvas(
+              "المتطلبات السابقة",
+              `
+              <ul> ${requirs
+                .map(
+                  (item) =>
+                    `<li>${JSON.parse(item)
+                      .map(
+                        (i) =>
+                          `${i["النوع"]} - ${i["التفاصيل"]} - الأخطاء: ${i["الأخطاء"]||0}`
+                      )
+                      .join("<br>")}</li>`
+                )
+                .join("")}</ul>
+              `,'start'
+            );
+          };
+        } else {
+          requirmentsDayValue = "/";
+        }
 
         const thisDay = new Date().toISOString().slice(0, 10);
         data.push({
@@ -1770,10 +1820,8 @@ async function loadDayStudentsList() {
                 row[result.columns.indexOf("evalMoyenne")]
               )
             : null,
-          evalMoyenne: attendance_value ? editEvaluationDayBtn : null,
-          requirsMoyenne: attendance_value
-            ? row[result.columns.indexOf("requirsMoyenne")]
-            : null,
+          evalMoyenne: attendance_value ? evaluationDayValue : null,
+          requirsMoyenne: attendance_value ? requirmentsDayValue : null,
           actions: editBtn,
         });
       });
@@ -1782,7 +1830,7 @@ async function loadDayStudentsList() {
       showTab("pills-students");
       return;
     }
-    const dayStudentsTable = await initOrReloadDataTable(
+    await initOrReloadDataTable(
       "#dayListTable",
       data,
       [
@@ -1812,7 +1860,7 @@ async function loadDayStudentsList() {
         },
         {
           data: "evaluation",
-          className: "text-center fw-bold fs-5 py-1",
+          className: "text-center fw-bold fs-6",
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
@@ -2028,7 +2076,21 @@ async function loadDayStudentsList() {
                   {
                     text: '<i class="fa-solid fa-circle-info"></i> معلومات الحصة',
                     action: async function (e, dt) {
-                      alert(`وقت بدء الحصة: ${start_time}\n`);
+                      showOffCanvas(
+                        "معلومات الحصة",
+                        `
+                      <p>وقت بدء الحصة: <strong>${
+                        start_time || "غير محدد"
+                      }</strong><br>
+                      عدد التلاميذ الحاضرين: <strong>${
+                        project_db.exec(
+                          `SELECT COUNT(*) FROM day_evaluations WHERE day_id = ${workingDayID} AND attendance = 1;`
+                        )[0].values[0][0]
+                      }</strong><br>
+                       ملاحظة اليوم: <em>${dayNote || "لا توجد ملاحظة"}</em><br>
+                      </p>
+                      `
+                      );
                     },
                   },
                   {
@@ -2269,9 +2331,7 @@ addQuranSelectionBtn.onclick = function () {
     <td style="white-space: normal;">${requirQuantityDetailInput.value}</td>
     <td>${requirEvaluationInput.value}</td>
     <td>
-      ${saveStateErrorsInput.value} في الحفظ + ${
-    saveStopErrorsInput.value
-  } في الفتح
+      ${saveStateErrorsInput.value}
     </td>
     <td>
       ${calcRequirementMoyenne(
@@ -3372,9 +3432,11 @@ async function showStudentsBulletins(dates) {
   function formatDetail(detail) {
     if (!detail) return "-";
     detail = JSON.parse(detail).map((item) => {
-      const errorsCount =
-        parseInt(item["الأخطاء"].split(" ")[0]) +
-        parseInt(item["الأخطاء"].split(" ")[4]);
+      console.log(typeof item["الأخطاء"]);
+      const errorsCount = item["الأخطاء"].includes(" ")
+        ? parseInt(item["الأخطاء"].split(" ")[0]) +
+          parseInt(item["الأخطاء"].split(" ")[4])
+        : parseInt(item["الأخطاء"]);
       return (
         item["النوع"] +
         " " +
