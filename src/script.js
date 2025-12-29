@@ -1387,7 +1387,6 @@ function checkAuthorizedOut(time, requirMoyenne, minutesToAdd, after = 60) {
   return requirMoyenne && difference < 0;
 }
 
-
 async function showOffCanvas(title, body, side = "top") {
   const bsOffcanvas = new bootstrap.Offcanvas("#offcanvasTop");
   document.getElementById("offcanvasTop").classList.remove(`offcanvas-top`);
@@ -1758,19 +1757,25 @@ async function loadDayStudentsList() {
 
         const attendance_value = attendance;
 
-        let evaluationDayValue;
-        if (
-          row[result.columns.indexOf("clothing")] == null &&
-          row[result.columns.indexOf("haircut")] == null &&
-          row[result.columns.indexOf("behavior")] == null
-        ) {
-          evaluationDayValue = document.createElement("i");
-          evaluationDayValue.className = "fa-solid fa-pen-to-square mt-2";
-          evaluationDayValue.textContent =
-            "   " + row[result.columns.indexOf("evalMoyenne")];
-          evaluationDayValue.onclick = () => editStudentDay(true);
-        } else {
-          evaluationDayValue = row[result.columns.indexOf("evalMoyenne")];
+        let evaluationDayContainer = "/";
+        if (attendance_value) {
+          evaluationDayContainer = document.createElement("div");
+          const evaluationDayIcon = document.createElement("i");
+          evaluationDayIcon.className = "fa-solid fa-pen-to-square";
+          evaluationDayIcon.onclick = () => editStudentDay(true);
+          if (
+            row[result.columns.indexOf("clothing")] == null &&
+            row[result.columns.indexOf("haircut")] == null &&
+            row[result.columns.indexOf("behavior")] == null
+          ) {
+            evaluationDayIcon.textContent =
+              "   " + row[result.columns.indexOf("evalMoyenne")];
+          } else {
+            evaluationDayContainer.append(
+              row[result.columns.indexOf("evalMoyenne")] + "   "
+            );
+          }
+          evaluationDayContainer.append(evaluationDayIcon);
         }
 
         let requirmentsDayValue = "/";
@@ -1819,7 +1824,7 @@ async function loadDayStudentsList() {
                 row[result.columns.indexOf("evalMoyenne")]
               )
             : null,
-          evalMoyenne: attendance_value ? evaluationDayValue : null,
+          evalMoyenne:  evaluationDayContainer,
           requirsMoyenne: requirmentsDayValue,
           actions: editBtn,
         });
@@ -1875,8 +1880,9 @@ async function loadDayStudentsList() {
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
-            if (type === "sort" && !data) {
-              return 0;
+            if (type === "sort") {
+              if (!data) return 0;
+              else return parseFloat(data.innerHTML.split("  ")[0]);
             }
             return data;
           },
@@ -1887,9 +1893,8 @@ async function loadDayStudentsList() {
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
-            console.log(data,type)
-            if (type === "sort"){
-              if(!data) return 0;
+            if (type === "sort") {
+              if (!data) return 0;
               else return parseFloat(data.split("    ")[0]);
             }
             return data;
@@ -1924,7 +1929,7 @@ async function loadDayStudentsList() {
             targets: 0,
             render: DataTable.render.select(),
           },
-          { visible: false, targets: [-3, -2] },
+          // { visible: false, targets: [-3, -2] },
           { targets: [0, 1, -1], orderable: false },
         ],
         layout: {
