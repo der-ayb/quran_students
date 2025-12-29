@@ -406,7 +406,7 @@
     </button>
   </div>
   <!-- offcanvas -->
-  <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasTop" aria-labelledby="offcanvasTopLabel">
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasTop" aria-labelledby="offcanvasTopLabel" style="z-index: 1102;">
     <div class="offcanvas-header">
       <h5 class="offcanvas-title" id="offcanvasTopLabel">Offcanvas top</h5>
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -664,7 +664,9 @@
                           </div>
                         </div>
                         <div class="w-100"></div>
-                        <label>التفاصيل:</label>
+                        <div class="row"><label class="col-4">التفاصيل:</label>
+                          <i id="historyRequirBtn" class="col fa-solid fa-clock-rotate-left"></i>
+                        </div>
                         <div>
                           <textarea type="text" id="requirQuantityDetail" class="form-control mb-3"></textarea>
                         </div>

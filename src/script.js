@@ -67,6 +67,7 @@ const addedPointsInput = document.getElementById("addedPoints");
 const evalMoyenne = document.getElementById("evalMoyenne");
 
 const requirMoyenneInput = document.getElementById("requirMoyenne");
+const historyRequirBtn = document.getElementById("historyRequirBtn");
 const requirQuantityDetailInput = document.getElementById(
   "requirQuantityDetail"
 );
@@ -1385,20 +1386,16 @@ function checkAuthorizedOut(time, requirMoyenne, minutesToAdd, after = 60) {
   const difference = newTimeObj - currentTotalMinutes;
   return requirMoyenne && difference < 0;
 }
-async function showOffCanvas(title, body,side=null) {
+
+
+async function showOffCanvas(title, body, side = "top") {
   const bsOffcanvas = new bootstrap.Offcanvas("#offcanvasTop");
-  if(side){
-    document.getElementById("offcanvasTop").classList.remove(`offcanvas-top`);
-    document.getElementById("offcanvasTop").classList.remove(`offcanvas-end`);
-    document.getElementById("offcanvasTop").classList.remove(`offcanvas-start`);
-    document.getElementById("offcanvasTop").classList.remove(`offcanvas-bottom`);
-    document.getElementById("offcanvasTop").classList.add(`offcanvas-${side}`);
-  }else{
-    document.getElementById("offcanvasTop").classList.add(`offcanvas-top`);
-    document.getElementById("offcanvasTop").classList.remove(`offcanvas-end`);
-    document.getElementById("offcanvasTop").classList.remove(`offcanvas-start`);
-    document.getElementById("offcanvasTop").classList.remove(`offcanvas-bottom`);
-  }
+  document.getElementById("offcanvasTop").classList.remove(`offcanvas-top`);
+  document.getElementById("offcanvasTop").classList.remove(`offcanvas-end`);
+  document.getElementById("offcanvasTop").classList.remove(`offcanvas-start`);
+  document.getElementById("offcanvasTop").classList.remove(`offcanvas-bottom`);
+  document.getElementById("offcanvasTop").classList.add(`offcanvas-${side}`);
+
   document.getElementById("offcanvasTopLabel").innerText = `${title}:`;
   document.getElementById("offcanvas-body").innerHTML = body;
   bsOffcanvas.show();
@@ -1573,6 +1570,39 @@ async function showStudentDayModal(isUniqueStudent = true) {
   evalMoyenne.disabled = !isUniqueStudent;
   retardInput.disabled = !isUniqueStudent;
 }
+
+function showRequirementsHistory(student_id) {
+  let requirs = [];
+  project_db
+    .exec(
+      ` SELECT detail FROM day_requirements
+                  WHERE student_id = ${student_id} ORDER BY day_id DESC
+                  LIMIT 3`
+    )[0]
+    .values.forEach((row) => {
+      requirs.push(row[0]);
+    });
+  showOffCanvas(
+    "المتطلبات السابقة",
+    `
+              <ul> ${requirs
+                .map((item) =>
+                  JSON.parse(item)
+                    .map(
+                      (i) =>
+                        `<li> ${i["النوع"]} - ${i["التفاصيل"]} - الأخطاء: ${
+                          i["الأخطاء"] || 0
+                        }</li>`
+                    )
+                    .join("")
+                )
+                .reverse()
+                .join("")}</ul>
+              `,
+    "start"
+  );
+}
+
 async function loadDayStudentsList() {
   dayNoteContainer.style.display = "none";
   if (!project_db) {
@@ -1687,6 +1717,7 @@ async function loadDayStudentsList() {
             );
 
           initRequirementFields(student_id);
+          historyRequirBtn.onclick = () => showRequirementsHistory(student_id);
 
           requirMoyenneInput.value =
             row[result.columns.indexOf("requirsMoyenne")] || "0.00";
@@ -1742,43 +1773,11 @@ async function loadDayStudentsList() {
           evaluationDayValue = row[result.columns.indexOf("evalMoyenne")];
         }
 
-        let requirmentsDayValue;
+        let requirmentsDayValue = "/";
         if (attendance_value) {
-          requirmentsDayValue = document.createElement("i");
-          requirmentsDayValue.className = "fa-solid fa-clock-rotate-left mt-2";
-          requirmentsDayValue.textContent =
-            "   " + (row[result.columns.indexOf("requirsMoyenne")] || "0.00");
-          requirmentsDayValue.onclick = function () {
-            let requirs = [];
-            project_db
-              .exec(
-                `
-                        SELECT detail,day_id FROM day_requirements
-                        WHERE student_id = ${student_id} ORDER BY day_id DESC
-                        LIMIT 3`
-              )[0]
-              .values.forEach((row) => {
-                requirs.push(row[0]);
-              });
-            showOffCanvas(
-              "المتطلبات السابقة",
-              `
-              <ul> ${requirs
-                .map(
-                  (item) =>
-                    `<li>${JSON.parse(item)
-                      .map(
-                        (i) =>
-                          `${i["النوع"]} - ${i["التفاصيل"]} - الأخطاء: ${i["الأخطاء"]||0}`
-                      )
-                      .join("<br>")}</li>`
-                )
-                .join("")}</ul>
-              `,'start'
-            );
-          };
-        } else {
-          requirmentsDayValue = "/";
+          requirmentsDayValue = `${
+            row[result.columns.indexOf("requirsMoyenne")] || "0.00"
+          }    <i onclick="showRequirementsHistory(${student_id})" class="fa-solid fa-clock-rotate-left"></i>`;
         }
 
         const thisDay = new Date().toISOString().slice(0, 10);
@@ -1821,7 +1820,7 @@ async function loadDayStudentsList() {
               )
             : null,
           evalMoyenne: attendance_value ? evaluationDayValue : null,
-          requirsMoyenne: attendance_value ? requirmentsDayValue : null,
+          requirsMoyenne: requirmentsDayValue,
           actions: editBtn,
         });
       });
@@ -1888,8 +1887,10 @@ async function loadDayStudentsList() {
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
-            if (type === "sort" && !data) {
-              return 0;
+            console.log(data,type)
+            if (type === "sort"){
+              if(!data) return 0;
+              else return parseFloat(data.split("    ")[0]);
             }
             return data;
           },
