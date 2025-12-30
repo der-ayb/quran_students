@@ -1880,9 +1880,10 @@ async function loadDayStudentsList() {
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
+            console.log(data,type)
             if (type === "sort") {
               if (!data) return 0;
-              else return parseFloat(data.innerHTML.split("  ")[0]);
+              else if(typeof data ==="object") return parseFloat(data.innerHTML.split("  ")[0]);
             }
             return data;
           },
