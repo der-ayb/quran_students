@@ -1864,7 +1864,7 @@ async function loadDayStudentsList() {
         },
         {
           data: "evaluation",
-          className: "text-center fw-bold fs-6",
+          className: "text-center fw-bold fs-5",
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
@@ -1880,9 +1880,8 @@ async function loadDayStudentsList() {
           type: "num",
           defaultContent: "/",
           render: function (data, type, row) {
-            console.log(data,type)
             if (type === "sort") {
-              if (!data) return 0;
+              if (!data || data==="/") return 0;
               else if(typeof data ==="object") return parseFloat(data.innerHTML.split("  ")[0]);
             }
             return data;
@@ -1895,7 +1894,7 @@ async function loadDayStudentsList() {
           defaultContent: "/",
           render: function (data, type, row) {
             if (type === "sort") {
-              if (!data) return 0;
+              if (!data ) return 0;
               else return parseFloat(data.split("    ")[0]);
             }
             return data;
@@ -1930,7 +1929,7 @@ async function loadDayStudentsList() {
             targets: 0,
             render: DataTable.render.select(),
           },
-          // { visible: false, targets: [-3, -2] },
+          { visible: false, targets: [-3, -2] },
           { targets: [0, 1, -1], orderable: false },
         ],
         layout: {
@@ -3935,6 +3934,7 @@ async function setStatisticsTable(query, buttons = []) {
           searching: false,
           scrollX: true,
           info: false,
+          order: [[columns.length - 1, "asc"]],
           oLanguage: {
             sSearch: "بحث",
             emptyTable: "لا توجد بيانات في الجدول.",
