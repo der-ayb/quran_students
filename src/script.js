@@ -1824,7 +1824,7 @@ async function loadDayStudentsList() {
                 row[result.columns.indexOf("evalMoyenne")]
               )
             : null,
-          evalMoyenne:  evaluationDayContainer,
+          evalMoyenne: evaluationDayContainer,
           requirsMoyenne: requirmentsDayValue,
           actions: editBtn,
         });
@@ -1881,8 +1881,9 @@ async function loadDayStudentsList() {
           defaultContent: "/",
           render: function (data, type, row) {
             if (type === "sort") {
-              if (!data || data==="/") return 0;
-              else if(typeof data ==="object") return parseFloat(data.innerHTML.split("  ")[0]);
+              if (!data || data === "/") return 0;
+              else if (typeof data === "object")
+                return parseFloat(data.innerHTML.split("  ")[0]);
             }
             return data;
           },
@@ -1894,7 +1895,7 @@ async function loadDayStudentsList() {
           defaultContent: "/",
           render: function (data, type, row) {
             if (type === "sort") {
-              if (!data ) return 0;
+              if (!data) return 0;
               else return parseFloat(data.split("    ")[0]);
             }
             return data;
@@ -2410,7 +2411,10 @@ async function showTab(tabId) {
       //   "2025-12-23",
       //   "2025-12-27",
       //   "2025-12-28",
-      // ]);
+      //   "2025-12-29",
+      //   "2025-12-30",
+      //   "2025-12-31",
+      // ],"66,67,69");
     }
   } else {
     showTab("pills-home");
@@ -2514,6 +2518,8 @@ function statisStudentToggleAll() {
   document.querySelectorAll(".statisStudentItem").forEach((item) => {
     item.checked = statisAllCheckbox.checked;
   });
+  statisticType.value = "0";
+  statisticType.dispatchEvent(new Event("change"));
 }
 
 function statisStudentUpdateAll() {
@@ -2522,6 +2528,8 @@ function statisStudentUpdateAll() {
     items.length ===
     document.querySelectorAll(".statisStudentItem:checked").length;
   statisAllCheckbox.checked = allChecked;
+  statisticType.value = "0";
+  statisticType.dispatchEvent(new Event("change"));
 }
 
 function getStatisticsSelectedStudentsId() {
@@ -2531,7 +2539,13 @@ function getStatisticsSelectedStudentsId() {
   return selected.join(", ");
 }
 
-async function showStudentsBulletins(dates) {
+async function showStudentsBulletins(dates, studentsIDS = null) {
+  const studentsList = studentsIDS || getStatisticsSelectedStudentsId();
+  if (!studentsList) {
+    window.showToast("warning", "يرجى اخيار طلاب من القائمة.");
+    return;
+  }
+  
   try {
     const attendanceRes = {};
     project_db
@@ -2559,7 +2573,7 @@ async function showStudentsBulletins(dates) {
             `LEFT JOIN day_evaluations de${index} ON s.id = de${index}.student_id AND de${index}.day_id IN (SELECT id FROM day_id${index})`
         )
         .join("\n")}
-      WHERE s.id in (${getStatisticsSelectedStudentsId()})
+      WHERE s.id in (${studentsList})
       GROUP BY s.id
       ORDER BY s.id;`
       )[0]
@@ -2601,7 +2615,7 @@ async function showStudentsBulletins(dates) {
       FROM students s 
       LEFT JOIN day_evaluations de ON s.id = de.student_id 
       LEFT JOIN day_requirements dr ON dr.student_id = s.id 
-      WHERE s.id in (${getStatisticsSelectedStudentsId()})
+      WHERE s.id in (${studentsList})
       GROUP BY s.id, s.fname, s.lname
       ORDER BY fname, lname;
       `);
@@ -2834,24 +2848,14 @@ async function showStudentsBulletins(dates) {
     isStacked = false
   ) {
     const { data, studentName, studentOrder, studentId } = studentReport;
-    const dataLength = data
-      .map((i) => {
-        return i.detail ? JSON.parse(i.detail).length : 1;
-      })
-      .reduce((accumulator, current) => accumulator + current, 0);
-
     const recordCounts =
       data
         .map((i) => {
-          if (Array.isArray(i.detail)) {
-            return i.detail.length;
-          } else {
-            return 1;
-          }
+          return i.detail ? JSON.parse(i.detail).length : 1;
         })
-        .reduce((accumulator, currentValue) => accumulator + currentValue, 0) +
-      1;
-    const tableCellHeight = isStacked ? 5 : 35 - recordCounts;
+        .reduce((accumulator, current) => accumulator + current, 0) + 1;
+
+    const tableCellHeight = isStacked ? 5 : 33 - recordCounts / 2;
     const tableBody = createTableBody(data, tableCellHeight / 3, isStacked);
 
     const content = [
@@ -2910,7 +2914,8 @@ async function showStudentsBulletins(dates) {
             (isStacked
               ? 841.89 / 4 + (isSecond ? 841.89 / 2 : 0)
               : 841.89 / 2) -
-            ((dataLength + 1) / 2) * (isStacked ? 13 : 25),
+            (recordCounts / (isStacked ? 2 : recordCounts)) *
+              (isStacked ? 13 : 345),
           x: 18,
         },
         layout: {
@@ -3374,7 +3379,7 @@ async function showStudentsBulletins(dates) {
             [
               {
                 text: `الترتيب: ${studentOrder}/${
-                  getStatisticsSelectedStudentsId().split(",").length
+                  studentsList.split(",").length
                 }`,
                 style: "tableCell",
                 bold: true,
@@ -3438,7 +3443,6 @@ async function showStudentsBulletins(dates) {
   function formatDetail(detail) {
     if (!detail) return "-";
     detail = JSON.parse(detail).map((item) => {
-      console.log(typeof item["الأخطاء"]);
       const errorsCount = item["الأخطاء"].includes(" ")
         ? parseInt(item["الأخطاء"].split(" ")[0]) +
           parseInt(item["الأخطاء"].split(" ")[4])
@@ -3469,6 +3473,12 @@ async function showStudentsBulletins(dates) {
 }
 
 async function showStudentsResultsStatistics() {
+  const studentsList = getStatisticsSelectedStudentsId();
+  if (!studentsList) {
+    window.showToast("warning", "يرجى اخيار طلاب من القائمة.");
+    return;
+  }
+
   let [dates, isFullMonth] = getDatesInRange();
   dates = dates.sort((a, b) => new Date(a) - new Date(b));
 
@@ -3550,7 +3560,7 @@ async function showStudentsResultsStatistics() {
     FROM students s 
     LEFT JOIN day_evaluations de ON s.id = de.student_id 
     LEFT JOIN day_requirements dr ON dr.student_id = s.id 
-    WHERE s.id in (${getStatisticsSelectedStudentsId()})
+    WHERE s.id in (${studentsList})
     GROUP BY s.id, "اسم الطالب" 
     ORDER BY s.id;
 `;
@@ -3705,6 +3715,12 @@ async function showStudentsResultsStatistics() {
 }
 
 async function showAttendanceStatistics() {
+  const studentsList = getStatisticsSelectedStudentsId();
+  if (!studentsList) {
+    window.showToast("warning", "يرجى اخيار طلاب من القائمة.");
+    return;
+  }
+
   let [dates, isFullMonth] = getDatesInRange();
   dates = dates.sort((a, b) => new Date(a) - new Date(b));
 
@@ -3758,7 +3774,7 @@ async function showAttendanceStatistics() {
         ) as "النسبة (%)"
     FROM students s
     ${dateJoins}
-    WHERE s.id in (${getStatisticsSelectedStudentsId()})
+    WHERE s.id in (${studentsList})
     GROUP BY s.id
     ORDER BY s.id;
 `;
