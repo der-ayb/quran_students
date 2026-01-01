@@ -2385,7 +2385,13 @@ async function showTab(tabId) {
   } else if (tabId === "pills-home") {
     await loadClassRoomsList();
   } else if (tabId === "pills-preferences") {
-    if (loginStatus.innerHTML.includes("progress-bar")) initAuth();
+    if (
+      loginStatus.innerHTML.includes("progress-bar") ||
+      loginStatus.innerText.includes("لايوجد اتصال بالانترنيت")
+    ) {
+      if (navigator.onLine) initAuth();
+      else loginStatus.innerHTML = "<p>لايوجد اتصال بالانترنيت</p>";
+    }
   } else if (workingClassroomId) {
     if (tabId === "pills-students") {
       await loadStudentsList();
@@ -2545,7 +2551,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     window.showToast("warning", "يرجى اخيار طلاب من القائمة.");
     return;
   }
-  
+
   try {
     const attendanceRes = {};
     project_db
