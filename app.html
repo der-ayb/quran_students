@@ -271,10 +271,10 @@
 
 
         <div class="card">
-          <div class="card-header" id="headingThree">
+          <div class="card-header" id="headingTwo">
             <h2 class="mb-0">
               <button class="btn btn-link btn-block text-start collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
                 البيانات
                 <span style="display: none;"
                   class="syncBadge position-absolute top-1 start-95 translate-middle p-1 bg-danger border border-light rounded-circle">
@@ -283,7 +283,7 @@
               </button>
             </h2>
           </div>
-          <div id="collapseThree" class="accordion-collapse collapse text-center my-3" aria-labelledby="headingThree"
+          <div id="collapseTwo" class="accordion-collapse collapse text-center my-3" aria-labelledby="headingTwo"
             data-bs-parent="#pills-preferences">
 
             <!-- <div id="g_id_onload"
@@ -304,6 +304,38 @@
                 <input type="file" id="importDBbtn" class="d-none">
               </label>
               <button type="button" id="downloadDBbtn" class="btn btn-primary">📤 تصدير</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" id="headingThree">
+            <h2 class="mb-0">
+              <button id="goal" class="btn btn-link btn-block text-start collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                عن التطبيق
+              </button>
+            </h2>
+          </div>
+          <div id="collapseThree" class="accordion-collapse collapse text-center my-3" aria-labelledby="headingThree"
+            data-bs-parent="#pills-preferences">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body text-center">
+              <h5 class="card-title mb-3">تطبيق متابعة الحفظ</h5>
+              <p class="text-muted mb-2"><small>الإصدار 1.4.3</small></p>
+              <p class="card-text">تم تطوير هذا التطبيق لمساعدة المعلمين في متابعة حفظ تلاميذهم للقرآن الكريم.</p>
+              <div class="d-flex gap-2 justify-content-center my-3">
+                <a href="https://github.com/der-ayb/quran_students" class="btn btn-sm btn-outline-primary" target="_blank">
+                <i class="fab fa-github me-1"></i>GitHub
+                </a>
+                <a href="mailto:derrafa6@gmail.com" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-envelope me-1"></i>Contact
+                </a>
+              </div>
+              <button class="btn btn-info w-100 mt-3" onclick="checkForUpdates()">
+                <i class="fas fa-sync-alt me-2"></i>التحقق من التحديثات
+              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -584,7 +616,7 @@
                       </div>
                       <div class="col">
                         <div class="mb-3">
-                          <label for="addedPoints">نقاط إظافية:</label>
+                          <label for="addedPoints">نقاط إضافية:</label>
                           <div class="input-group mb-3">
                             <button class="btn btn-sm btn-outline-secondary" type="button"><i
                                 class="fa-regular fa-square-minus"></i></button>

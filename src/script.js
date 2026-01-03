@@ -502,6 +502,23 @@ async function hideLoadingModal() {
     );
   }
 }
+
+// --- check app updates ---
+async function checkForUpdates() {
+  if ("serviceWorker" in navigator) {
+    if (!navigator.onLine) {
+      showToast("warning", "لا يوجد اتصال بالإنترنت.");
+      return;
+    }
+    await showLoadingModal("جاري التحقق من التحديثات");
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration) {
+      await registration.update();
+    }
+    loadingModal.hide();
+  }
+}
+
 // --- Event Handlers Async ---
 async function createNewDB() {
   if (
@@ -1190,7 +1207,8 @@ function onChangeAttendanceState(radio = null) {
   if (selectedRadio.id !== "present") {
     newStudentDayModalBody.style.display = "none";
   } else {
-    evalMoyenne.value = "0.00";
+    // evalMoyenne.value = "0.00";
+    retardInput.dispatchEvent(new Event("input"));
     newStudentDayModalBody.style.display = "block";
   }
 }
@@ -1593,9 +1611,9 @@ function showRequirementsHistory(student_id) {
                           i["الأخطاء"] || 0
                         }</li>`
                     )
+                    .reverse()
                     .join("")
                 )
-                .reverse()
                 .join("")}</ul>
               `,
     "start"
@@ -2272,7 +2290,7 @@ function initializeToast() {
     el.setAttribute("aria-atomic", "true");
     el.innerHTML = `
           <div class="d-flex">
-            <div class="toast-body">${message}</div>
+            <div class="toast-body text-center">${message}</div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
           </div>
         `;
