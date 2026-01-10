@@ -173,11 +173,55 @@ try {
 function on_back_function(e) {
   if (!e.state || !e.state.isPWABack) return;
 
-  const modalIsShown =
-    studentDayModalElement && studentDayModalElement.classList.contains("show");
+  function isOverlayOpen() {
+    // Check for Bootstrap 5 modal
+    const modal = document.querySelector(".modal.show");
+    if (modal) return true;
 
-  if (modalIsShown) {
-    studentDayModal.hide();
+    // Check for Bootstrap 5 offcanvas
+    const offcanvas = document.querySelector(".offcanvas.show");
+    if (offcanvas) return true;
+
+    // Check for custom overlays with data attribute
+    const customOverlay = document.querySelector('[data-prevent-close="true"]');
+    if (customOverlay) return true;
+
+    return false;
+  }
+  function closeAllOverlays() {
+    // Close Bootstrap modals
+    const modals = document.querySelectorAll(".modal.show");
+    modals.forEach((modal) => {
+      const bsModal = bootstrap.Modal.getInstance(modal);
+      if (bsModal) {
+        bsModal.hide();
+      } else {
+        modal.classList.remove("show");
+        modal.style.display = "none";
+      }
+    });
+
+    // Close Bootstrap offcanvases
+    const offcanvases = document.querySelectorAll(".offcanvas.show");
+    offcanvases.forEach((offcanvas) => {
+      const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+      if (bsOffcanvas) {
+        bsOffcanvas.hide();
+      } else {
+        offcanvas.classList.remove("show");
+      }
+    });
+
+    // Remove backdrop and body classes
+    const backdrop = document.querySelector(
+      ".modal-backdrop, .offcanvas-backdrop"
+    );
+    if (backdrop) backdrop.remove();
+    document.body.classList.remove("modal-open", "offcanvas-show");
+  }
+
+  if (isOverlayOpen()) {
+    closeAllOverlays();
     history.pushState({ isPWABack: true }, "");
     return;
   }
@@ -186,8 +230,6 @@ function on_back_function(e) {
 window.addEventListener("popstate", on_back_function);
 
 // Initialize
-const pwaBackHandler = new PwaBackHandler();
-
 document.addEventListener("DOMContentLoaded", async function () {
   // init Plus Minus buttons
   initPlusMinusButtons(saveStateErrorsInput);
@@ -1957,7 +1999,7 @@ async function loadDayStudentsList() {
             targets: 0,
             render: DataTable.render.select(),
           },
-          { visible: false, targets: [-3, -2] },
+          // { visible: false, targets: [-3, -2] },
           { targets: [0, 1, -1], orderable: false },
         ],
         layout: {
