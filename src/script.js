@@ -161,163 +161,29 @@ async function initPlusMinusButtons(numberField) {
   });
 }
 // back button event listenner
-class PwaBackHandler {
-  constructor() {
-    this.exitPromptShown = false;
-    this.init();
-  }
-
-  init() {
-    // Handle browser back button/gesture
-    window.addEventListener("popstate", (e) => this.handleBack(e));
-
-    // Also handle beforeunload for tab/window close
-    window.addEventListener("beforeunload", (e) => this.handleTabClose(e));
-  }
-
-  handleBack(e) {
-    // Check if any Bootstrap modal/offcanvas is open
-    if (this.isOverlayOpen()) {
-      e.preventDefault();
-      this.closeAllOverlays();
-    } else {
-      e.preventDefault();
-      this.showExitConfirm();
+try {
+  if (history && typeof history.pushState === "function") {
+    if (!history.state || !history.state.isPWABack) {
+      history.replaceState({ isPWABack: true }, "");
+      history.pushState({ isPWABack: true }, "");
     }
   }
+} catch (err) {}
 
-  handleTabClose(e) {
-    // This triggers when user tries to close the tab/window
-    // You can add additional checks here if needed
-    if (this.isOverlayOpen()) {
-      e.preventDefault();
-      e.returnValue = "You have an open modal. Please close it first.";
-      return e.returnValue;
-    }
+function on_back_function(e) {
+  if (!e.state || !e.state.isPWABack) return;
+
+  const modalIsShown =
+    studentDayModalElement && studentDayModalElement.classList.contains("show");
+
+  if (modalIsShown) {
+    studentDayModal.hide();
+    history.pushState({ isPWABack: true }, "");
+    return;
   }
-
-  isOverlayOpen() {
-    // Check for Bootstrap 5 modal
-    const modal = document.querySelector(".modal.show");
-    if (modal) return true;
-
-    // Check for Bootstrap 5 offcanvas
-    const offcanvas = document.querySelector(".offcanvas.show");
-    if (offcanvas) return true;
-
-    // Check for custom overlays with data attribute
-    const customOverlay = document.querySelector('[data-prevent-close="true"]');
-    if (customOverlay) return true;
-
-    return false;
-  }
-
-  closeAllOverlays() {
-    // Close Bootstrap modals
-    const modals = document.querySelectorAll(".modal.show");
-    modals.forEach((modal) => {
-      const bsModal = bootstrap.Modal.getInstance(modal);
-      if (bsModal) {
-        bsModal.hide();
-      } else {
-        modal.classList.remove("show");
-        modal.style.display = "none";
-      }
-    });
-
-    // Close Bootstrap offcanvases
-    const offcanvases = document.querySelectorAll(".offcanvas.show");
-    offcanvases.forEach((offcanvas) => {
-      const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
-      if (bsOffcanvas) {
-        bsOffcanvas.hide();
-      } else {
-        offcanvas.classList.remove("show");
-      }
-    });
-
-    // Remove backdrop and body classes
-    const backdrop = document.querySelector(
-      ".modal-backdrop, .offcanvas-backdrop"
-    );
-    if (backdrop) backdrop.remove();
-    document.body.classList.remove("modal-open", "offcanvas-show");
-  }
-
-  showExitConfirm() {
-    // Use browser's native confirm dialog
-    const shouldExit = confirm("Do you want to exit the app?");
-
-    if (shouldExit) {
-      this.performExit();
-    } else {
-      // User cancelled - push a new state to stay
-      history.pushState({ preventExit: true }, "");
-    }
-  }
-
-  performExit() {
-    // Check if it's an installed PWA (standalone mode)
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone;
-
-    if (isStandalone) {
-      // For installed PWA, we can't truly close, so:
-
-      // Option 1: Go to home page (recommended)
-      window.location.href = "/";
-
-      // Option 2: Try to minimize (limited support)
-      // window.history.back(); // If there's history
-
-      // Option 3: Show a message that they need to swipe away
-      // this.showSwipeAwayHint();
-    } else {
-      // Running in browser tab
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        // Can't go back - close tab/window
-        window.close();
-      }
-    }
-  }
-
-  showSwipeAwayHint() {
-    // Create a hint for installed PWA users
-    const hint = document.createElement("div");
-    hint.className = "exit-hint alert alert-info position-fixed";
-    hint.style.cssText = `
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            max-width: 90%;
-            text-align: center;
-            animation: fadeInOut 3s forwards;
-        `;
-    hint.innerHTML = `
-            <i class="fas fa-info-circle me-2"></i>
-            To exit, swipe up from bottom and close the app
-        `;
-
-    // Add animation CSS
-    const style = document.createElement("style");
-    style.textContent = `
-            @keyframes fadeInOut {
-                0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-                10% { opacity: 1; transform: translateX(-50%) translateY(0); }
-                90% { opacity: 1; transform: translateX(-50%) translateY(0); }
-                100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-            }
-        `;
-    document.head.appendChild(style);
-
-    document.body.appendChild(hint);
-    setTimeout(() => hint.remove(), 3000);
-  }
+  window.addEventListener("popstate", on_back_function);
 }
+window.addEventListener("popstate", on_back_function);
 
 // Initialize
 const pwaBackHandler = new PwaBackHandler();
@@ -1344,8 +1210,14 @@ function onChangeAttendanceState(radio = null) {
   if (selectedRadio.id !== "present") {
     newStudentDayModalBody.style.display = "none";
   } else {
-    // evalMoyenne.value = "0.00";
-    retardInput.dispatchEvent(new Event("input"));
+    evalMoyenne.value = calcEvaluationMoyenne(
+      retardInput.value,
+      clothingInput.value,
+      haircutInput.value,
+      behaviorInput.value,
+      prayerInput.value,
+      addedPointsInput.value
+    );
     newStudentDayModalBody.style.display = "block";
   }
 }
