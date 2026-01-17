@@ -15,6 +15,12 @@ const surahsData = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "quranstudentsDB";
 const QURAN_DB_KEY = "quranDB";
+const evaluationLaddersValues = {
+  retard: { initialPresenceMark: 30, retardPointsPerMinute: 0.4 },
+  behavior: { ممتاز: 5, جيد: 4, متوسط: 3, سيء: -5, "سيئ جدا": -10 },
+  clothing: { ممتاز: 5, جيد: 3, حسن: 2, "غير مقبول": -5 },
+  haircut: { جيد: 5, متوسط: 2, "غير مقبول": -5 },
+};
 const arabicMonths = [
   "جانفي",
   "فيفري",
@@ -55,6 +61,7 @@ const firstSurahSelect = document.getElementById("first-surah");
 const requirEvaluationInput = document.getElementById("requirEvaluation");
 const requireBookInput = document.getElementById("requirBook");
 const saveStateErrorsInput = document.getElementById("saveStateErrors");
+const requirMoyenneInput = document.getElementById("requirMoyenne");
 const requirTeacherInput = document.getElementById("requirTeacher");
 let teachersPoints = {};
 
@@ -66,7 +73,7 @@ const prayerInput = document.getElementById("prayer");
 const addedPointsInput = document.getElementById("addedPoints");
 const evalMoyenne = document.getElementById("evalMoyenne");
 
-const requirMoyenneInput = document.getElementById("requirMoyenne");
+const requirsMoyenneInput = document.getElementById("requirsMoyenne");
 const historyRequirBtn = document.getElementById("historyRequirBtn");
 const requirQuantityDetailInput = document.getElementById(
   "requirQuantityDetail"
@@ -161,81 +168,66 @@ async function initPlusMinusButtons(numberField) {
   });
 }
 // back button event listenner
-try {
-  if (history && typeof history.pushState === "function") {
-    if (!history.state || !history.state.isPWABack) {
-      history.replaceState({ isPWABack: true }, "");
-      history.pushState({ isPWABack: true }, "");
-    }
-  }
-} catch (err) {}
+function isAnyOverlayOpen() {
+  return (
+    document.querySelector(
+      '.modal.show, .offcanvas.show, [role="dialog"]:not([aria-hidden="true"])'
+    ) !== null
+  );
+}
 
-function on_back_function(e) {
-  if (!e.state || !e.state.isPWABack) return;
-
-  function isOverlayOpen() {
-    // Check for Bootstrap 5 modal
-    const modal = document.querySelector(".modal.show");
-    if (modal) return true;
-
-    // Check for Bootstrap 5 offcanvas
-    const offcanvas = document.querySelector(".offcanvas.show");
-    if (offcanvas) return true;
-
-    // Check for custom overlays with data attribute
-    const customOverlay = document.querySelector('[data-prevent-close="true"]');
-    if (customOverlay) return true;
-
-    return false;
-  }
-  function closeAllOverlays() {
-    // Close Bootstrap modals
-    const modals = document.querySelectorAll(".modal.show");
-    modals.forEach((modal) => {
-      const bsModal = bootstrap.Modal.getInstance(modal);
-      if (bsModal) {
-        bsModal.hide();
-      } else {
-        modal.classList.remove("show");
-        modal.style.display = "none";
-      }
-    });
-
-    // Close Bootstrap offcanvases
-    const offcanvases = document.querySelectorAll(".offcanvas.show");
-    offcanvases.forEach((offcanvas) => {
-      const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
-      if (bsOffcanvas) {
-        bsOffcanvas.hide();
-      } else {
-        offcanvas.classList.remove("show");
-      }
-    });
-
-    // Remove backdrop and body classes
-    const backdrop = document.querySelector(
-      ".modal-backdrop, .offcanvas-backdrop"
-    );
-    if (backdrop) backdrop.remove();
-    document.body.classList.remove("modal-open", "offcanvas-show");
+function closeAnyOverlay() {
+  // Bootstrap modal
+  const modal = document.querySelector(".modal.show");
+  if (modal && window.bootstrap) {
+    bootstrap.Modal.getInstance(modal)?.hide();
+    return true;
   }
 
-  if (isOverlayOpen()) {
-    closeAllOverlays();
-    history.pushState({ isPWABack: true }, "");
+  // Bootstrap offcanvas
+  const offcanvas = document.querySelector(".offcanvas.show");
+  if (offcanvas && window.bootstrap) {
+    bootstrap.Offcanvas.getInstance(offcanvas)?.hide();
+    return true;
+  }
+
+  // Generic fallback (click close button)
+  const closeBtn = document.querySelector(
+    '[data-bs-dismiss], [aria-label="Close"], .close, .btn-close'
+  );
+  if (closeBtn) {
+    closeBtn.click();
+    return true;
+  }
+
+  return false;
+}
+
+let allowExit = false;
+history.pushState({ pwa: true }, "");
+
+window.addEventListener("popstate", () => {
+  // 1️⃣ Close any open overlay
+  if (isAnyOverlayOpen()) {
+    closeAnyOverlay();
+    history.pushState({ pwa: true }, "");
     return;
   }
-  window.addEventListener("popstate", on_back_function);
-}
-window.addEventListener("popstate", on_back_function);
+
+  // 2️⃣ Ask exit confirmation
+  if (!allowExit) {
+    const exit = confirm("Do you want to exit the app?");
+    if (exit) {
+      allowExit = true;
+      history.back();
+    } else {
+      history.pushState({ pwa: true }, "");
+    }
+  }
+});
 
 // Initialize
 document.addEventListener("DOMContentLoaded", async function () {
-  // init Plus Minus buttons
-  initPlusMinusButtons(saveStateErrorsInput);
-  initPlusMinusButtons(addedPointsInput);
-  initPlusMinusButtons(prayerInput);
-
   // theme selector
   themeSelector.onchange = async function () {
     const theme = this.value;
@@ -302,6 +294,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     endYear: today.getFullYear() - 3,
     startYear: today.getFullYear() - 97,
   });
+
+  // init Plus Minus buttons
+  initPlusMinusButtons(saveStateErrorsInput);
+  initPlusMinusButtons(addedPointsInput);
+  initPlusMinusButtons(prayerInput);
+  initPlusMinusButtons(requirMoyenneInput);
+  // parse evaluation ladder selects
+  populateEvalSelects();
 });
 
 // --- IndexedDB Promisified ---
@@ -454,6 +454,7 @@ async function init() {
       }
       localStorage.setItem("newUser", false);
       await initializeAyatdata(quran_db);
+      initEvaluationLaddersValues(project_db);
       await dayDatePickerInit();
       showTab("pills-home");
       nav_bar.style.removeProperty("display");
@@ -1177,7 +1178,7 @@ document
     if (studentIdInput.value) {
       submitButton.textContent = "تحديث";
     } else {
-      submitButton.textContent = "إظافة";
+      submitButton.textContent = "إضافة";
     }
   });
 
@@ -1190,7 +1191,7 @@ document
     if (classroomIdInput.value) {
       submitButton.textContent = "تحديث";
     } else {
-      submitButton.textContent = "إظافة";
+      submitButton.textContent = "إضافة";
     }
   });
 
@@ -1273,7 +1274,10 @@ function calcEvaluationMoyenne(
   addedPoints
 ) {
   let moyenne = 0;
-  moyenne += 30 - parseInt(retard > -1 ? retard : 0) / 3;
+  moyenne +=
+    evaluationLaddersValues["retard"]["initialPresenceMark"] -
+    parseInt(retard > -1 ? retard : 0) *
+      evaluationLaddersValues["retard"]["retardPointsPerMinute"];
   moyenne += parseInt(clothing) || 0;
   moyenne += parseInt(haircut) || 0;
   moyenne += parseInt(behavior) || 0;
@@ -1361,6 +1365,11 @@ function setRequirEvalInput() {
     requirTypeInput.value,
     saveStateErrorsInput.value
   );
+  requirMoyenneInput.value = calcRequirementMoyenne(
+    requirQuantityInput.value,
+    requirEvaluationInput.value,
+    requirTypeInput.value
+  );
 }
 
 $([requirTypeInput, saveStateErrorsInput]).on(
@@ -1396,7 +1405,7 @@ function update_student_day_notes(studentId, working_day_id) {
           studentId,
           working_day_id,
           JSON.stringify(requirList),
-          requirMoyenneInput.value || "0",
+          requirsMoyenneInput.value || "0",
         ]
       );
     } else {
@@ -1429,8 +1438,8 @@ function update_student_day_notes(studentId, working_day_id) {
 
   Object.keys(teachersPoints).forEach((key) => {
     project_db.run(
-      `UPDATE day_evaluations SET added_points = added_points + ? ,
-                                  moyenne = moyenne + ?
+      `UPDATE day_evaluations SET added_points = COALESCE(added_points, 0) + ? ,
+                                  moyenne = COALESCE(moyenne, 0) + ?
                                   WHERE student_id = ?  
                                   AND day_id = ?;`,
       [teachersPoints[key], teachersPoints[key], key, working_day_id]
@@ -1447,13 +1456,13 @@ function calcRetardTime() {
   return moment().diff(moment(start_time, "HH:mm"), "minutes");
 }
 
-function checkAuthorizedOut(time, requirMoyenne, minutesToAdd, after = 60) {
+function checkAuthorizedOut(time, requirsMoyenne, minutesToAdd, after = 60) {
   const now = new Date();
   const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
   const [h, m] = time.split(":").map(Number);
   const newTimeObj = h * 60 + m + (minutesToAdd + after);
   const difference = newTimeObj - currentTotalMinutes;
-  return requirMoyenne && difference < 0;
+  return requirsMoyenne && difference < 0;
 }
 
 async function showOffCanvas(title, body, side = "top") {
@@ -1550,7 +1559,7 @@ async function addNewStudyDay() {
     return;
   }
   project_db.run(
-    "INSERT OR REPLACE INTO education_day (date,time, notes,class_room_id) VALUES (?,?, ?,?);",
+    "INSERT OR REPLACE INTO education_day (date,time, notes,class_room_id,evaluation_ladder_id) VALUES (?,?, ?,?,(SELECT id FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1));",
     [workingDay, appointment_time, null, workingClassroomId]
   );
   start_time = appointment_time;
@@ -1645,7 +1654,7 @@ function showRequirementsHistory(student_id) {
     .exec(
       ` SELECT detail FROM day_requirements
                   WHERE student_id = ${student_id} ORDER BY day_id DESC
-                  LIMIT 3`
+                  LIMIT 5`
     )[0]
     .values.forEach((row) => {
       requirs.push(row[0]);
@@ -1689,6 +1698,19 @@ async function loadDayStudentsList() {
     document.getElementById("addNewDayBtn").style.display = "block";
     document.getElementById("dayListTable").style.display = "none";
     return;
+  }
+
+  // fill evaluation ladder
+  const newEvalLaddersValues = JSON.parse(
+    project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
+      dayResult[0].values[0][
+        dayResult[0].columns.indexOf("evaluation_ladder_id")
+      ],
+    ])[0].values[0]
+  );
+  if (newEvalLaddersValues !== evaluationLaddersValues) {
+    Object.assign(evaluationLaddersValues, newEvalLaddersValues);
+    populateEvalSelects();
   }
 
   workingDayID = dayResult[0].values[0][dayResult[0].columns.indexOf("id")];
@@ -1751,6 +1773,7 @@ async function loadDayStudentsList() {
         ) {
           requirTeacherInput.add(new Option(full_name, student_id));
         }
+
         function editStudentDay(isEvaluation = true) {
           showStudentDayModal(true);
 
@@ -1762,6 +1785,9 @@ async function loadDayStudentsList() {
           } else {
             evaluationCollapse.hide();
             requirCollapse.show();
+            setTimeout(() => {
+              requireBookInput.scrollIntoView();
+            }, 500);
           }
 
           setAttendanceValue(attendance);
@@ -1787,7 +1813,7 @@ async function loadDayStudentsList() {
           initRequirementFields(student_id);
           historyRequirBtn.onclick = () => showRequirementsHistory(student_id);
 
-          requirMoyenneInput.value =
+          requirsMoyenneInput.value =
             row[result.columns.indexOf("requirsMoyenne")] || "0.00";
           requirementsTable.querySelector("tbody").innerHTML = "";
           JSON.parse(row[result.columns.indexOf("detail")] || "[]").forEach(
@@ -1802,7 +1828,9 @@ async function loadDayStudentsList() {
                 <td>${item["الأخطاء"] || ""}</td>
                 <td>${item["المعدل"]}</td>
                 <td>${item["المعرض"] || ""}</td>
-                <td><button class="btn btn-danger btn-sm" onclick="removeRequirItem(this,${student_id})">X</button></td>`;
+                <td><div class="btn-group-vertical" role="group" aria-label="Vertical button group">
+                    <button type="button" class="btn btn-success" onclick="editRequirement(this);"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="removeRequirItem(this,${student_id})"><i class="fa-solid fa-xmark"></i></button></td></div>`;
               requirementsTable.querySelector("tbody").appendChild(row);
             }
           );
@@ -2379,29 +2407,75 @@ function initializeToast() {
     window._toastQueue.length = 0;
   }
 }
+function editRequirement(button) {
+  const row = button.closest("tr");
+  requireBookInput.value = row.firstElementChild.textContent;
+  requireBookInput.dispatchEvent(new Event("change"));
+  requirTypeInput.value = row.firstElementChild.nextElementSibling.textContent;
+  requirTypeInput.dispatchEvent(new Event("change"));
+  const detail =
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+
+  const startSurahName = detail.split(" ").at(0);
+  const finishSurahName = detail.split(" ").at(-3);
+  if (requireBookInput.value == "القرآن الكريم") {
+    setOptionValueByText(firstSurahSelect, startSurahName);
+    setOptionValueByText(secondSurahSelect, finishSurahName);
+    firstAyahSelect.value = detail.split(" ").at(2);
+    secondAyahSelect.value = detail.split(" ").at(-1);
+  }
+  saveStateErrorsInput.value =
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+  const teacherName =
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+  setOptionValueByText(requirTeacherInput, teacherName);
+  // row.remove();
+  requirsMoyenneInput.value = calcRequirementsMoyenne();
+  requireBookInput.scrollIntoView();
+
+  addQuranSelectionBtn.innerText = "تحديث";
+  addQuranSelectionBtn.onclick = () => {
+    addRequirToTable(row);
+
+    addQuranSelectionBtn.innerText = "إضافة";
+    addQuranSelectionBtn.onclick = () => addRequirToTable();
+  };
+  studentDayModalElement.addEventListener(
+    "hidden.bs.modal",
+    (event) => {
+      addQuranSelectionBtn.innerText = "إضافة";
+      addQuranSelectionBtn.onclick = () => addRequirToTable();
+    },
+    { once: true }
+  );
+}
 
 function removeRequirItem(button, student_id = null) {
   const row = button.closest("tr");
+  row.remove();
+  requirsMoyenneInput.value = calcRequirementsMoyenne();
+  studentDayFormSubmitBtn.disabled = false;
+  studentDayFormSubmitBtn.nextElementSibling.disabled = false;
+
   initRequirementFields(
-    row.previousElementSibling
+    requirementsTable.rows.length > 2
       ? {
-          الكتاب: row.previousElementSibling.firstElementChild.textContent,
+          الكتاب:
+            requirementsTable.rows[requirementsTable.rows.length - 2]
+              .firstElementChild.textContent,
           النوع:
-            row.previousElementSibling.firstElementChild.nextElementSibling
-              .textContent,
+            requirementsTable.rows[requirementsTable.rows.length - 2]
+              .firstElementChild.nextElementSibling.textContent,
           التفاصيل:
-            row.previousElementSibling.firstElementChild.nextElementSibling
-              .nextElementSibling.nextElementSibling.textContent,
+            requirementsTable.rows[requirementsTable.rows.length - 2]
+              .firstElementChild.nextElementSibling.nextElementSibling
+              .nextElementSibling.textContent,
         }
       : student_id
   );
-  row.remove();
-  requirMoyenneInput.value = calcRequirementsMoyenne();
-  studentDayFormSubmitBtn.disabled = false;
-  studentDayFormSubmitBtn.nextElementSibling.disabled = false;
 }
 
-addQuranSelectionBtn.onclick = function () {
+function addRequirToTable(row = false) {
   if (
     !requireBookInput.value ||
     !requirQuantityDetailInput.value ||
@@ -2412,8 +2486,8 @@ addQuranSelectionBtn.onclick = function () {
     window.showToast("error", "الرجاء إدخال الحقول اللازمة.");
     return;
   }
-  const row = document.createElement("tr");
-  row.innerHTML = `
+  const newRow = document.createElement("tr");
+  newRow.innerHTML = `
     <td>${requireBookInput.value}</td>
     <td>${requirTypeInput.value}</td>
     <td class="d-none">${requirQuantityInput.value}</td>
@@ -2423,30 +2497,30 @@ addQuranSelectionBtn.onclick = function () {
       ${saveStateErrorsInput.value}
     </td>
     <td>
-      ${calcRequirementMoyenne(
-        requirQuantityInput.value,
-        requirEvaluationInput.value,
-        requirTypeInput.value
-      )}
+      ${requirMoyenneInput.value}
     </td>
     <td>
       ${requirTeacherInput.options[requirTeacherInput.selectedIndex].text}
     </td>
     <td>
+    <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
+      <button type="button" class="btn btn-success" onclick="editRequirement(this);"><i class="fa-solid fa-pen-to-square"></i></button>
       <button class="btn btn-danger btn-sm" 
-      onclick="teachersPoints[requirTeacherInput.value] = teachersPoints[requirTeacherInput.value] -
+        onclick="teachersPoints[requirTeacherInput.value] = teachersPoints[requirTeacherInput.value] -
                 Math.floor(parseFloat(this.parentNode.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.textContent));
-                removeRequirItem(this);"
-              >X</button>
+                removeRequirItem(this);"><i class="fa-solid fa-xmark"></i></button>
+    </div>
     </td>`;
-  requirementsTable.querySelector("tbody").appendChild(row);
+  if (!row) requirementsTable.querySelector("tbody").appendChild(newRow);
+  else row.replaceWith(newRow);
+  requirementsTable.scrollIntoView();
   if (requirTeacherInput.value !== "0") {
     teachersPoints[requirTeacherInput.value] =
       (teachersPoints[requirTeacherInput.value] || 0) +
       Math.floor(parseFloat(requirQuantityInput.value));
   }
 
-  requirMoyenneInput.value = calcRequirementsMoyenne();
+  requirsMoyenneInput.value = calcRequirementsMoyenne();
   studentDayFormSubmitBtn.disabled = false;
   studentDayFormSubmitBtn.nextElementSibling.disabled = false;
   initRequirementFields({
@@ -2454,7 +2528,166 @@ addQuranSelectionBtn.onclick = function () {
     النوع: requirTypeInput.value,
     التفاصيل: requirQuantityDetailInput.value,
   });
-};
+}
+
+addQuranSelectionBtn.onclick = () => addRequirToTable();
+
+// Evaluation Ladder
+async function initEvaluationLaddersValues(db) {
+  try {
+    Object.assign(
+      evaluationLaddersValues,
+      JSON.parse(
+        db.exec(
+          "SELECT detail FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1;"
+        )[0].values[0]
+      )
+    );
+  } catch (error) {
+    if (String(error).includes("no such table")) {
+      db.run(
+        `CREATE TABLE "evaluation_ladder" (
+            "id"	integer NOT NULL,
+            "detail"	text NOT NULL CHECK((JSON_VALID("detail") OR "detail" IS NULL)),
+            PRIMARY KEY("id" AUTOINCREMENT)
+          );
+          INSERT INTO evaluation_ladder (detail) VALUES ('${JSON.stringify(
+            evaluationLaddersValues
+          )}');
+          -- 1. Create a temporary table with all current data
+          CREATE TABLE education_day_backup AS 
+          SELECT * FROM education_day;
+          -- 2. Drop the original table
+          DROP TABLE education_day;
+          -- 3. Create new table with the foreign key
+          CREATE TABLE education_day (
+              "id"	integer NOT NULL,
+              "date"	date NOT NULL,
+              "time"	time NOT NULL,
+              "notes"	text,
+              "class_room_id"	bigint NOT NULL,
+              -- New column with constraints
+              evaluation_ladder_id INTEGER NOT NULL DEFAULT 1,
+              -- Foreign key constraint
+              CONSTRAINT "unique_education_day" UNIQUE("date","class_room_id"),
+              PRIMARY KEY("id" AUTOINCREMENT),
+              FOREIGN KEY("class_room_id") REFERENCES "class_rooms"("id") DEFERRABLE INITIALLY DEFERRED
+                      
+              FOREIGN KEY (evaluation_ladder_id) REFERENCES evaluation_ladder(id)
+          );
+          -- 4. Copy data from backup (excluding the new column)
+          INSERT INTO education_day (id, date,time,notes,class_room_id)
+          SELECT id, date,time,notes,class_room_id
+          FROM education_day_backup;
+          -- 5. Drop the backup table
+          DROP TABLE education_day_backup;`
+      );
+      saveToIndexedDB(db.export());
+    }
+  }
+}
+
+function populateEvalSelects() {
+  for (type of ["behavior", "clothing", "haircut"]) {
+    const select = document.getElementById(type);
+    select.innerHTML = "";
+    for (const [key, value] of Object.entries(evaluationLaddersValues[type])) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+      select.appendChild(option);
+    }
+    select.innerHTML += '<option value="0" selected>بدون تقييم</option>';
+  }
+}
+
+function displayEvalLadder(evalLaddersValues = null) {
+  if (!evalLaddersValues) evalLaddersValues = evaluationLaddersValues;
+  document.getElementById("initialPresenceMark").value =
+    evalLaddersValues["retard"]["initialPresenceMark"];
+  document.getElementById("retardPointsPerMinute").value =
+    evalLaddersValues["retard"]["retardPointsPerMinute"];
+  for (type of ["behavior", "clothing", "haircut"]) {
+    const list = document.getElementById(type + "-marksList");
+    list.innerHTML = "";
+
+    for (const [key, value] of Object.entries(evalLaddersValues[type])) {
+      const item = document.createElement("div");
+      item.className = "input-group mb-3";
+      item.innerHTML = `
+                    <input type="text" class="form-control text-center px-0 w-25" id="${type}_key-${key}" value="${key}" placeholder="Mark name">
+                    <input type="number" class="form-control text-center px-0" id="${type}_value-${key}" value="${value}" placeholder="Value">
+                    <button class="btn btn-danger px-1" onclick="removeEvalLadder('${type}','${key}')">حذف</button>
+                `;
+      list.appendChild(item);
+    }
+  }
+}
+
+function updateEvalLadder() {
+  const newLadders = {
+    retard: {
+      initialPresenceMark: document.getElementById("initialPresenceMark").value,
+      retardPointsPerMinute: document.getElementById("retardPointsPerMinute")
+        .value,
+    },
+  };
+  for (type of ["behavior", "clothing", "haircut"]) {
+    const oldLadders = Object.keys(evaluationLaddersValues[type]);
+    newLadders[type] = {};
+
+    for (const oldKey of oldLadders) {
+      const keyInput = document.getElementById(`${type}_key-${oldKey}`);
+      const valueInput = document.getElementById(`${type}_value-${oldKey}`);
+
+      if (keyInput && valueInput) {
+        const newKey = keyInput.value.trim().toLowerCase();
+        const newValue = parseFloat(valueInput.value);
+
+        if (newKey && !isNaN(newValue)) {
+          newLadders[type][newKey] = newValue;
+        }
+      }
+    }
+  }
+  Object.keys(evaluationLaddersValues).forEach(
+    (key) => delete evaluationLaddersValues[key]
+  );
+  Object.assign(evaluationLaddersValues, newLadders);
+
+  project_db.run(
+    `INSERT INTO evaluation_ladder (detail) VALUES ('${JSON.stringify(
+      evaluationLaddersValues
+    )}');`
+  );
+  saveToIndexedDB(project_db.export());
+  displayEvalLadder();
+
+  window.showToast("info", "تم تحديث سلم النقيط بنجاح!");
+}
+
+function addEvalLadder(type) {
+  const markName = prompt("اسم الملاحظة:");
+  if (markName && markName.trim()) {
+    const trimmedName = markName.trim().toLowerCase();
+    if (evaluationLaddersValues[type].hasOwnProperty(trimmedName)) {
+      alert("هذه الملاحظة موجودة من قبل!");
+      return;
+    }
+    const markValue = prompt(`أدخل القيمة`, "0");
+    if (markValue !== null && !isNaN(markValue)) {
+      evaluationLaddersValues[type][trimmedName] = parseFloat(markValue);
+      displayEvalLadder();
+    }
+  }
+}
+
+function removeEvalLadder(type, key) {
+  if (Object.keys(evaluationLaddersValues[type]).length > 2) {
+    delete evaluationLaddersValues[type][key];
+    displayEvalLadder();
+  }
+}
 
 async function showTab(tabId) {
   document
@@ -2467,6 +2700,16 @@ async function showTab(tabId) {
   } else if (tabId === "pills-home") {
     await loadClassRoomsList();
   } else if (tabId === "pills-preferences") {
+    if (!document.getElementById("behavior-marksList").innerHTML) {
+      displayEvalLadder(
+        JSON.parse(
+          project_db.exec(
+            "SELECT detail FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1;"
+          )[0]?.values[0] || null
+        )
+      );
+      document.getElementById("list-retard").classList.add("show", "active");
+    }
     if (
       loginStatus.innerHTML.includes("progress-bar") ||
       loginStatus.innerText.includes("لايوجد اتصال بالانترنيت")
