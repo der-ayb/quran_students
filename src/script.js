@@ -76,7 +76,7 @@ const evalMoyenne = document.getElementById("evalMoyenne");
 const requirsMoyenneInput = document.getElementById("requirsMoyenne");
 const historyRequirBtn = document.getElementById("historyRequirBtn");
 const requirQuantityDetailInput = document.getElementById(
-  "requirQuantityDetail"
+  "requirQuantityDetail",
 );
 const requirQuantityInput = document.getElementById("requirQuantity");
 const requirTypeInput = document.getElementById("requirType");
@@ -97,11 +97,11 @@ const newStudentInfosForm = document.getElementById("newStudentInfosForm");
 const newClassroomInfosForm = document.getElementById("newClassroomInfosForm");
 const studentDayForm = document.getElementById("studentDayForm");
 const studentDayFormSubmitBtn = document.getElementById(
-  "studentDayFormSubmitBtn"
+  "studentDayFormSubmitBtn",
 );
 
 const newStudentDayModalBody = document.getElementById(
-  "newStudentDayModalBody"
+  "newStudentDayModalBody",
 );
 
 let statisAllCheckbox = document.getElementById("statisAllCheckbox");
@@ -120,18 +120,18 @@ const studentDayModalElement = document.getElementById("newStudentDayModal");
 const studentDayModal = new bootstrap.Modal(studentDayModalElement);
 
 const studentInfosModal = new bootstrap.Modal(
-  document.getElementById("newStudentInfosModal")
+  document.getElementById("newStudentInfosModal"),
 );
 const classroomInfosModal = new bootstrap.Modal(
-  document.getElementById("newClassroomInfosModal")
+  document.getElementById("newClassroomInfosModal"),
 );
 
 const requirCollapse = new bootstrap.Collapse(
-  document.getElementById("requirCollapse")
+  document.getElementById("requirCollapse"),
 );
 
 const evaluationCollapse = new bootstrap.Collapse(
-  document.getElementById("evaluationCollapse")
+  document.getElementById("evaluationCollapse"),
 );
 
 document.getElementById("maximizeModalBtn").onclick = async (e) => {
@@ -171,7 +171,7 @@ async function initPlusMinusButtons(numberField) {
 function isAnyOverlayOpen() {
   return (
     document.querySelector(
-      '.modal.show, .offcanvas.show, [role="dialog"]:not([aria-hidden="true"])'
+      '.modal.show, .offcanvas.show, [role="dialog"]:not([aria-hidden="true"])',
     ) !== null
   );
 }
@@ -193,7 +193,7 @@ function closeAnyOverlay() {
 
   // Generic fallback (click close button)
   const closeBtn = document.querySelector(
-    '[data-bs-dismiss], [aria-label="Close"], .close, .btn-close'
+    '[data-bs-dismiss], [aria-label="Close"], .close, .btn-close',
   );
   if (closeBtn) {
     closeBtn.click();
@@ -408,7 +408,7 @@ async function loadDBFromFile(file, downloaded = false) {
 async function fetchAndPutIntoIndexedDBFile(
   db_key,
   url,
-  onSuccessCallback = function () {}
+  onSuccessCallback = function () {},
 ) {
   try {
     const response = await fetch(url);
@@ -447,7 +447,7 @@ async function init() {
         if (!(await downloadQuranDB())) {
           window.showToast(
             "error",
-            "فشل في إنشاء قاعدة بيانات جديدة، تأكد من الاتصال بالإنترنت."
+            "فشل في إنشاء قاعدة بيانات جديدة، تأكد من الاتصال بالإنترنت.",
           );
           return;
         }
@@ -478,7 +478,7 @@ async function downloadQuranDB() {
       quran_db = db;
       await initializeAyatdata(db);
       await dayDatePickerInit();
-    }
+    },
   );
 }
 
@@ -489,7 +489,7 @@ async function initOrReloadDataTable(
   columns,
   options = {},
   TableDetailIsShow = false,
-  shoulDestroy = false
+  shoulDestroy = false,
 ) {
   if ($.fn.DataTable.isDataTable(selector)) {
     if (shoulDestroy) {
@@ -544,7 +544,7 @@ async function hideLoadingModal() {
     loadingModal.hide();
   } else {
     setLoadingModalText(
-      loadingModalShowNumber[loadingModalShowNumber.length - 1]
+      loadingModalShowNumber[loadingModalShowNumber.length - 1],
     );
   }
 }
@@ -580,14 +580,14 @@ async function createNewDB() {
       "./assets/default.sqlite3",
       (db) => {
         project_db = db;
-      }
+      },
     )) ||
     !(await downloadQuranDB())
   ) {
     hideLoadingModal();
     window.showToast(
       "error",
-      "فشل في إنشاء قاعدة بيانات جديدة، تأكد من الاتصال بالإنترنت."
+      "فشل في إنشاء قاعدة بيانات جديدة، تأكد من الاتصال بالإنترنت.",
     );
     return;
   }
@@ -643,7 +643,7 @@ document.getElementById("importDBbtn").onchange = async (e) => {
     } catch (e) {
       window.showToast(
         "error",
-        "فشل في استرداد قاعدة البيانات. تأكد من صحة الملف."
+        "فشل في استرداد قاعدة البيانات. تأكد من صحة الملف.",
       );
     }
   }
@@ -702,20 +702,20 @@ newClassroomInfosForm.onsubmit = (e) => {
     if (classroomIdInput.value) {
       project_db.run(
         "UPDATE class_rooms SET mosque = ?, place = ?, sex = ? ,level = ? WHERE id = ?;",
-        [mosque, place, sex, level, classroomIdInput.value]
+        [mosque, place, sex, level, classroomIdInput.value],
       );
       window.showToast(
-        `success", "تم تعديل الطالب${isGirls ? "ة" : ""} بنجاح.`
+        `success", "تم تعديل الطالب${isGirls ? "ة" : ""} بنجاح.`,
       );
     } else {
       project_db.run(
         "INSERT INTO class_rooms (mosque, place, sex, level) VALUES (?, ?, ?,?);",
-        [mosque, place, sex, level]
+        [mosque, place, sex, level],
       );
       newClassroomInfosForm.reset();
       window.showToast(
         "success",
-        `تم إضافة الطالب${isGirls ? "ة" : ""} بنجاح.`
+        `تم إضافة الطالب${isGirls ? "ة" : ""} بنجاح.`,
       );
     }
     saveToIndexedDB(project_db.export());
@@ -791,7 +791,7 @@ async function loadClassRoomsList() {
             deleteTableRow("#classroomsListTable", "id", classroomId);
             window.showToast(
               "success",
-              `تم حذف الطالب${isGirls ? "ة" : ""} بنجاح.`
+              `تم حذف الطالب${isGirls ? "ة" : ""} بنجاح.`,
             );
           } catch (e) {
             window.showToast("warning", "Error: " + e.message);
@@ -870,7 +870,7 @@ async function loadClassRoomsList() {
                   dt.button(0).text(
                     isVisible
                       ? '<i class="fa-solid fa-table-cells">'
-                      : '<i class="fa-solid fa-table"></i>'
+                      : '<i class="fa-solid fa-table"></i>',
                   );
                 },
               },
@@ -886,7 +886,7 @@ async function loadClassRoomsList() {
           },
         },
       },
-      classroomsTableDetailIsShow
+      classroomsTableDetailIsShow,
     );
   } catch (e) {
     window.showToast("warning", "Error: " + e.message);
@@ -901,7 +901,7 @@ async function loadStudentsList() {
   try {
     const results = project_db.exec(
       "SELECT * FROM students WHERE class_room_id = ?;",
-      [workingClassroomId]
+      [workingClassroomId],
     );
     const data = [];
     if (results.length) {
@@ -921,7 +921,7 @@ async function loadStudentsList() {
           const studentId = row[0];
           const result = project_db.exec(
             "SELECT * FROM students WHERE id = ?;",
-            [studentId]
+            [studentId],
           );
           studentIdInput.value = studentId;
           firstNameInput.value =
@@ -953,7 +953,7 @@ async function loadStudentsList() {
             deleteTableRow("#studentsListTable", "id", row[0]);
             window.showToast(
               "success",
-              `تم حذف الطالب${isGirls ? "ة" : ""} بنجاح.`
+              `تم حذف الطالب${isGirls ? "ة" : ""} بنجاح.`,
             );
           } catch (e) {
             window.showToast("warning", "Error: " + e.message);
@@ -993,8 +993,8 @@ async function loadStudentsList() {
           age: Math.abs(
             moment().diff(
               moment(new Date(row[result.columns.indexOf("birthyear")])),
-              "years"
-            )
+              "years",
+            ),
           ),
           parentPhone: phone_button_group,
           actions: action_button_group,
@@ -1057,7 +1057,7 @@ async function loadStudentsList() {
                   dt.button(0).text(
                     isVisible
                       ? '<i class="fa-solid fa-table-cells">'
-                      : '<i class="fa-solid fa-table"></i>'
+                      : '<i class="fa-solid fa-table"></i>',
                   );
                 },
               },
@@ -1076,7 +1076,7 @@ async function loadStudentsList() {
                     .map((row) => row.parentPhone)
                     .filter((row) => typeof row !== "string")
                     .map((row) =>
-                      row.querySelector("a").href.replace("tel:", "")
+                      row.querySelector("a").href.replace("tel:", ""),
                     )
                     .toString();
 
@@ -1095,7 +1095,7 @@ async function loadStudentsList() {
           },
         },
       },
-      studentsTableDetailIsShow
+      studentsTableDetailIsShow,
     );
   } catch (e) {
     window.showToast("warning", "Error: " + e.message);
@@ -1121,7 +1121,7 @@ newStudentInfosForm.addEventListener("submit", (e) => {
   if (parentPhone && !/^(05|06|07)\d{8}$/.test(parentPhone)) {
     window.showToast(
       "error",
-      "رقم الهاتف غير صالح. يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام."
+      "رقم الهاتف غير صالح. يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكون من 10 أرقام.",
     );
     return;
   }
@@ -1129,22 +1129,22 @@ newStudentInfosForm.addEventListener("submit", (e) => {
     if (studentIdInput.value) {
       project_db.run(
         "UPDATE students SET fname = ?,lname = ?, birthyear = ?, parent_phone = ? WHERE id = ?;",
-        [fname, lname, birthyear, parentPhone, studentIdInput.value]
+        [fname, lname, birthyear, parentPhone, studentIdInput.value],
       );
       window.showToast(
         "success",
-        `تم تعديل الالطالب${isGirls ? "ة" : ""} بنجاح.`
+        `تم تعديل الالطالب${isGirls ? "ة" : ""} بنجاح.`,
       );
     } else {
       project_db.run(
         "INSERT INTO students (fname,lname, birthyear, parent_phone, class_room_id) VALUES (?, ?,?, ?,?);",
-        [fname, lname, birthyear, parentPhone, workingClassroomId]
+        [fname, lname, birthyear, parentPhone, workingClassroomId],
       );
       newStudentInfosForm.reset();
       studentIdInput.value = "";
       window.showToast(
         "success",
-        `تم إضافة الالطالب${isGirls ? "ة" : ""} بنجاح.`
+        `تم إضافة الالطالب${isGirls ? "ة" : ""} بنجاح.`,
       );
     }
     saveToIndexedDB(project_db.export());
@@ -1173,7 +1173,7 @@ document
   .getElementById("newStudentInfosModal")
   .addEventListener("shown.bs.modal", function () {
     const submitButton = document.querySelector(
-      "#newStudentInfosModal [type='submit']"
+      "#newStudentInfosModal [type='submit']",
     );
     if (studentIdInput.value) {
       submitButton.textContent = "تحديث";
@@ -1186,7 +1186,7 @@ document
   .getElementById("newClassroomInfosModal")
   .addEventListener("shown.bs.modal", function () {
     const submitButton = document.querySelector(
-      "#newClassroomInfosModal [type='submit']"
+      "#newClassroomInfosModal [type='submit']",
     );
     if (classroomIdInput.value) {
       submitButton.textContent = "تحديث";
@@ -1197,7 +1197,7 @@ document
 
 requireBookInput.onchange = function () {
   const quranSelectionSection = document.getElementById(
-    "quranSelectionSection"
+    "quranSelectionSection",
   );
 
   if (this.value === "القرآن الكريم") {
@@ -1259,7 +1259,7 @@ function onChangeAttendanceState(radio = null) {
       haircutInput.value,
       behaviorInput.value,
       prayerInput.value,
-      addedPointsInput.value
+      addedPointsInput.value,
     );
     newStudentDayModalBody.style.display = "block";
   }
@@ -1271,7 +1271,7 @@ function calcEvaluationMoyenne(
   haircut,
   behavior,
   prayer,
-  addedPoints
+  addedPoints,
 ) {
   let moyenne = 0;
   moyenne +=
@@ -1301,7 +1301,7 @@ function calcRequirementMoyenne(quantity, evaluation, type) {
 function calcRequirementsMoyenne() {
   let moyenne = 0;
   const headers = Array.from(
-    requirementsTable.querySelectorAll("thead th")
+    requirementsTable.querySelectorAll("thead th"),
   ).map((header) => header.textContent.trim());
   const rows = requirementsTable.querySelectorAll("tbody tr");
   rows.forEach((row) => {
@@ -1320,12 +1320,12 @@ function calcRequirementsMoyenne() {
 function calcRequirementEvaluation(
   requirQuantity,
   requirType,
-  saveStateErrors
+  saveStateErrors,
 ) {
   const errorValue = parseFloat(
     10 /
       (requirQuantity *
-        (requirType === "حفظ" ? 2 : requirType === "مراجعة" ? 1 : 0.8))
+        (requirType === "حفظ" ? 2 : requirType === "مراجعة" ? 1 : 0.8)),
   );
   const result = parseFloat(10 - errorValue * parseFloat(saveStateErrors));
   return result ? (result < 0 ? 0 : result.toFixed(2)) : "";
@@ -1355,7 +1355,7 @@ $([
     haircutInput.value,
     behaviorInput.value,
     prayerInput.value,
-    addedPointsInput.value
+    addedPointsInput.value,
   );
 });
 
@@ -1363,18 +1363,18 @@ function setRequirEvalInput() {
   requirEvaluationInput.value = calcRequirementEvaluation(
     requirQuantityInput.value,
     requirTypeInput.value,
-    saveStateErrorsInput.value
+    saveStateErrorsInput.value,
   );
   requirMoyenneInput.value = calcRequirementMoyenne(
     requirQuantityInput.value,
     requirEvaluationInput.value,
-    requirTypeInput.value
+    requirTypeInput.value,
   );
 }
 
 $([requirTypeInput, saveStateErrorsInput]).on(
   "change input",
-  setRequirEvalInput
+  setRequirEvalInput,
 );
 
 function update_student_day_notes(studentId, working_day_id) {
@@ -1384,7 +1384,7 @@ function update_student_day_notes(studentId, working_day_id) {
   }
   if ([0, 1].includes(getAttendanceValue())) {
     const headers = Array.from(
-      requirementsTable.querySelectorAll("thead th")
+      requirementsTable.querySelectorAll("thead th"),
     ).map((header) => header.textContent.trim());
     const rows = requirementsTable.querySelectorAll("tbody tr");
     const requirList = [];
@@ -1406,12 +1406,12 @@ function update_student_day_notes(studentId, working_day_id) {
           working_day_id,
           JSON.stringify(requirList),
           requirsMoyenneInput.value || "0",
-        ]
+        ],
       );
     } else {
       project_db.run(
         `DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;`,
-        [studentId, working_day_id]
+        [studentId, working_day_id],
       );
     }
     project_db.run(
@@ -1427,12 +1427,12 @@ function update_student_day_notes(studentId, working_day_id) {
         parseInt(prayerInput.value) || null,
         parseInt(addedPointsInput.value) || null,
         getAttendanceValue() == 1 ? evalMoyenne.value : 0,
-      ]
+      ],
     );
   } else {
     project_db.run(
       `DELETE FROM day_evaluations WHERE student_id = ? AND day_id = ?;`,
-      [studentId, working_day_id]
+      [studentId, working_day_id],
     );
   }
 
@@ -1442,7 +1442,7 @@ function update_student_day_notes(studentId, working_day_id) {
                                   moyenne = COALESCE(moyenne, 0) + ?
                                   WHERE student_id = ?  
                                   AND day_id = ?;`,
-      [teachersPoints[key], teachersPoints[key], key, working_day_id]
+      [teachersPoints[key], teachersPoints[key], key, working_day_id],
     );
   });
   teachersPoints = {};
@@ -1492,7 +1492,7 @@ async function markPresence(studentId) {
       null,
       null,
       calcEvaluationMoyenne(retard_time, null, null, null, null, null),
-    ]
+    ],
   );
   saveToIndexedDB(project_db.export());
   await loadDayStudentsList();
@@ -1560,7 +1560,7 @@ async function addNewStudyDay() {
   }
   project_db.run(
     "INSERT OR REPLACE INTO education_day (date,time, notes,class_room_id,evaluation_ladder_id) VALUES (?,?, ?,?,(SELECT id FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1));",
-    [workingDay, appointment_time, null, workingClassroomId]
+    [workingDay, appointment_time, null, workingClassroomId],
   );
   start_time = appointment_time;
   saveToIndexedDB(project_db.export());
@@ -1654,7 +1654,7 @@ function showRequirementsHistory(student_id) {
     .exec(
       ` SELECT detail FROM day_requirements
                   WHERE student_id = ${student_id} ORDER BY day_id DESC
-                  LIMIT 5`
+                  LIMIT 5`,
     )[0]
     .values.forEach((row) => {
       requirs.push(row[0]);
@@ -1669,14 +1669,14 @@ function showRequirementsHistory(student_id) {
                       (i) =>
                         `<li> ${i["النوع"]} - ${i["التفاصيل"]} - الأخطاء: ${
                           i["الأخطاء"] || 0
-                        }</li>`
+                        }</li>`,
                     )
                     .reverse()
-                    .join("")
+                    .join(""),
                 )
                 .join("")}</ul>
               `,
-    "start"
+    "start",
   );
 }
 
@@ -1689,7 +1689,7 @@ async function loadDayStudentsList() {
 
   const dayResult = project_db.exec(
     `SELECT * FROM education_day WHERE class_room_id = ? AND date = ?`,
-    [workingClassroomId, workingDay]
+    [workingClassroomId, workingDay],
   );
   if (!dayResult.length) {
     if ($.fn.DataTable.isDataTable("#dayListTable")) {
@@ -1706,7 +1706,7 @@ async function loadDayStudentsList() {
       dayResult[0].values[0][
         dayResult[0].columns.indexOf("evaluation_ladder_id")
       ],
-    ])[0].values[0]
+    ])[0].values[0],
   );
   if (newEvalLaddersValues !== evaluationLaddersValues) {
     Object.assign(evaluationLaddersValues, newEvalLaddersValues);
@@ -1807,7 +1807,7 @@ async function loadDayStudentsList() {
               haircutInput.value,
               behaviorInput.value,
               prayerInput.value,
-              addedPointsInput.value
+              addedPointsInput.value,
             );
 
           initRequirementFields(student_id);
@@ -1832,7 +1832,7 @@ async function loadDayStudentsList() {
                     <button type="button" class="btn btn-success" onclick="editRequirement(this);"><i class="fa-solid fa-pen-to-square"></i></button>
                     <button class="btn btn-danger btn-sm" onclick="removeRequirItem(this,${student_id})"><i class="fa-solid fa-xmark"></i></button></td></div>`;
               requirementsTable.querySelector("tbody").appendChild(row);
-            }
+            },
           );
 
           const working_day_id = workingDayID;
@@ -1869,7 +1869,7 @@ async function loadDayStudentsList() {
               "   " + row[result.columns.indexOf("evalMoyenne")];
           } else {
             evaluationDayContainer.append(
-              row[result.columns.indexOf("evalMoyenne")] + "   "
+              row[result.columns.indexOf("evalMoyenne")] + "   ",
             );
           }
           evaluationDayContainer.append(evaluationDayIcon);
@@ -1892,33 +1892,33 @@ async function loadDayStudentsList() {
               ? (retardValue < 0
                   ? `قبل ${retardValue * -1} د `
                   : retardValue == 0
-                  ? `في الوقت `
-                  : `بعد ${retardValue} د `) +
+                    ? `في الوقت `
+                    : `بعد ${retardValue} د `) +
                 (thisDay == workingDay &&
                 checkAuthorizedOut(
                   start_time,
                   row[result.columns.indexOf("requirsMoyenne")],
-                  retardValue
+                  retardValue,
                 )
                   ? "🟢"
                   : "")
               : attendance_value == 0
-              ? "غياب مبرر"
-              : `<button onclick="markPresence(${student_id})" class="btn fa-solid fa-square-check px-1" style="transform: scale(1.3); cursor: pointer;"></button>` +
-                (row[result.columns.indexOf("parentPhone")]
-                  ? `<input type="checkbox" id="sms_btn${student_id}" onclick="window.location.href='sms:${
-                      row[result.columns.indexOf("parentPhone")]
-                    }?body=ليكن في علمكم أن إبن${isGirls ? "ت" : ""}كم ${
-                      row[result.columns.indexOf("studentFName")]
-                    } غائب${
-                      isGirls ? "ة" : ""
-                    } عن حصة تحفيظ القرآن اليوم'" class="btn-check" autocomplete="off">
+                ? "غياب مبرر"
+                : `<button onclick="markPresence(${student_id})" class="btn fa-solid fa-square-check px-1" style="transform: scale(1.3); cursor: pointer;"></button>` +
+                  (row[result.columns.indexOf("parentPhone")]
+                    ? `<input type="checkbox" id="sms_btn${student_id}" onclick="window.location.href='sms:${
+                        row[result.columns.indexOf("parentPhone")]
+                      }?body=ليكن في علمكم أن إبن${isGirls ? "ت" : ""}كم ${
+                        row[result.columns.indexOf("studentFName")]
+                      } غائب${
+                        isGirls ? "ة" : ""
+                      } عن حصة تحفيظ القرآن اليوم'" class="btn-check" autocomplete="off">
               <label class="btn fa-solid fa-comment-sms px-2" for="sms_btn${student_id}"></label>`
-                  : ""),
+                    : ""),
           evaluation: attendance_value
             ? calcGlobalMoyenne(
                 row[result.columns.indexOf("requirsMoyenne")],
-                row[result.columns.indexOf("evalMoyenne")]
+                row[result.columns.indexOf("evalMoyenne")],
               )
             : null,
           evalMoyenne: evaluationDayContainer,
@@ -2078,7 +2078,7 @@ async function loadDayStudentsList() {
                       if (!project_db) {
                         window.showToast(
                           "info",
-                          "لا يوجد قاعدة بيانات مفتوحة."
+                          "لا يوجد قاعدة بيانات مفتوحة.",
                         );
                         return;
                       }
@@ -2102,11 +2102,11 @@ async function loadDayStudentsList() {
                         updates.push(`behavior = ${values.behavior}`);
                       if (values.prayer)
                         updates.push(
-                          `prayer = COALESCE(prayer,0) + ${values.prayer}`
+                          `prayer = COALESCE(prayer,0) + ${values.prayer}`,
                         );
                       if (values.added_points)
                         updates.push(
-                          `added_points = COALESCE(added_points,0) + ${values.added_points}`
+                          `added_points = COALESCE(added_points,0) + ${values.added_points}`,
                         );
 
                       // Calculate total moyenne adjustment
@@ -2155,14 +2155,14 @@ async function loadDayStudentsList() {
                         if (!project_db) {
                           window.showToast(
                             "info",
-                            "لا يوجد قاعدة بيانات مفتوحة."
+                            "لا يوجد قاعدة بيانات مفتوحة.",
                           );
                           return;
                         }
                         try {
                           project_db.run(
                             "UPDATE education_day SET notes = ? WHERE id = ?;",
-                            [note, workingDayID]
+                            [note, workingDayID],
                           );
                           saveToIndexedDB(project_db.export());
                           dayNoteContainer.style.display = note
@@ -2188,12 +2188,12 @@ async function loadDayStudentsList() {
                       }</strong><br>
                       عدد التلاميذ الحاضرين: <strong>${
                         project_db.exec(
-                          `SELECT COUNT(*) FROM day_evaluations WHERE day_id = ${workingDayID} AND attendance = 1;`
+                          `SELECT COUNT(*) FROM day_evaluations WHERE day_id = ${workingDayID} AND attendance = 1;`,
                         )[0].values[0][0]
                       }</strong><br>
                        ملاحظة اليوم: <em>${dayNote || "لا توجد ملاحظة"}</em><br>
                       </p>
-                      `
+                      `,
                       );
                     },
                   },
@@ -2203,15 +2203,15 @@ async function loadDayStudentsList() {
                       if (confirm("هل تريد إلغاء هذا اليوم ؟")) {
                         project_db.run(
                           `DELETE FROM day_evaluations WHERE day_id = ?;`,
-                          [workingDayID]
+                          [workingDayID],
                         );
                         project_db.run(
                           `DELETE FROM day_requirements WHERE day_id = ?;`,
-                          [workingDayID]
+                          [workingDayID],
                         );
                         project_db.run(
                           "DELETE FROM education_day WHERE id = ?;",
-                          [workingDayID]
+                          [workingDayID],
                         );
                         saveToIndexedDB(project_db.export());
                         setIsCustomDate();
@@ -2225,7 +2225,7 @@ async function loadDayStudentsList() {
           },
         },
       },
-      studentsDayTableDetailIsShow
+      studentsDayTableDetailIsShow,
     );
   } catch (e) {
     window.showToast("error", "Error: " + e.message);
@@ -2267,7 +2267,7 @@ async function dayDatePickerInit() {
     },
     async function (start) {
       changeDayDate(start.format("YYYY-MM-DD"));
-    }
+    },
   );
 
   // statistics date picker
@@ -2315,14 +2315,14 @@ async function dayDatePickerInit() {
     async function (start) {
       statisticType.value = "0";
       statisticType.dispatchEvent(new Event("change"));
-    }
+    },
   );
   setIsCustomDate();
 }
 
 function setIsCustomDate() {
   const result = project_db.exec(
-    `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`
+    `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`,
   );
   const events =
     result.length && result[0].values.length
@@ -2359,10 +2359,10 @@ function initializeToast() {
       type === "error"
         ? "bg-danger text-white"
         : type === "success"
-        ? "bg-success text-white"
-        : type === "warning"
-        ? "bg-warning text-dark"
-        : "bg-info text-white";
+          ? "bg-success text-white"
+          : type === "warning"
+            ? "bg-warning text-dark"
+            : "bg-info text-white";
     el.className = `toast ${bg} border-0`;
     el.setAttribute("role", "alert");
     el.setAttribute("aria-live", "assertive");
@@ -2402,7 +2402,7 @@ function initializeToast() {
   window._toastReady = true;
   if (Array.isArray(window._toastQueue) && window._toastQueue.length) {
     window._toastQueue.forEach((t) =>
-      window._realShowToast(t.message, t.type, t.delay)
+      window._realShowToast(t.message, t.type, t.delay),
     );
     window._toastQueue.length = 0;
   }
@@ -2446,7 +2446,7 @@ function editRequirement(button) {
       addQuranSelectionBtn.innerText = "إضافة";
       addQuranSelectionBtn.onclick = () => addRequirToTable();
     },
-    { once: true }
+    { once: true },
   );
 }
 
@@ -2471,7 +2471,7 @@ function removeRequirItem(button, student_id = null) {
               .firstElementChild.nextElementSibling.nextElementSibling
               .nextElementSibling.textContent,
         }
-      : student_id
+      : student_id,
   );
 }
 
@@ -2539,9 +2539,9 @@ async function initEvaluationLaddersValues(db) {
       evaluationLaddersValues,
       JSON.parse(
         db.exec(
-          "SELECT detail FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1;"
-        )[0].values[0]
-      )
+          "SELECT detail FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1;",
+        )[0].values[0],
+      ),
     );
   } catch (error) {
     if (String(error).includes("no such table")) {
@@ -2552,7 +2552,7 @@ async function initEvaluationLaddersValues(db) {
             PRIMARY KEY("id" AUTOINCREMENT)
           );
           INSERT INTO evaluation_ladder (detail) VALUES ('${JSON.stringify(
-            evaluationLaddersValues
+            evaluationLaddersValues,
           )}');
           -- 1. Create a temporary table with all current data
           CREATE TABLE education_day_backup AS 
@@ -2580,7 +2580,7 @@ async function initEvaluationLaddersValues(db) {
           SELECT id, date,time,notes,class_room_id
           FROM education_day_backup;
           -- 5. Drop the backup table
-          DROP TABLE education_day_backup;`
+          DROP TABLE education_day_backup;`,
       );
       saveToIndexedDB(db.export());
     }
@@ -2651,14 +2651,14 @@ function updateEvalLadder() {
     }
   }
   Object.keys(evaluationLaddersValues).forEach(
-    (key) => delete evaluationLaddersValues[key]
+    (key) => delete evaluationLaddersValues[key],
   );
   Object.assign(evaluationLaddersValues, newLadders);
 
   project_db.run(
     `INSERT INTO evaluation_ladder (detail) VALUES ('${JSON.stringify(
-      evaluationLaddersValues
-    )}');`
+      evaluationLaddersValues,
+    )}');`,
   );
   saveToIndexedDB(project_db.export());
   displayEvalLadder();
@@ -2690,6 +2690,45 @@ function removeEvalLadder(type, key) {
 }
 
 async function showTab(tabId) {
+  // ----
+  // let alllist = [];
+  // let savelist = [];
+  // let reviselist = [];
+  // let hasilalist = [];
+  // const lsR = project_db.exec(`
+  //           SELECT dr.detail
+  //           FROM day_requirements dr
+  //           INNER JOIN education_day ed ON dr.day_id = ed.id
+  //           WHERE dr.student_id = 43
+  //           ORDER BY ed.date DESC`);
+  // if (lsR.length)
+  //   detail = lsR[0].values.forEach((item) => {
+  //     alllist.push(...JSON.parse(item[0]).reverse());
+  //   });
+  // alllist.forEach((item) => {
+  //   switch (item["النوع"]) {
+  //     case "حفظ":
+  //       savelist.push(item["التفاصيل"]);
+  //       break;
+  //     case "مراجعة":
+  //       reviselist.push(item["التفاصيل"]);
+  //       break;
+  //     case "حصيلة":
+  //       hasilalist.push(item["التفاصيل"]);
+  //       break;
+  //   }
+  // });
+
+  // console.table(hasilalist);
+  // SELECT quran_ayat.id,quran_index.sura FROM quran_ayat
+  // INNER JOIN quran_index ON quran_index.id_sura = quran_ayat.sura
+  // WHERE quran_ayat.id BETWEEN
+  // (SELECT id FROM quran_ayat  WHERE ayah = 12
+  // AND sura = (SELECT id_sura FROM quran_index WHERE sura = "النساء"))
+  // AND
+  // (SELECT id FROM quran_ayat  WHERE ayah = 18
+  // AND sura = (SELECT id_sura FROM quran_index WHERE sura = "النساء"));
+  // ------
   document
     .querySelectorAll(".tab-pane")
     .forEach((el) => el.classList.remove("show", "active"));
@@ -2704,9 +2743,9 @@ async function showTab(tabId) {
       displayEvalLadder(
         JSON.parse(
           project_db.exec(
-            "SELECT detail FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1;"
-          )[0]?.values[0] || null
-        )
+            "SELECT detail FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1;",
+          )[0]?.values[0] || null,
+        ),
       );
       document.getElementById("list-retard").classList.add("show", "active");
     }
@@ -2753,7 +2792,7 @@ async function showTab(tabId) {
   }
 }
 
-async function fillStatistiscStudentsList() {
+async function fillStatistiscStudentsList(uniqueStudent = false) {
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
@@ -2761,24 +2800,30 @@ async function fillStatistiscStudentsList() {
   try {
     const results = project_db.exec(
       "SELECT id,fname,lname FROM students WHERE class_room_id = ?;",
-      [workingClassroomId]
+      [workingClassroomId],
     );
     const data = [];
     if (results.length) {
       const result = results[0];
       const dropdown = document.querySelector(".statisticsStudentsMenu");
-      dropdown.innerHTML = `
+      dropdown.innerHTML = !uniqueStudent
+        ? `
         <div class="form-check">
             <input class="form-check-input" type="checkbox" id="statisAllCheckbox" onchange="statisStudentToggleAll()" checked>
             <label class="form-check-label">الجميع</label>
         </div>
-        <hr>`;
+        <hr>`
+        : "";
       statisAllCheckbox = document.getElementById("statisAllCheckbox");
       result.values.forEach((row) => {
         const newItem = document.createElement("div");
         newItem.className = "form-check";
         newItem.innerHTML = `
-                      <input class="form-check-input statisStudentItem" type="checkbox" value="${
+                      <input class="form-check-input statisStudentItem" ${
+                        !uniqueStudent
+                          ? `type="checkbox"`
+                          : `type="radio" name="radioDefault"`
+                      } value="${
                         row[0]
                       }" checked onchange="statisStudentUpdateAll()">
                       <label class="form-check-label">${
@@ -2797,7 +2842,7 @@ async function fillStatistiscStudentsList() {
 
 function getDatesInRange() {
   const result = project_db.exec(
-    `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`
+    `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`,
   );
   if (result.length && result[0].values.length) {
     const [startDateStr, endDateStr] = statisticsDateInput
@@ -2832,11 +2877,13 @@ statisticType.onchange = async function () {
       hideLoadingModal();
       break;
     case "results":
+      // fillStatistiscStudentsList(true);
       await showLoadingModal("جاري تحميل الإحصائيات");
       showStudentsResultsStatistics();
       hideLoadingModal();
       break;
     default:
+      // fillStatistiscStudentsList();
       if ($.fn.DataTable.isDataTable("#statisticsTable")) {
         $("#statisticsTable").DataTable().destroy();
         $("#statisticsTable").empty();
@@ -2865,7 +2912,7 @@ function statisStudentUpdateAll() {
 
 function getStatisticsSelectedStudentsId() {
   const selected = Array.from(
-    document.querySelectorAll(".statisStudentItem:checked")
+    document.querySelectorAll(".statisStudentItem:checked"),
   ).map((item) => item.value);
   return selected.join(", ");
 }
@@ -2885,7 +2932,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       WITH ${dates
         .map(
           (date, index) =>
-            `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`
+            `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`,
         )
         .join(",\n")}
       SELECT
@@ -2894,19 +2941,19 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           (${dates
             .map(
               (_, index) =>
-                `CASE WHEN de${index}.attendance = 0 THEN 1 ELSE 0 END`
+                `CASE WHEN de${index}.attendance = 0 THEN 1 ELSE 0 END`,
             )
             .join(" +\n        ")}) as "المجموع (/${dates.length})"
       FROM students s
       ${dates
         .map(
           (date, index) =>
-            `LEFT JOIN day_evaluations de${index} ON s.id = de${index}.student_id AND de${index}.day_id IN (SELECT id FROM day_id${index})`
+            `LEFT JOIN day_evaluations de${index} ON s.id = de${index}.student_id AND de${index}.day_id IN (SELECT id FROM day_id${index})`,
         )
         .join("\n")}
       WHERE s.id in (${studentsList})
       GROUP BY s.id
-      ORDER BY s.id;`
+      ORDER BY s.id;`,
       )[0]
       .values.forEach((row) => {
         const studentId = row[0];
@@ -2918,7 +2965,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     const dateCtes = dates
       .map(
         (date, index) =>
-          `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`
+          `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`,
       )
       .join(", \n");
 
@@ -2931,7 +2978,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           + 
           (SELECT COALESCE(SUM(dr.moyenne), 0) FROM day_requirements dr 
           WHERE dr.student_id = s.id AND dr.day_id IN (SELECT id FROM day_id${index}))
-        `
+        `,
       )
       .join(" +\n        ");
 
@@ -3080,8 +3127,8 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
               studentReport,
               dates,
               studentIndex > 0,
-              pageStudents.length > 1
-            )
+              pageStudents.length > 1,
+            ),
           );
         }
       });
@@ -3176,7 +3223,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     studentReport,
     dates,
     isSecond,
-    isStacked = false
+    isStacked = false,
   ) {
     const { data, studentName, studentOrder, studentId } = studentReport;
     const recordCounts =
@@ -3213,7 +3260,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         text: reverseArabicWords(
           `حرر في: ${new Date().getDate()}  ${
             arabicMonths[new Date().getMonth()]
-          } ${new Date(dates[0]).getFullYear()}`
+          } ${new Date(dates[0]).getFullYear()}`,
         ),
         style: "subheader",
         alignment: "left",
@@ -3400,13 +3447,13 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
         record.detail = formatDetail(record.detail);
         const clothingOption = document.querySelector(
-          `#clothing option[value='${record.clothing}']`
+          `#clothing option[value='${record.clothing}']`,
         );
         const haircutOption = document.querySelector(
-          `#haircut option[value='${record.haircut}']`
+          `#haircut option[value='${record.haircut}']`,
         );
         const behaviorOption = document.querySelector(
-          `#behavior option[value='${record.behavior}']`
+          `#behavior option[value='${record.behavior}']`,
         );
         const retardOption =
           parseInt(record.retard) > 0
@@ -3633,7 +3680,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       .map((monthYear) => ({
         monthYear,
         records: groups[monthYear].sort(
-          (a, b) => new Date(a.day) - new Date(b.day)
+          (a, b) => new Date(a.day) - new Date(b.day),
         ),
       }))
       .sort((a, b) => new Date(a.records[0].day) - new Date(b.records[0].day));
@@ -3669,24 +3716,24 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     studentData,
     studentOrder,
     isSecond,
-    isStacked = false
+    isStacked = false,
   ) {
     const totalDays =
       studentData.length -
       studentData.filter((record) => record.attendance == 0).length;
     const validRecords = studentData.filter(
-      (record) => record.attendance !== null
+      (record) => record.attendance !== null,
     );
 
     if (totalDays === 0) return [];
 
     const presentDays = validRecords.filter(
-      (record) => record.attendance === 1
+      (record) => record.attendance === 1,
     ).length;
     const total = validRecords.reduce(
       (sum, record) =>
         sum + (record.requirements_score || 0) + (record.evaluation_score || 0),
-      0
+      0,
     );
     const totalAvg = total / totalDays;
 
@@ -3822,7 +3869,7 @@ async function showStudentsResultsStatistics() {
   const dateCtes = dates
     .map(
       (date, index) =>
-        `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`
+        `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`,
     )
     .join(", \n");
 
@@ -3835,8 +3882,8 @@ async function showStudentsResultsStatistics() {
               + 
               (SELECT COALESCE(SUM(moyenne), 0) FROM day_requirements WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
           , 2), "غ") as '${arabicDays[new Date(date).getDay()]} ${new Date(
-          date
-        ).getDate()}'`
+            date,
+          ).getDate()}'`,
     )
     .join(",\n    ");
 
@@ -3849,7 +3896,7 @@ async function showStudentsResultsStatistics() {
           + 
           (SELECT COALESCE(SUM(dr.moyenne), 0) FROM day_requirements dr 
           WHERE dr.student_id = s.id AND dr.day_id IN (SELECT id FROM day_id${index}))
-        `
+        `,
     )
     .join(" +\n        ");
 
@@ -3962,7 +4009,7 @@ async function showStudentsResultsStatistics() {
                   }`;
                   if (daysCount >= 12) {
                     cell.marginLeft = cell.marginRight = Number(
-                      (((daysCount - 12) * -7) / 4 + 4).toFixed(1)
+                      (((daysCount - 12) * -7) / 4 + 4).toFixed(1),
                     );
                   }
                 }
@@ -4064,7 +4111,7 @@ async function showAttendanceStatistics() {
   const dateCtes = dates
     .map(
       (date, index) =>
-        `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`
+        `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`,
     )
     .join(",\n");
 
@@ -4076,14 +4123,14 @@ async function showAttendanceStatistics() {
         WHEN de${index}.attendance = 1 THEN 'ح'
         WHEN de${index}.attendance = 0 THEN 'غ م'
         ELSE 'غ'
-    END as '${arabicDays[new Date(date).getDay()]} ${new Date(date).getDate()}'`
+    END as '${arabicDays[new Date(date).getDay()]} ${new Date(date).getDate()}'`,
     )
     .join(",\n    ");
 
   const dateJoins = dates
     .map(
       (date, index) =>
-        `LEFT JOIN day_evaluations de${index} ON s.id = de${index}.student_id AND de${index}.day_id IN (SELECT id FROM day_id${index})`
+        `LEFT JOIN day_evaluations de${index} ON s.id = de${index}.student_id AND de${index}.day_id IN (SELECT id FROM day_id${index})`,
     )
     .join("\n");
 
@@ -4306,7 +4353,7 @@ async function setStatisticsTable(query, buttons = []) {
           },
         },
         false,
-        true
+        true,
       );
     } else {
       console.log("لاتوجد معلومات");
@@ -4333,7 +4380,7 @@ const populateSurahDropdown = async (selectElement) => {
     selectElement.appendChild(
       createOption(surah.number, `${surah.name}`, {
         surahNum: surah.number,
-      })
+      }),
     );
   });
 };
@@ -4369,11 +4416,11 @@ const checkSecondSurahAyahs = (secondSurahNumber) => {
       quran_db
         .exec(
           "SELECT * FROM quran_ayat WHERE sura = " +
-            secondSurahSelectedOption.value
+            secondSurahSelectedOption.value,
         )[0]
         .values.forEach((row) => {
           secondAyahSelect.appendChild(
-            createOption(row[1], `${row[1]}- ${row[2]}`)
+            createOption(row[1], `${row[1]}- ${row[2]}`),
           );
         });
     }
@@ -4411,7 +4458,7 @@ firstSurahSelect.onchange = async function () {
       .exec("SELECT * FROM quran_ayat WHERE sura = " + this.value)[0]
       .values.forEach((row) => {
         firstAyahSelect.appendChild(
-          createOption(row[1], `${row[1]}- ${row[2]}`)
+          createOption(row[1], `${row[1]}- ${row[2]}`),
         );
       });
 
@@ -4420,11 +4467,11 @@ firstSurahSelect.onchange = async function () {
     surahsData.forEach((surah) => {
       if (surah.number < firstSurahNumber) {
         secondSurahSelect.querySelector(
-          'option[value="' + surah.number + '"]'
+          'option[value="' + surah.number + '"]',
         ).style.display = "none";
       } else {
         secondSurahSelect.querySelector(
-          'option[value="' + surah.number + '"]'
+          'option[value="' + surah.number + '"]',
         ).style.display = "block";
       }
     });
@@ -4469,8 +4516,8 @@ secondAyahSelect.onchange = async function () {
       firstAyahSelect.options[firstAyahSelect.selectedIndex].value,
       secondSurahSelect.options[secondSurahSelect.selectedIndex].dataset
         .surahNum,
-      secondAyahSelect.options[secondAyahSelect.selectedIndex].value
-    )
+      secondAyahSelect.options[secondAyahSelect.selectedIndex].value,
+    ),
   );
   const results = quran_db.exec(query);
   if (!results || !results.length || !results[0].values.length) {
