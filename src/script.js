@@ -111,6 +111,7 @@ let start_time = null;
 const themeSelector = document.getElementById("themeSelector");
 const themeTag = document.getElementById("themeStylesheet");
 const fontSelector = document.getElementById("fontSelect");
+const outTimeInput = document.getElementById("outTimeInput");
 
 const loadingModalText = document.getElementById("loadingText");
 const loadingModalElement = document.getElementById("loadingModal");
@@ -119,6 +120,7 @@ const loadingModal = new bootstrap.Modal(loadingModalElement);
 const studentDayModalElement = document.getElementById("newStudentDayModal");
 const studentDayModal = new bootstrap.Modal(studentDayModalElement);
 
+const maximizeModalBtn = document.getElementById("maximizeModalBtn");
 const studentInfosModal = new bootstrap.Modal(
   document.getElementById("newStudentInfosModal"),
 );
@@ -134,13 +136,13 @@ const evaluationCollapse = new bootstrap.Collapse(
   document.getElementById("evaluationCollapse"),
 );
 
-document.getElementById("maximizeModalBtn").onclick = async (e) => {
+maximizeModalBtn.onclick = async (e) => {
   studentDayModal.show();
-  document.getElementById("maximizeModalBtn").style.display = "none";
+  maximizeModalBtn.style.display = "none";
 };
 
 async function minimizeModal() {
-  document.getElementById("maximizeModalBtn").style.removeProperty("display");
+  maximizeModalBtn.style.removeProperty("display");
 }
 
 async function initPlusMinusButtons(numberField) {
@@ -226,55 +228,62 @@ window.addEventListener("popstate", () => {
   }
 });
 
-// Initialize
-document.addEventListener("DOMContentLoaded", async function () {
-  // theme selector
-  themeSelector.onchange = async function () {
-    const theme = this.value;
-    themeTag.href = `https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/${theme}/bootstrap.rtl.min.css`;
-    localStorage.setItem("selectedTheme", theme);
+themeSelector.onchange = async function () {
+  const theme = this.value;
+  themeTag.href = `https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/${theme}/bootstrap.rtl.min.css`;
+  localStorage.setItem("selectedTheme", theme);
 
-    // Optimize theme-specific style injection/removal
-    const styleId = "darkThemeStyle";
-    let styleNode = document.getElementById(styleId);
+  // Optimize theme-specific style injection/removal
+  const styleId = "darkThemeStyle";
+  let styleNode = document.getElementById(styleId);
 
-    if (
-      themeSelector.options[themeSelector.selectedIndex].text.includes("(dark)")
-    ) {
-      if (!styleNode) {
-        styleNode = document.createElement("style");
-        styleNode.id = styleId;
-        styleNode.textContent = `
+  if (
+    themeSelector.options[themeSelector.selectedIndex].text.includes("(dark)")
+  ) {
+    if (!styleNode) {
+      styleNode = document.createElement("style");
+      styleNode.id = styleId;
+      styleNode.textContent = `
         .btn, .form-select,.form-control, .input-group-text {
           padding-bottom: 5px !important;
           padding-top: 5px !important;
         }
       `;
-        document.head.appendChild(styleNode);
-      }
-      document
-        .getElementById("classroomsListTable")
-        .classList.add("table-dark");
-      document.getElementById("studentsListTable").classList.add("table-dark");
-      document.getElementById("dayListTable").classList.add("table-dark");
-      document.getElementById("statisticsTable").classList.add("table-dark");
-    } else {
-      if (styleNode) styleNode.remove();
-      document
-        .getElementById("classroomsListTable")
-        .classList.remove("table-dark");
-      document
-        .getElementById("studentsListTable")
-        .classList.remove("table-dark");
-      document.getElementById("dayListTable").classList.remove("table-dark");
-      document.getElementById("statisticsTable").classList.remove("table-dark");
+      document.head.appendChild(styleNode);
     }
-  };
+    document.getElementById("classroomsListTable").classList.add("table-dark");
+    document.getElementById("studentsListTable").classList.add("table-dark");
+    document.getElementById("dayListTable").classList.add("table-dark");
+    document.getElementById("statisticsTable").classList.add("table-dark");
+  } else {
+    if (styleNode) styleNode.remove();
+    document
+      .getElementById("classroomsListTable")
+      .classList.remove("table-dark");
+    document.getElementById("studentsListTable").classList.remove("table-dark");
+    document.getElementById("dayListTable").classList.remove("table-dark");
+    document.getElementById("statisticsTable").classList.remove("table-dark");
+  }
+};
+
+outTimeInput.onchange = async function () {
+  const outTime = this.value;
+  localStorage.setItem("selectedOutTime", outTime);
+};
+
+// Initialize
+document.addEventListener("DOMContentLoaded", async function () {
+  // theme selector
 
   const savedTheme = localStorage.getItem("selectedTheme");
   if (savedTheme) {
     themeSelector.value = savedTheme;
     themeSelector.dispatchEvent(new Event("change"));
+  }
+
+  const savedOutTime = localStorage.getItem("selectedOutTime");
+  if (savedOutTime) {
+    outTimeInput.value = savedOutTime;
   }
 
   // font change
@@ -455,7 +464,7 @@ async function init() {
       localStorage.setItem("newUser", false);
       await initializeAyatdata(quran_db);
       initEvaluationLaddersValues(project_db);
-      await dayDatePickerInit();
+      await InitDatePickers();
       showTab("pills-home");
       nav_bar.style.removeProperty("display");
       // display synchronization badge
@@ -477,7 +486,7 @@ async function downloadQuranDB() {
     async (db) => {
       quran_db = db;
       await initializeAyatdata(db);
-      await dayDatePickerInit();
+      await InitDatePickers();
     },
   );
 }
@@ -704,19 +713,14 @@ newClassroomInfosForm.onsubmit = (e) => {
         "UPDATE class_rooms SET mosque = ?, place = ?, sex = ? ,level = ? WHERE id = ?;",
         [mosque, place, sex, level, classroomIdInput.value],
       );
-      window.showToast(
-        `success", "تم تعديل الطالب${isGirls ? "ة" : ""} بنجاح.`,
-      );
+      window.showToast("success", "تم تعديل القسم بنجاح.");
     } else {
       project_db.run(
         "INSERT INTO class_rooms (mosque, place, sex, level) VALUES (?, ?, ?,?);",
         [mosque, place, sex, level],
       );
       newClassroomInfosForm.reset();
-      window.showToast(
-        "success",
-        `تم إضافة الطالب${isGirls ? "ة" : ""} بنجاح.`,
-      );
+      window.showToast("success", `تم إضافة القسم بنجاح.`);
     }
     saveToIndexedDB(project_db.export());
     classroomInfosModal.hide();
@@ -789,10 +793,7 @@ async function loadClassRoomsList() {
             ]);
             saveToIndexedDB(project_db.export());
             deleteTableRow("#classroomsListTable", "id", classroomId);
-            window.showToast(
-              "success",
-              `تم حذف الطالب${isGirls ? "ة" : ""} بنجاح.`,
-            );
+            window.showToast("success", `تم حذف القسم بنجاح.`);
           } catch (e) {
             window.showToast("warning", "Error: " + e.message);
           }
@@ -1133,7 +1134,7 @@ newStudentInfosForm.addEventListener("submit", (e) => {
       );
       window.showToast(
         "success",
-        `تم تعديل الالطالب${isGirls ? "ة" : ""} بنجاح.`,
+        `تم تعديل الطالب${isGirls ? "ة" : ""} بنجاح.`,
       );
     } else {
       project_db.run(
@@ -1456,11 +1457,12 @@ function calcRetardTime() {
   return moment().diff(moment(start_time, "HH:mm"), "minutes");
 }
 
-function checkAuthorizedOut(time, requirsMoyenne, minutesToAdd, after = 60) {
+function checkAuthorizedOut(time, requirsMoyenne, minutesToAdd) {
   const now = new Date();
   const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
   const [h, m] = time.split(":").map(Number);
-  const newTimeObj = h * 60 + m + (minutesToAdd + after);
+  const newTimeObj =
+    h * 60 + m + (minutesToAdd + outTimeInput.valueAsNumber || 0);
   const difference = newTimeObj - currentTotalMinutes;
   return requirsMoyenne && difference < 0;
 }
@@ -1701,16 +1703,21 @@ async function loadDayStudentsList() {
   }
 
   // fill evaluation ladder
-  const newEvalLaddersValues = JSON.parse(
-    project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
-      dayResult[0].values[0][
-        dayResult[0].columns.indexOf("evaluation_ladder_id")
-      ],
-    ])[0].values[0],
-  );
-  if (newEvalLaddersValues !== evaluationLaddersValues) {
-    Object.assign(evaluationLaddersValues, newEvalLaddersValues);
-    populateEvalSelects();
+  if (
+    !studentDayModalElement.classList.contains("show") &&
+    maximizeModalBtn.style.display === "none"
+  ) {
+    const newEvalLaddersValues = JSON.parse(
+      project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
+        dayResult[0].values[0][
+          dayResult[0].columns.indexOf("evaluation_ladder_id")
+        ],
+      ])[0].values[0],
+    );
+    if (newEvalLaddersValues !== evaluationLaddersValues) {
+      Object.assign(evaluationLaddersValues, newEvalLaddersValues);
+      populateEvalSelects();
+    }
   }
 
   workingDayID = dayResult[0].values[0][dayResult[0].columns.indexOf("id")];
@@ -1776,6 +1783,12 @@ async function loadDayStudentsList() {
 
         function editStudentDay(isEvaluation = true) {
           showStudentDayModal(true);
+
+          maximizeModalBtn.style.display = "none";
+
+          for (const option of requirTeacherInput.options) {
+            option.disabled = option.value == student_id;
+          }
 
           studentNameInput.value = full_name;
 
@@ -2244,10 +2257,11 @@ async function changeDayDate(date) {
   dayDateInput.val(workingDay);
   dayDateInput.data("daterangepicker").setStartDate(workingDay);
   dayDateInput.data("daterangepicker").setEndDate(workingDay);
+  maximizeModalBtn.style.display = "none";
   await loadDayStudentsList();
 }
 
-async function dayDatePickerInit() {
+async function InitDatePickers() {
   // day date picker
   dayDateInput.daterangepicker(
     {
@@ -2271,6 +2285,31 @@ async function dayDatePickerInit() {
   );
 
   // statistics date picker
+  const islamicDateFormatter = new Intl.DateTimeFormat(
+    "ar-DZ-u-ca-islamic-umalqura",
+    {
+      day: "numeric",
+    },
+  );
+
+  const getIslamicDayOfMonth = (date) =>
+    parseInt(islamicDateFormatter.format(date));
+
+  const today = moment();
+  const todayIslamicDay = getIslamicDayOfMonth(new Date());
+
+  // Get current Islamic month start
+  const currentMonthStart = moment()
+    .subtract(todayIslamicDay - 1, "days")
+    .toDate();
+
+  // Get previous Islamic month dates
+  const previousMonthEnd = moment(currentMonthStart).subtract(1, "days");
+  const previousMonthStart = moment(previousMonthEnd).subtract(
+    getIslamicDayOfMonth(previousMonthEnd.toDate()) - 1,
+    "days",
+  );
+
   statisticsDateInput.daterangepicker(
     {
       showDropdowns: true,
@@ -2305,11 +2344,8 @@ async function dayDatePickerInit() {
             .subtract(moment().day() < 6 ? 14 : 7, "days")
             .add(6, "days"),
         ],
-        "هذا الشهر": [moment().startOf("month"), moment().endOf("month")],
-        "الشهر الماضي": [
-          moment().subtract(1, "month").startOf("month"),
-          moment().subtract(1, "month").endOf("month"),
-        ],
+        "هذا الشهر": [moment(currentMonthStart), today],
+        "الشهر الماضي": [previousMonthStart, previousMonthEnd],
       },
     },
     async function (start) {
@@ -2662,6 +2698,7 @@ function updateEvalLadder() {
   );
   saveToIndexedDB(project_db.export());
   displayEvalLadder();
+  maximizeModalBtn.style.display = "none";
 
   window.showToast("info", "تم تحديث سلم النقيط بنجاح!");
 }
@@ -2766,25 +2803,25 @@ async function showTab(tabId) {
       studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      // showStudentsBulletins([
-      //   "2025-12-01",
-      //   "2025-12-02",
-      //   "2025-12-12",
-      //   "2025-12-13",
-      //   "2025-12-15",
-      //   "2025-12-16",
-      //   "2025-12-17",
-      //   "2025-12-19",
-      //   "2025-12-20",
-      //   "2025-12-21",
-      //   "2025-12-22",
-      //   "2025-12-23",
-      //   "2025-12-27",
-      //   "2025-12-28",
-      //   "2025-12-29",
-      //   "2025-12-30",
-      //   "2025-12-31",
-      // ],"66,67,69");
+      // showStudentsBulletins(
+      //   [
+      //     "2026-01-02",
+      //     "2026-01-03",
+      //     "2026-01-05",
+      //     "2026-01-06",
+      //     "2026-01-07",
+      //     "2026-01-09",
+      //     "2026-01-10",
+      //     "2026-01-12",
+      //     "2026-01-13",
+      //     "2026-01-14",
+      //     "2026-01-16",
+      //     "2026-01-17",
+      //     "2026-01-18",
+      //     "2026-01-19",
+      //   ],
+      //   "43,44",
+      // );
     }
   } else {
     showTab("pills-home");
@@ -2918,6 +2955,21 @@ function getStatisticsSelectedStudentsId() {
 }
 
 async function showStudentsBulletins(dates, studentsIDS = null) {
+  const maleAppends = {
+    // "آدم عيساوة": { points: 400, note: "" },
+    // "أصيل بوخالفة": { points: 400, note: "" },
+    // "بدر الدين عيساوة": { points: 400, note: "تلميذ مجتهد واصل على هذا المنوال نسأل" },
+    // "سيف عيساوة ": { points: 400, note: "" },
+    // "صلاح لعايب": { points: 400, note: "" },
+    // "عبد الستير لعايب": { points: 400, note: "" },
+    // "عبد المجيد حليتيم": { points: 400, note: "" },
+    // "معتز عيساوة": { points: 400, note: "" },
+  };
+  const femmaleAppends = {
+    // "بشرى عيساوة": { points: 400, note: "" },
+    // "ريم بوخالفة": { points: 400, note: "" },
+    // "غفران حليتيم": { points: 400, note: "" },
+  };
   const studentsList = studentsIDS || getStatisticsSelectedStudentsId();
   if (!studentsList) {
     window.showToast("warning", "يرجى اخيار طلاب من القائمة.");
@@ -3003,11 +3055,22 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       return;
     }
 
-    let students = results[0].values.map((row) => ({
-      id: row[0],
-      name: `${row[1]} ${row[2]}`,
-      order: (row[3] / attendanceRes[row[0]]).toFixed(2),
-    }));
+    let students = results[0].values.map((row) => {
+      const name = `${row[1]} ${row[2]}`;
+      const fullAddedPoints = isGirls
+        ? femmaleAppends[name]?.points || 0
+        : maleAppends[name]?.points || 0;
+      const order = (
+        (row[3] + fullAddedPoints) /
+        attendanceRes[row[0]]
+      ).toFixed(2);
+      return {
+        id: row[0],
+        name: name,
+        order: order,
+      };
+    });
+    console.log(students);
 
     students = [...students]
       .sort((a, b) => parseFloat(b.order) - parseFloat(a.order))
@@ -3112,11 +3175,11 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         if (studentIndex > 0) {
           // Add separator between students (except for the first one)
           content.push({
-            text: "ـــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ",
+            text: "ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ",
             absolutePosition: {
-              y: 841.89 / 2,
+              y: 841.89 / 2 - 5,
+              x: 20,
             },
-            alignment: "center",
           });
         }
 
@@ -3138,7 +3201,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
     const docDefinition = {
       pageSize: "A4",
-      pageMargins: [20, 20, 20, 20],
+      pageMargins: [20, 0, 20, 0],
       pageOrientation: "portrait",
       content: content,
       styles: {
@@ -3164,7 +3227,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           lineHeight: 1.1,
         },
         summary: {
-          fontSize: 9,
+          fontSize: 10,
           bold: true,
           margin: [0, 8, 0, 4],
           color: "#2c3e50",
@@ -3190,7 +3253,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         .map((i) => JSON.parse(i.detail)?.length ?? 1)
         .reduce((accumulator, currentValue) => accumulator + currentValue, 0);
 
-      if (studentDataRecordsLength <= 22) {
+      if (studentDataRecordsLength <= 20) {
         studentsWithFewRecords.push(studentReport);
       } else {
         studentsWithManyRecords.push(studentReport);
@@ -3231,7 +3294,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         .map((i) => {
           return i.detail ? JSON.parse(i.detail).length : 1;
         })
-        .reduce((accumulator, current) => accumulator + current, 0) + 1;
+        .reduce((accumulator, current) => accumulator + current, 0) + 3;
 
     const tableCellHeight = isStacked ? 5 : 33 - recordCounts / 2;
     const tableBody = createTableBody(data, tableCellHeight / 3, isStacked);
@@ -3239,12 +3302,14 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     const content = [
       // Student header
       {
-        text: reverseArabicWords("تقرير  متابعة الطالب" + (isGirls ? "ة" : "")),
+        text: reverseArabicWords(
+          "تقرير  متابعة الطالب في حفظ القرآن الكريم" + (isGirls ? "ة" : ""),
+        ),
         style: "header",
         alignment: "center",
-        fontSize: isStacked ? 12 : 14,
+        fontSize: isStacked ? 14 : 14,
         absolutePosition: {
-          y: (isSecond ? 841.89 / 2 : 0) + 20,
+          y: (isSecond ? 841.89 / 2 : 0) + 15,
         },
       },
       {
@@ -3258,9 +3323,12 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       },
       {
         text: reverseArabicWords(
-          `حرر في: ${new Date().getDate()}  ${
-            arabicMonths[new Date().getMonth()]
-          } ${new Date(dates[0]).getFullYear()}`,
+          `حرر  يوم: ${new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "long",
+          }).format(new Date())}`,
         ),
         style: "subheader",
         alignment: "left",
@@ -3273,18 +3341,9 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       // Table
       {
         table: {
-          headerRows: 1,
+          headerRows: 2,
           heights: tableCellHeight,
-          widths: [
-            25,
-            30,
-            30,
-            ...(isGirls ? [] : [30]),
-            20,
-            ...(isGirls ? [360] : [325]),
-            26,
-            22,
-          ],
+          widths: [32, 26, 30, 30, 20, 27, 290, 31, 18],
           body: tableBody,
         },
         absolutePosition: {
@@ -3292,8 +3351,9 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             (isStacked
               ? 841.89 / 4 + (isSecond ? 841.89 / 2 : 0)
               : 841.89 / 2) -
-            (recordCounts / (isStacked ? 2 : recordCounts)) *
-              (isStacked ? 13 : 345),
+            (10 +
+              (recordCounts / (isStacked ? 2 : recordCounts)) *
+                (isStacked ? 13 : 345)),
           x: 18,
         },
         layout: {
@@ -3332,16 +3392,57 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
   // Create compact table body for stacked layout
   function createTableBody(studentData, marginTopBottom, isStacked = false) {
     // Arabic headers - two rows for date
-    const headerRows = [
+    const topHeaderRows = [
       {
-        text: "إظافية",
+        text: "المجموع",
+        style: "tableHeader",
+        alignment: "center",
+        marginTop: marginTopBottom * 4,
+        marginBottom: -2,
+        rowSpan: 2,
+      },
+      {
+        text: "التقييم",
+        style: "tableHeader",
+        alignment: "center",
+        colSpan: 4,
+        marginTop: marginTopBottom,
+        marginBottom: -2,
+      },
+      {},
+      {},
+      {},
+      {
+        text: "المطلوب",
+        style: "tableHeader",
+        alignment: "center",
+        marginTop: marginTopBottom,
+        marginBottom: -2,
+        colSpan: 2,
+      },
+      {},
+      {
+        text: "اليوم",
+        style: "tableHeader",
+        alignment: "center",
+        colSpan: 2,
+        rowSpan: 2,
+        marginTop: marginTopBottom * 4,
+        marginBottom: -2,
+      },
+      {}, // empty for the second part of date
+    ];
+    const headerRows = [
+      {},
+      {
+        text: "إضافية",
         style: "tableHeader",
         alignment: "center",
         marginTop: marginTopBottom,
         marginBottom: -2,
       },
       {
-        text: "اللباس",
+        text: "الهندام",
         style: "tableHeader",
         alignment: "center",
         marginTop: marginTopBottom,
@@ -3355,13 +3456,6 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         marginBottom: -2,
       },
       {
-        text: "الحلاقة",
-        style: "tableHeader",
-        alignment: "center",
-        marginTop: marginTopBottom,
-        marginBottom: -2,
-      },
-      {
         text: "التأخر",
         style: "tableHeader",
         alignment: "center",
@@ -3369,7 +3463,14 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         marginBottom: -2,
       },
       {
-        text: "الواجبات",
+        text: "الرصيد",
+        style: "tableHeader",
+        alignment: "center",
+        marginTop: marginTopBottom,
+        marginBottom: -2,
+      },
+      {
+        text: "التفصيل",
         style: "tableHeader",
         alignment: "center",
         marginTop: marginTopBottom,
@@ -3386,11 +3487,6 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       {}, // empty for the second part of date
     ];
 
-    // Adjust headers for girls (remove haircut column)
-    if (isGirls) {
-      headerRows.splice(3, 1); // Remove haircut from first header row
-    }
-
     // Group records by month and year
     const groupedRecords = groupRecordsByMonthYear(studentData);
 
@@ -3403,16 +3499,19 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
       records.forEach((record, recordIndex) => {
         const recordDate = new Date(record.day);
-        const day = `${
-          arabicDays[recordDate.getDay()]
-        } ${recordDate.getDate()}`;
+        const day = new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
+          day: "numeric",
+          weekday: "short",
+        })
+          .format(recordDate)
+          .replace("،", "");
 
         // Handle absence
         if (record.attendance !== 1) {
-          const row = createEmptyArray(isGirls ? 7 : 8); // Create array with correct number of columns
+          const row = createEmptyArray(9); // Create array with correct number of columns
 
           // Set values for the row (RTL order - from right to left)
-          const baseIndex = isGirls ? 6 : 7;
+          const baseIndex = 8;
 
           row[baseIndex] =
             recordIndex === 0
@@ -3433,11 +3532,14 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           };
 
           row[0] = {
-            text: "غـــــــــائـــب" + (isGirls ? "ة" : ""),
+            text:
+              record.attendance === 0
+                ? "غـــيــاب  مـبــرر"
+                : "غـــــــــائـــب" + (isGirls ? "ة" : ""),
             style: "tableCell",
             alignment: "center",
             bold: true,
-            colSpan: isGirls ? 5 : 6,
+            colSpan: 7,
             margin: [0, marginTopBottom, 0, -2],
           };
 
@@ -3445,12 +3547,10 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           return;
         }
 
+        record.moyennes = getDetailMoyennes(record.detail);
         record.detail = formatDetail(record.detail);
         const clothingOption = document.querySelector(
           `#clothing option[value='${record.clothing}']`,
-        );
-        const haircutOption = document.querySelector(
-          `#haircut option[value='${record.haircut}']`,
         );
         const behaviorOption = document.querySelector(
           `#behavior option[value='${record.behavior}']`,
@@ -3461,8 +3561,8 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             : "بلا  تأخر";
 
         if (record.detail.length == 1) {
-          const row = createEmptyArray(isGirls ? 7 : 8);
-          const baseIndex = isGirls ? 6 : 7;
+          const row = createEmptyArray(9);
+          const baseIndex = 8;
 
           // Month (only for first record in month group)
           row[baseIndex] =
@@ -3491,26 +3591,24 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             alignment: "right",
             margin: [0, marginTopBottom, 0, -2],
           };
+          row[baseIndex - 3] = {
+            text: record.moyennes[0],
+            style: "tableCell",
+            bold: true,
+            alignment: "center",
+            margin: [0, marginTopBottom, 0, -2],
+          };
 
           // retard
-          row[baseIndex - 3] = {
+          row[baseIndex - 4] = {
             text: retardOption,
             style: "tableCell",
             alignment: "center",
             margin: [-2, marginTopBottom, -2, -2],
           };
-          // Haircut (if not girls)
-          if (!isGirls) {
-            row[baseIndex - 4] = {
-              text: haircutOption ? haircutOption.textContent : "-",
-              style: "tableCell",
-              alignment: "center",
-              margin: [-2, marginTopBottom, -2, -2],
-            };
-          }
 
           // Behavior
-          const behaviorIndex = isGirls ? baseIndex - 4 : baseIndex - 5;
+          const behaviorIndex = baseIndex - 5;
           row[behaviorIndex] = {
             text: behaviorOption ? behaviorOption.textContent : "-",
             style: "tableCell",
@@ -3519,7 +3617,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           };
 
           // Clothing
-          const clothingIndex = isGirls ? baseIndex - 5 : baseIndex - 6;
+          const clothingIndex = baseIndex - 6;
           row[clothingIndex] = {
             text: clothingOption ? clothingOption.textContent : "-",
             style: "tableCell",
@@ -3528,9 +3626,21 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           };
 
           // Additional points
-          const pointsIndex = isGirls ? baseIndex - 6 : baseIndex - 7;
+          const pointsIndex = baseIndex - 7;
           row[pointsIndex] = {
             text: record.added_points ? record.added_points : "-",
+            style: "tableCell",
+            alignment: "center",
+            margin: [-2, marginTopBottom, -2, -2],
+          };
+
+          // day moyenne points
+          const moyenneIndex = baseIndex - 8;
+          row[moyenneIndex] = {
+            text: (
+              (record.requirements_score || 0) + (record.evaluation_score || 0)
+            ).toFixed(2),
+            bold: true,
             style: "tableCell",
             alignment: "center",
             margin: [-2, marginTopBottom, -2, -2],
@@ -3540,8 +3650,8 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         } else {
           // For multiple details, create multiple rows
           record.detail.forEach((detail, detailIndex) => {
-            const row = createEmptyArray(isGirls ? 7 : 8);
-            const baseIndex = isGirls ? 6 : 7;
+            const row = createEmptyArray(9);
+            const baseIndex = 8;
 
             // Month (only for first record and first detail in month group)
             row[baseIndex] =
@@ -3579,9 +3689,16 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
               alignment: "right",
               margin: [0, marginTopBottom, 0, -2],
             };
+            row[baseIndex - 3] = {
+              text: record.moyennes[detailIndex] || "-",
+              style: "tableCell",
+              bold: true,
+              alignment: "center",
+              margin: [0, marginTopBottom, 0, -2],
+            };
 
             // retard
-            row[baseIndex - 3] =
+            row[baseIndex - 4] =
               detailIndex === 0
                 ? {
                     text: retardOption,
@@ -3592,22 +3709,8 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                   }
                 : {};
 
-            // Haircut (if not girls, only for first detail)
-            if (!isGirls) {
-              row[baseIndex - 4] =
-                detailIndex === 0
-                  ? {
-                      text: haircutOption ? haircutOption.textContent : "-",
-                      style: "tableCell",
-                      alignment: "center",
-                      rowSpan: record.detail.length,
-                      margin: [-2, 5 * record.detail.length, -2, -2],
-                    }
-                  : {};
-            }
-
             // Behavior (only for first detail)
-            const behaviorIndex = isGirls ? baseIndex - 4 : baseIndex - 5;
+            const behaviorIndex = baseIndex - 5;
             row[behaviorIndex] =
               detailIndex === 0
                 ? {
@@ -3620,7 +3723,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                 : {};
 
             // Clothing (only for first detail)
-            const clothingIndex = isGirls ? baseIndex - 5 : baseIndex - 6;
+            const clothingIndex = baseIndex - 6;
             row[clothingIndex] =
               detailIndex === 0
                 ? {
@@ -3633,11 +3736,28 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                 : {};
 
             // Additional points (only for first detail)
-            const pointsIndex = isGirls ? baseIndex - 6 : baseIndex - 7;
+            const pointsIndex = baseIndex - 7;
             row[pointsIndex] =
               detailIndex === 0
                 ? {
                     text: record.added_points ? record.added_points : "-",
+                    style: "tableCell",
+                    alignment: "center",
+                    rowSpan: record.detail.length,
+                    margin: [-2, 5 * record.detail.length, -2, -2],
+                  }
+                : {};
+
+            // day moyenne  (only for first detail)
+            const moyenneIndex = baseIndex - 8;
+            row[moyenneIndex] =
+              detailIndex === 0
+                ? {
+                    text: (
+                      (record.requirements_score || 0) +
+                      (record.evaluation_score || 0)
+                    ).toFixed(2),
+                    bold: true,
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: record.detail.length,
@@ -3651,7 +3771,70 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       });
     });
 
-    return [headerRows, ...body];
+    const fullAddedPoints = isGirls
+      ? femmaleAppends[studentData[0].student_name]?.points || 0
+      : maleAppends[studentData[0].student_name]?.points || 0;
+    const totalDays =
+      studentData.length -
+      studentData.filter((record) => record.attendance == 0).length;
+    const validRecords = studentData.filter(
+      (record) => record.attendance !== null,
+    );
+
+    if (totalDays === 0) return [];
+
+    const total = validRecords.reduce(
+      (sum, record) =>
+        sum + (record.requirements_score || 0) + (record.evaluation_score || 0),
+      0,
+    );
+    const resultRows = [
+      {
+        text: total.toFixed(2),
+        style: "tableHeader",
+        alignment: "center",
+        marginTop: marginTopBottom,
+        marginBottom: -2,
+        fontSize: 9,
+        border: [true, true, false, true],
+      },
+      {
+        text: "المجموع العام:",
+        style: "tableHeader",
+        alignment: "left",
+        border: [false, true, true, true],
+        fontSize: 9,
+        marginTop: marginTopBottom,
+        marginBottom: -2,
+        marginLeft: -3,
+        colSpan: 2,
+      },
+      {},
+      {
+        text: fullAddedPoints,
+        style: "tableHeader",
+        alignment: "right",
+        marginTop: marginTopBottom,
+        marginBottom: -2,
+        border: [true, true, false, true],
+      },
+      {
+        text: "رصيد إضافي:",
+        style: "tableHeader",
+        alignment: "left",
+        marginTop: marginTopBottom,
+        marginLeft: -3,
+        colSpan: 2,
+        marginBottom: -2,
+        border: [false, true, true, true],
+      },
+      {},
+      { text: "", border: [false, true, false, false] },
+      { text: "", border: [false, true, false, false] },
+      { text: "", border: [false, true, false, false] }, // empty for the second part of date
+    ];
+
+    return [topHeaderRows, headerRows, ...body, resultRows];
   }
 
   // Helper function to create an empty array with specified length
@@ -3666,8 +3849,16 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     studentData.forEach((record) => {
       const recordDate = new Date(record.day);
       const monthYear = `${
-        arabicMonths[recordDate.getMonth()]
-      } ${recordDate.getFullYear()}`;
+        new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
+          year: "numeric",
+        })
+          .format(recordDate)
+          .split(" ")[0]
+      } ${reverseArabicWords(
+        new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
+          month: "long",
+        }).format(recordDate),
+      )}`;
 
       if (!groups[monthYear]) {
         groups[monthYear] = [];
@@ -3727,20 +3918,42 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
     if (totalDays === 0) return [];
 
+    const fullAddedPoints = isGirls
+      ? femmaleAppends[studentData[0].student_name]?.points || 0
+      : maleAppends[studentData[0].student_name]?.points || 0;
     const presentDays = validRecords.filter(
       (record) => record.attendance === 1,
     ).length;
-    const total = validRecords.reduce(
-      (sum, record) =>
-        sum + (record.requirements_score || 0) + (record.evaluation_score || 0),
-      0,
-    );
-    const totalAvg = total / totalDays;
+    const total =
+      validRecords.reduce(
+        (sum, record) =>
+          sum +
+          (record.requirements_score || 0) +
+          (record.evaluation_score || 0),
+        0,
+      ) + (fullAddedPoints || 0);
+    const totalMoyenne = total / totalDays;
 
     const attendanceRate = ((presentDays / totalDays) * 100).toFixed(1);
 
+    const fullNote = isGirls
+      ? femmaleAppends[studentData[0].student_name]?.note || ""
+      : maleAppends[studentData[0].student_name]?.note || "";
+
     // Full summary for single student view
     return [
+      ...[
+        fullNote
+          ? {
+              text: reverseArabicWords(`الملاحظة:  ${fullNote}`),
+              margin: [0, 5, 0, 8],
+              alignment: "right",
+              absolutePosition: {
+                y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 75,
+              },
+            }
+          : {},
+      ],
       {
         text: reverseArabicWords("الملخص"),
         style: "summary",
@@ -3752,7 +3965,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       },
       {
         table: {
-          widths: ["*", "*", "*", "*", "*"],
+          widths: [70, "*", "*", "*", "*"],
           body: [
             [
               {
@@ -3762,24 +3975,18 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                 style: "tableCell",
                 bold: true,
                 alignment: "center",
-                border: [false, false, false, false],
-                fontSize: 10,
+                border: [true, true, true, true],
+                fontSize: 12,
+                marginTop: 3,
               },
               {
-                text: `المعدل العام: ${totalAvg.toFixed(2)}`,
+                text: `المعدل العام: ${totalMoyenne.toFixed(2)}`,
                 style: "tableCell",
                 alignment: "center",
                 bold: true,
                 border: [true, false, false, false],
                 fontSize: 10,
-              },
-              {
-                text: `المجموع العام: ${total.toFixed(2)}`,
-                style: "tableCell",
-                alignment: "center",
-                bold: true,
-                border: [true, false, false, false],
-                fontSize: 10,
+                marginTop: 3,
               },
               {
                 text: `نسبة الحضور: ${attendanceRate}%`,
@@ -3787,6 +3994,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                 alignment: "center",
                 border: [true, false, false, false],
                 fontSize: 10,
+                marginTop: 3,
               },
               {
                 text: `إجمالي الأيام: ${totalDays}`,
@@ -3794,12 +4002,14 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                 alignment: "center",
                 border: [true, false, false, false],
                 fontSize: 10,
+                marginTop: 3,
               },
             ],
           ],
         },
         absolutePosition: {
           y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 40,
+          x: 18,
         },
         margin: [0, 0, 0, 5],
       },
@@ -3840,13 +4050,14 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         " | " +
         " بتقدير: " +
         item["التقدير"] +
-        "/10  | " +
-        " بمجموع: " +
-        item["المعدل"] +
-        "  نقطة "
+        "/10"
       );
     });
     return detail;
+  }
+  function getDetailMoyennes(detail) {
+    if (!detail) return "-";
+    return JSON.parse(detail).map((item) => item["المعدل"]);
   }
 }
 

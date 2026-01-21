@@ -13,7 +13,7 @@ workbox.precaching.precacheAndRoute(
     { url: "./", revision: "1" },
     { url: "./favicon.ico", revision: "1" },
     { url: "./index.html", revision: "1" },
-    { url: "./app.html", revision: "20" },
+    { url: "./app.html", revision: "21" },
     { url: "./manifest.json", revision: "2" },
 
     { url: "./src/style.css", revision: "5" },
