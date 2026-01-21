@@ -18,7 +18,7 @@ workbox.precaching.precacheAndRoute(
 
     { url: "./src/style.css", revision: "5" },
     { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "33" },
+    { url: "./src/script.js", revision: "34" },
     { url: "./src/auth.js", revision: "2" },
     { url: "./src/pdfmake.js", revision: "1" },
     { url: "./src/vfs_fonts.js", revision: "1" },
