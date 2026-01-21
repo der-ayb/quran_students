@@ -4420,7 +4420,7 @@ const checkSecondSurahAyahs = (secondSurahNumber) => {
         )[0]
         .values.forEach((row) => {
           secondAyahSelect.appendChild(
-            createOption(row[1], `${row[1]}- ${row[2]}`),
+            createOption(row[2], `${row[2]}- ${row[3]}`),
           );
         });
     }
@@ -4458,7 +4458,7 @@ firstSurahSelect.onchange = async function () {
       .exec("SELECT * FROM quran_ayat WHERE sura = " + this.value)[0]
       .values.forEach((row) => {
         firstAyahSelect.appendChild(
-          createOption(row[1], `${row[1]}- ${row[2]}`),
+          createOption(row[2], `${row[2]}- ${row[3]}`),
         );
       });
 
