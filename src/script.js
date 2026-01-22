@@ -2802,10 +2802,10 @@ async function showTab(tabId) {
       fillStatistiscStudentsList();
       // showStudentsBulletins(
       //   [
-      //     "2026-01-02",
-      //     "2026-01-03",
-      //     "2026-01-05",
-      //     "2026-01-06",
+      //     // "2026-01-02",
+      //     // "2026-01-03",
+      //     // "2026-01-05",
+      //     // "2026-01-06",
       //     "2026-01-07",
       //     "2026-01-09",
       //     "2026-01-10",
@@ -2816,8 +2816,9 @@ async function showTab(tabId) {
       //     "2026-01-17",
       //     "2026-01-18",
       //     "2026-01-19",
+      //     "2026-01-21"
       //   ],
-      //   "43,44",
+        // "43,44",
       // );
     }
   } else {
@@ -3334,7 +3335,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         table: {
           headerRows: 2,
           heights: tableCellHeight,
-          widths: [32, 26, 30, 30, 20, 27, 290, 31, 18],
+          widths: [32, 26, 30, 30, 20, 27, 284, 33, 20],
           body: tableBody,
         },
         absolutePosition: {
@@ -3511,7 +3512,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                   style: "tableCell",
                   alignment: "center",
                   rowSpan: monthRowSpan,
-                  margin: [-2, marginTopBottom + 4.5 * monthRowSpan, -2, -2],
+                  margin: [-2, 2 * monthRowSpan, -1, -3],
                 }
               : {};
 
@@ -3560,7 +3561,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                   style: "tableCell",
                   alignment: "center",
                   rowSpan: monthRowSpan,
-                  margin: [-2, marginTopBottom + 4.5 * monthRowSpan, -2, -2],
+                  margin: [-2, 2 * monthRowSpan, -1, -3],
                 }
               : {};
 
@@ -3649,7 +3650,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: monthRowSpan,
-                    margin: [-2, marginTopBottom + 4.5 * monthRowSpan, -2, -2],
+                    margin: [-2, 2 * monthRowSpan, -1, -3],
                   }
                 : {};
 
@@ -3922,6 +3923,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     const totalMoyenne = total / totalDays;
 
     const attendanceRate = ((presentDays / totalDays) * 100).toFixed(1);
+    const fullNote = studentsAppends[studentData[0].student_name]?.note || "";
 
     // Full summary for single student view
     return [
@@ -3984,16 +3986,18 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         },
         margin: [0, 0, 0, 5],
       },
-      {
-        text: reverseArabicWords(
-          `الملاحظة:  ${studentsAppends[studentData[0].student_name]?.note || "تلميذ مجتهد واصل في حفظ كتاب الله."}`,
-        ),
-        margin: [0, 5, 0, 8],
-        alignment: "right",
-        absolutePosition: {
-          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 30,
-        },
-      },
+      ...[
+        fullNote
+          ? {
+              text: reverseArabicWords(`الملاحظة:  ${fullNote}`),
+              margin: [0, 5, 0, 8],
+              alignment: "right",
+              absolutePosition: {
+                y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 40,
+              },
+            }
+          : {},
+      ],
       {
         text: reverseArabicWords('إمضاء الولي'),
         margin: [0, 5, 0, 8],
