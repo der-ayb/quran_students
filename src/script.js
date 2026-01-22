@@ -121,12 +121,8 @@ const studentDayModalElement = document.getElementById("newStudentDayModal");
 const studentDayModal = new bootstrap.Modal(studentDayModalElement);
 
 const maximizeModalBtn = document.getElementById("maximizeModalBtn");
-const studentInfosModal = new bootstrap.Modal(
-  document.getElementById("newStudentInfosModal"),
-);
-const classroomInfosModal = new bootstrap.Modal(
-  document.getElementById("newClassroomInfosModal"),
-);
+const studentInfosModal = new bootstrap.Modal("#newStudentInfosModal");
+const classroomInfosModal = new bootstrap.Modal("#newClassroomInfosModal");
 
 const requirCollapse = new bootstrap.Collapse(
   document.getElementById("requirCollapse"),
@@ -271,10 +267,15 @@ outTimeInput.onchange = async function () {
   localStorage.setItem("selectedOutTime", outTime);
 };
 
+fontSelector.onchange = async function () {
+  const font = this.value;
+  document.body.style.fontFamily = font;
+  localStorage.setItem("selectedFont", font);
+};
+
 // Initialize
 document.addEventListener("DOMContentLoaded", async function () {
   // theme selector
-
   const savedTheme = localStorage.getItem("selectedTheme");
   if (savedTheme) {
     themeSelector.value = savedTheme;
@@ -287,16 +288,12 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   // font change
-  fontSelector.onchange = async function () {
-    const font = this.value;
-    document.body.style.fontFamily = font;
-    localStorage.setItem("selectedFont", font);
-  };
   const savedFont = localStorage.getItem("selectedFont");
   if (savedFont) {
     fontSelector.value = savedFont;
     fontSelector.dispatchEvent(new Event("change"));
   }
+
   // set birthyear input limits
   const today = new Date();
   $("#birthyear").yearpicker({
@@ -1503,7 +1500,7 @@ async function markPresence(studentId) {
 function showApopintmentTimePicker(initialTime = null) {
   setApointementTimeToNow();
   updateAppointmentTimeDisplay();
-  new bootstrap.Modal(document.getElementById("timeModal")).show();
+  new bootstrap.Modal("#timeModal").show();
 }
 
 function updateAppointmentTimeDisplay() {
@@ -2829,54 +2826,6 @@ async function showTab(tabId) {
   }
 }
 
-async function fillStatistiscStudentsList(uniqueStudent = false) {
-  if (!project_db) {
-    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
-    return;
-  }
-  try {
-    const results = project_db.exec(
-      "SELECT id,fname,lname FROM students WHERE class_room_id = ?;",
-      [workingClassroomId],
-    );
-    const data = [];
-    if (results.length) {
-      const result = results[0];
-      const dropdown = document.querySelector(".statisticsStudentsMenu");
-      dropdown.innerHTML = !uniqueStudent
-        ? `
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="statisAllCheckbox" onchange="statisStudentToggleAll()" checked>
-            <label class="form-check-label">الجميع</label>
-        </div>
-        <hr>`
-        : "";
-      statisAllCheckbox = document.getElementById("statisAllCheckbox");
-      result.values.forEach((row) => {
-        const newItem = document.createElement("div");
-        newItem.className = "form-check";
-        newItem.innerHTML = `
-                      <input class="form-check-input statisStudentItem" ${
-                        !uniqueStudent
-                          ? `type="checkbox"`
-                          : `type="radio" name="radioDefault"`
-                      } value="${
-                        row[0]
-                      }" checked onchange="statisStudentUpdateAll()">
-                      <label class="form-check-label">${
-                        row[result.columns.indexOf("fname")] +
-                        " " +
-                        row[result.columns.indexOf("lname")]
-                      }</label>
-                  `;
-        dropdown.append(newItem);
-      });
-    }
-  } catch (e) {
-    window.showToast("warning", "Error: " + e.message);
-  }
-}
-
 function getDatesInRange() {
   const result = project_db.exec(
     `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`,
@@ -2929,6 +2878,54 @@ statisticType.onchange = async function () {
 };
 
 // statistics students list
+async function fillStatistiscStudentsList(uniqueStudent = false) {
+  if (!project_db) {
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    return;
+  }
+  try {
+    const results = project_db.exec(
+      "SELECT id,fname,lname FROM students WHERE class_room_id = ?;",
+      [workingClassroomId],
+    );
+    const data = [];
+    if (results.length) {
+      const result = results[0];
+      const dropdown = document.querySelector(".statisticsStudentsMenu");
+      dropdown.innerHTML = !uniqueStudent
+        ? `
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="statisAllCheckbox" onchange="statisStudentToggleAll()" checked>
+            <label class="form-check-label">الجميع</label>
+        </div>
+        <hr>`
+        : "";
+      statisAllCheckbox = document.getElementById("statisAllCheckbox");
+      result.values.forEach((row) => {
+        const newItem = document.createElement("div");
+        newItem.className = "form-check";
+        newItem.innerHTML = `
+                      <input class="form-check-input statisStudentItem" ${
+                        !uniqueStudent
+                          ? `type="checkbox"`
+                          : `type="radio" name="radioDefault"`
+                      } value="${
+                        row[0]
+                      }" checked onchange="statisStudentUpdateAll()">
+                      <label class="form-check-label">${
+                        row[result.columns.indexOf("fname")] +
+                        " " +
+                        row[result.columns.indexOf("lname")]
+                      }</label>
+                  `;
+        dropdown.append(newItem);
+      });
+    }
+  } catch (e) {
+    window.showToast("warning", "Error: " + e.message);
+  }
+}
+
 function statisStudentToggleAll() {
   document.querySelectorAll(".statisStudentItem").forEach((item) => {
     item.checked = statisAllCheckbox.checked;
@@ -2947,7 +2944,15 @@ function statisStudentUpdateAll() {
   statisticType.dispatchEvent(new Event("change"));
 }
 
-function getStatisticsSelectedStudentsId() {
+function getStatisticsSelectedStudentsId(getNames = false) {
+  if (getNames) {
+    return Array.from(
+      document.querySelectorAll(".statisStudentItem:checked"),
+    ).map((item) => ({
+      name: item.nextElementSibling.textContent,
+      id: item.value,
+    }));
+  }
   const selected = Array.from(
     document.querySelectorAll(".statisStudentItem:checked"),
   ).map((item) => item.value);
@@ -2955,26 +2960,15 @@ function getStatisticsSelectedStudentsId() {
 }
 
 async function showStudentsBulletins(dates, studentsIDS = null) {
-  const maleAppends = {
-    // "آدم عيساوة": { points: 400, note: "" },
-    // "أصيل بوخالفة": { points: 400, note: "" },
-    // "بدر الدين عيساوة": { points: 400, note: "تلميذ مجتهد واصل على هذا المنوال نسأل" },
-    // "سيف عيساوة ": { points: 400, note: "" },
-    // "صلاح لعايب": { points: 400, note: "" },
-    // "عبد الستير لعايب": { points: 400, note: "" },
-    // "عبد المجيد حليتيم": { points: 400, note: "" },
-    // "معتز عيساوة": { points: 400, note: "" },
-  };
-  const femmaleAppends = {
-    // "بشرى عيساوة": { points: 400, note: "" },
-    // "ريم بوخالفة": { points: 400, note: "" },
-    // "غفران حليتيم": { points: 400, note: "" },
-  };
   const studentsList = studentsIDS || getStatisticsSelectedStudentsId();
   if (!studentsList) {
     window.showToast("warning", "يرجى اخيار طلاب من القائمة.");
     return;
   }
+
+  const studentsAppends = localStorage.getItem("studentsAppends")
+    ? JSON.parse(localStorage.getItem("studentsAppends"))
+    : {};
 
   try {
     const attendanceRes = {};
@@ -3057,9 +3051,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
     let students = results[0].values.map((row) => {
       const name = `${row[1]} ${row[2]}`;
-      const fullAddedPoints = isGirls
-        ? femmaleAppends[name]?.points || 0
-        : maleAppends[name]?.points || 0;
+      const fullAddedPoints = studentsAppends[name]?.points || 0;
       const order = (
         (row[3] + fullAddedPoints) /
         attendanceRes[row[0]]
@@ -3070,7 +3062,6 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         order: order,
       };
     });
-    console.log(students);
 
     students = [...students]
       .sort((a, b) => parseFloat(b.order) - parseFloat(a.order))
@@ -3177,7 +3168,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           content.push({
             text: "ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ",
             absolutePosition: {
-              y: 841.89 / 2 - 5,
+              y: 841.89 / 2 - 7,
               x: 20,
             },
           });
@@ -3532,10 +3523,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           };
 
           row[0] = {
-            text:
-              record.attendance === 0
-                ? "غـــيــاب  مـبــرر"
-                : "غـــــــــائـــب" + (isGirls ? "ة" : ""),
+            text: "غـــــــــائـــب" + (isGirls ? "ة" : ""),
             style: "tableCell",
             alignment: "center",
             bold: true,
@@ -3771,9 +3759,8 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       });
     });
 
-    const fullAddedPoints = isGirls
-      ? femmaleAppends[studentData[0].student_name]?.points || 0
-      : maleAppends[studentData[0].student_name]?.points || 0;
+    const fullAddedPoints =
+      studentsAppends[studentData[0].student_name]?.points || 0;
     const totalDays =
       studentData.length -
       studentData.filter((record) => record.attendance == 0).length;
@@ -3795,6 +3782,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         alignment: "center",
         marginTop: marginTopBottom,
         marginBottom: -2,
+        marginRight: -3,
         fontSize: 9,
         border: [true, true, false, true],
       },
@@ -3918,9 +3906,8 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
     if (totalDays === 0) return [];
 
-    const fullAddedPoints = isGirls
-      ? femmaleAppends[studentData[0].student_name]?.points || 0
-      : maleAppends[studentData[0].student_name]?.points || 0;
+    const fullAddedPoints =
+      studentsAppends[studentData[0].student_name]?.points || 0;
     const presentDays = validRecords.filter(
       (record) => record.attendance === 1,
     ).length;
@@ -3936,31 +3923,15 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
     const attendanceRate = ((presentDays / totalDays) * 100).toFixed(1);
 
-    const fullNote = isGirls
-      ? femmaleAppends[studentData[0].student_name]?.note || ""
-      : maleAppends[studentData[0].student_name]?.note || "";
-
     // Full summary for single student view
     return [
-      ...[
-        fullNote
-          ? {
-              text: reverseArabicWords(`الملاحظة:  ${fullNote}`),
-              margin: [0, 5, 0, 8],
-              alignment: "right",
-              absolutePosition: {
-                y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 75,
-              },
-            }
-          : {},
-      ],
       {
         text: reverseArabicWords("الملخص"),
         style: "summary",
         margin: [0, 5, 0, 8],
         alignment: "center",
         absolutePosition: {
-          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 55,
+          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 75,
         },
       },
       {
@@ -4008,10 +3979,30 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           ],
         },
         absolutePosition: {
-          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 40,
+          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 60,
           x: 18,
         },
         margin: [0, 0, 0, 5],
+      },
+      {
+        text: reverseArabicWords(
+          `الملاحظة:  ${studentsAppends[studentData[0].student_name]?.note || "تلميذ مجتهد واصل في حفظ كتاب الله."}`,
+        ),
+        margin: [0, 5, 0, 8],
+        alignment: "right",
+        absolutePosition: {
+          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 30,
+        },
+      },
+      {
+        text: reverseArabicWords('إمضاء الولي'),
+        margin: [0, 5, 0, 8],
+        alignment: "left",
+        fontSize: 10,
+        absolutePosition: {
+          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 30,
+          x: 30, 
+        },
       },
     ];
   }
@@ -4293,9 +4284,57 @@ async function showStudentsResultsStatistics() {
           {
             text: "كشوف النقاط",
             action: async function (e, dt) {
-              await showLoadingModal("جاري تحميل الإحصائيات");
-              showStudentsBulletins(dates);
-              hideLoadingModal();
+              const appendsModal = new bootstrap.Modal("#appendsModal");
+              const appendsModalBody = document.querySelector(
+                "#appendsModal .modal-body",
+              );
+              const preStudentAppends = localStorage.getItem("studentsAppends")
+                ? JSON.parse(localStorage.getItem("studentsAppends"))
+                : {};
+              appendsModalBody.innerHTML = "";
+              getStatisticsSelectedStudentsId(true).forEach((student) => {
+                appendsModalBody.innerHTML += `
+                <div class="card">
+                  <div class="card-body">
+                    <h5 class="card-title" id="name-${student.id}">${student.name}</h5>
+                    <div class="input-group mb-3">
+                      <span class="input-group-text">نقاط إضافية</span>
+                      <input id="points-${student.id}" type="number" class="form-control text-center px-0" value="${preStudentAppends[student.name]?.points || 0}" step="1">
+                      <span class="input-group-text">نقطة</span>
+                    </div>
+                    <div class="input-group">
+                      <span class="input-group-text">الملاحظة</span>
+                      <textarea id="note-${student.id}" class="form-control" aria-label="With textarea">${preStudentAppends[student.name]?.note || ""}</textarea>
+                    </div>
+                  </div>
+                </div>
+                <hr />`;
+              });
+
+              appendsModal.show();
+              document.getElementById("createBulletinBtn").onclick =
+                async function () {
+                  appendsModal.hide();
+                  await showLoadingModal("جاري تحميل الإحصائيات");
+                  const obj = {};
+                  getStatisticsSelectedStudentsId(true).forEach((student) => {
+                    const points =
+                      parseInt(
+                        document.getElementById(`points-${student.id}`).value,
+                      ) || 0;
+                    const note =
+                      document.getElementById(`note-${student.id}`).value || "";
+                    obj[student.name] = { points, note };
+                  });
+                  const existingAppends = preStudentAppends || {};
+                  Object.assign(existingAppends, obj);
+                  localStorage.setItem(
+                    "studentsAppends",
+                    JSON.stringify(existingAppends),
+                  );
+                  showStudentsBulletins(dates);
+                  hideLoadingModal();
+                };
             },
           },
         ]),

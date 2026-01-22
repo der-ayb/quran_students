@@ -268,8 +268,9 @@
               </div>
               <div class="input-group mb-3">
                 <span class="input-group-text">وقت الخروج المسموح</span>
-                <input id="outTimeInput" type="number" class="form-control text-center px-0" value="60" min="0" max="300"
-                  step="1">
+                <input id="outTimeInput" type="number" class="form-control text-center px-0" value="60" min="0"
+                  max="300" step="1">
+                <span class="input-group-text">دقيقة</span>
               </div>
             </div>
           </div>
@@ -913,6 +914,25 @@
     </div>
   </div>
 
+  <div class="modal fade" id="appendsModal" tabindex="-1" aria-hidden="true" style="z-index: 1101;">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5">إضافات كشوف النقاط</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+          <button type="button" class="btn btn-primary" id="createBulletinBtn">إنشاء</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- toasts modal -->
   <div id="toastWrapper" class="toast-wrapper" aria-live="polite" aria-atomic="true"></div>
 </body>
 <script>
