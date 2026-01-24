@@ -2456,6 +2456,7 @@ function editRequirement(button) {
     setOptionValueByText(secondSurahSelect, finishSurahName);
     firstAyahSelect.value = detail.split(" ").at(2);
     secondAyahSelect.value = detail.split(" ").at(-1);
+    secondAyahSelect.dispatchEvent(new Event("change"));
   }
   saveStateErrorsInput.value =
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
@@ -2802,10 +2803,10 @@ async function showTab(tabId) {
       fillStatistiscStudentsList();
       // showStudentsBulletins(
       //   [
-      //     // "2026-01-02",
-      //     // "2026-01-03",
-      //     // "2026-01-05",
-      //     // "2026-01-06",
+      //     "2026-01-02",
+      //     "2026-01-03",
+      //     "2026-01-05",
+      //     "2026-01-06",
       //     "2026-01-07",
       //     "2026-01-09",
       //     "2026-01-10",
@@ -2818,7 +2819,7 @@ async function showTab(tabId) {
       //     "2026-01-19",
       //     "2026-01-21"
       //   ],
-        // "43,44",
+      //   // "43,44",
       // );
     }
   } else {
@@ -3999,13 +4000,13 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           : {},
       ],
       {
-        text: reverseArabicWords('إمضاء الولي'),
+        text: reverseArabicWords('إمضاء الولي            ×'),
         margin: [0, 5, 0, 8],
         alignment: "left",
         fontSize: 10,
         absolutePosition: {
-          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 30,
-          x: 30, 
+          y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 25,
+          x: 50, 
         },
       },
     ];
