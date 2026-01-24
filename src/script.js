@@ -2801,26 +2801,26 @@ async function showTab(tabId) {
       studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      // showStudentsBulletins(
-      //   [
-      //     "2026-01-02",
-      //     "2026-01-03",
-      //     "2026-01-05",
-      //     "2026-01-06",
-      //     "2026-01-07",
-      //     "2026-01-09",
-      //     "2026-01-10",
-      //     "2026-01-12",
-      //     "2026-01-13",
-      //     "2026-01-14",
-      //     "2026-01-16",
-      //     "2026-01-17",
-      //     "2026-01-18",
-      //     "2026-01-19",
-      //     "2026-01-21"
-      //   ],
-      //   // "43,44",
-      // );
+      showStudentsBulletins(
+        [
+          // "2026-01-02",
+          // "2026-01-03",
+          // "2026-01-05",
+          "2026-01-06",
+          "2026-01-07",
+          "2026-01-09",
+          "2026-01-10",
+          "2026-01-12",
+          "2026-01-13",
+          "2026-01-14",
+          "2026-01-16",
+          "2026-01-17",
+          "2026-01-18",
+          "2026-01-19",
+          "2026-01-21",
+        ],
+        "43,44",
+      );
     }
   } else {
     showTab("pills-home");
@@ -3800,24 +3800,32 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         colSpan: 2,
       },
       {},
-      {
-        text: fullAddedPoints,
-        style: "tableHeader",
-        alignment: "right",
-        marginTop: marginTopBottom,
-        marginBottom: -2,
-        border: [true, true, false, true],
-      },
-      {
-        text: "رصيد إضافي:",
-        style: "tableHeader",
-        alignment: "left",
-        marginTop: marginTopBottom,
-        marginLeft: -3,
-        colSpan: 2,
-        marginBottom: -2,
-        border: [false, true, true, true],
-      },
+      ...[
+        fullAddedPoints > 0
+          ? {
+              text: fullAddedPoints,
+              style: "tableHeader",
+              alignment: "right",
+              marginTop: marginTopBottom,
+              marginBottom: -2,
+              border: [true, true, false, true],
+            }
+          : { border: [true, true, false, false], text: "" },
+      ],
+      ...[
+        fullAddedPoints > 0
+          ? {
+              text: "رصيد إضافي:",
+              style: "tableHeader",
+              alignment: "left",
+              marginTop: marginTopBottom,
+              marginLeft: -3,
+              colSpan: 2,
+              marginBottom: -2,
+              border: [false, true, true, true],
+            }
+          : { colSpan: 2,border: [false, true, false, false], text: "" },
+      ],
       {},
       { text: "", border: [false, true, false, false] },
       { text: "", border: [false, true, false, false] },
@@ -4000,13 +4008,13 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           : {},
       ],
       {
-        text: reverseArabicWords('إمضاء الولي            ×'),
+        text: reverseArabicWords("إمضاء الولي            ×"),
         margin: [0, 5, 0, 8],
         alignment: "left",
         fontSize: 10,
         absolutePosition: {
           y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 25,
-          x: 50, 
+          x: 50,
         },
       },
     ];
