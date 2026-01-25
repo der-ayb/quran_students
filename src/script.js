@@ -2801,26 +2801,26 @@ async function showTab(tabId) {
       studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      showStudentsBulletins(
-        [
-          // "2026-01-02",
-          // "2026-01-03",
-          // "2026-01-05",
-          "2026-01-06",
-          "2026-01-07",
-          "2026-01-09",
-          "2026-01-10",
-          "2026-01-12",
-          "2026-01-13",
-          "2026-01-14",
-          "2026-01-16",
-          "2026-01-17",
-          "2026-01-18",
-          "2026-01-19",
-          "2026-01-21",
-        ],
-        "43,44",
-      );
+      // showStudentsBulletins(
+      //   [
+      //     // "2026-01-02",
+      //     // "2026-01-03",
+      //     // "2026-01-05",
+      //     "2026-01-06",
+      //     "2026-01-07",
+      //     "2026-01-09",
+      //     "2026-01-10",
+      //     "2026-01-12",
+      //     "2026-01-13",
+      //     "2026-01-14",
+      //     "2026-01-16",
+      //     "2026-01-17",
+      //     "2026-01-18",
+      //     "2026-01-19",
+      //     "2026-01-21",
+      //   ],
+      //   "43,44",
+      // );
     }
   } else {
     showTab("pills-home");
@@ -3246,7 +3246,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         .map((i) => JSON.parse(i.detail)?.length ?? 1)
         .reduce((accumulator, currentValue) => accumulator + currentValue, 0);
 
-      if (studentDataRecordsLength <= 20) {
+      if (studentDataRecordsLength <= 10) {
         studentsWithFewRecords.push(studentReport);
       } else {
         studentsWithManyRecords.push(studentReport);
