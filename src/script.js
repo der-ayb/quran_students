@@ -1581,22 +1581,7 @@ function setOrGetOptionValueByText(selector, text, get = false) {
   }
 }
 
-function initRequirementFields(student_idORdetail) {
-  let detail = null;
-
-  if (typeof student_idORdetail === "object") {
-    detail = student_idORdetail;
-  } else {
-    const lsR = project_db.exec(`
-            SELECT dr.detail
-            FROM day_requirements dr
-            INNER JOIN education_day ed ON dr.day_id = ed.id
-            WHERE dr.student_id = ${student_idORdetail}
-            ORDER BY ed.date DESC
-            LIMIT 1;`);
-    if (lsR.length) detail = JSON.parse(lsR[0].values[0][0]).at(-1);
-  }
-
+function initRequirementFields(detail = null) {
   if (detail) {
     requireBookInput.value = detail["الكتاب"];
     requireBookInput.dispatchEvent(new Event("change"));
@@ -1626,6 +1611,7 @@ function initRequirementFields(student_idORdetail) {
       firstAyahSelect.dispatchEvent(new Event("change"));
     }
   } else {
+    requireBookInput.value = "";
     requireBookInput.dispatchEvent(new Event("change"));
   }
   requirTeacherInput.value = "0";
@@ -1825,14 +1811,13 @@ async function loadDayStudentsList() {
               addedPointsInput.value,
             );
 
-          initRequirementFields(student_id);
           historyRequirBtn.onclick = () => showRequirementsHistory(student_id);
 
           requirsMoyenneInput.value =
             row[result.columns.indexOf("requirsMoyenne")] || "0.00";
           requirementsTable.querySelector("tbody").innerHTML = "";
           JSON.parse(row[result.columns.indexOf("detail")] || "[]").forEach(
-            (item) => {
+            (item, index, arr) => {
               const row = document.createElement("tr");
               row.innerHTML = `
                 <td>${item["الكتاب"]}</td>
@@ -1847,8 +1832,29 @@ async function loadDayStudentsList() {
                     <button type="button" class="btn btn-success" onclick="editRequirement(this);"><i class="fa-solid fa-pen-to-square"></i></button>
                     <button class="btn btn-danger btn-sm" onclick="removeRequirItem(this,${student_id})"><i class="fa-solid fa-xmark"></i></button></td></div>`;
               requirementsTable.querySelector("tbody").appendChild(row);
+              if (index === arr.length - 1) {
+                initRequirementFields({
+                  الكتاب: item["الكتاب"],
+                  النوع: item["النوع"],
+                  التفاصيل: item["التفاصيل"],
+                });
+              }
             },
           );
+          if (
+            !JSON.parse(row[result.columns.indexOf("detail")] || "[]").length
+          ) {
+            const lsR = project_db.exec(`
+                    SELECT dr.detail
+                    FROM day_requirements dr
+                    INNER JOIN education_day ed ON dr.day_id = ed.id
+                    WHERE dr.student_id = ${student_id}
+                    ORDER BY ed.date DESC
+                    LIMIT 1;`);
+            initRequirementFields(
+              lsR.length ? JSON.parse(lsR[0].values[0][0]).at(-1) : null,
+            );
+          }
 
           const working_day_id = workingDayID;
           studentDayFormSubmitBtn.onclick = async function () {
@@ -2496,36 +2502,54 @@ function editRequirement(button) {
 
 function removeRequirItem(button, student_id = null) {
   const row = button.closest("tr");
-  const quantity = row.firstElementChild.nextElementSibling.nextElementSibling.textContent;
+  const quantity =
+    row.firstElementChild.nextElementSibling.nextElementSibling.textContent;
   const teacherName =
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
-    if (teacherName !== "المعلم") {
-    teachersPoints[setOrGetOptionValueByText(requirTeacherInput, teacherName,true)] =
-      (teachersPoints[setOrGetOptionValueByText(requirTeacherInput, teacherName,true)] || 0) -
-      Math.floor(parseFloat(quantity));
+  if (teacherName !== "المعلم") {
+    teachersPoints[
+      setOrGetOptionValueByText(requirTeacherInput, teacherName, true)
+    ] =
+      (teachersPoints[
+        setOrGetOptionValueByText(requirTeacherInput, teacherName, true)
+      ] || 0) - Math.floor(parseFloat(quantity));
   }
   row.remove();
   requirsMoyenneInput.value = calcRequirementsMoyenne();
   studentDayFormSubmitBtn.disabled = false;
   studentDayFormSubmitBtn.nextElementSibling.disabled = false;
 
-  console.log(student_id)
-  initRequirementFields(
-    requirementsTable.rows.length >= 2
-      ? {
-          الكتاب:
-            requirementsTable.rows[requirementsTable.rows.length - 1]
-              .firstElementChild.textContent,
-          النوع:
-            requirementsTable.rows[requirementsTable.rows.length - 1]
-              .firstElementChild.nextElementSibling.textContent,
-          التفاصيل:
-            requirementsTable.rows[requirementsTable.rows.length - 1]
-              .firstElementChild.nextElementSibling.nextElementSibling
-              .nextElementSibling.textContent,
-        }
-      : student_id,
-  );
+  if (requirementsTable.rows.length >= 2) {
+    initRequirementFields({
+      الكتاب:
+        requirementsTable.rows[requirementsTable.rows.length - 1]
+          .firstElementChild.textContent,
+      النوع:
+        requirementsTable.rows[requirementsTable.rows.length - 1]
+          .firstElementChild.nextElementSibling.textContent,
+      التفاصيل:
+        requirementsTable.rows[requirementsTable.rows.length - 1]
+          .firstElementChild.nextElementSibling.nextElementSibling
+          .nextElementSibling.textContent,
+    });
+  } else {
+    requireBookInput.value = row.firstElementChild.textContent;
+    requireBookInput.dispatchEvent(new Event("change"));
+    requirTypeInput.value =
+      row.firstElementChild.nextElementSibling.textContent;
+    requirTypeInput.dispatchEvent(new Event("change"));
+    const detail =
+      row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+
+    const startSurahName = detail.split(" ").at(0);
+    if (requireBookInput.value == "القرآن الكريم") {
+      setOrGetOptionValueByText(firstSurahSelect, startSurahName);
+      firstSurahSelect.dispatchEvent(new Event("change"));
+      firstAyahSelect.value = detail.split(" ").at(2);
+      firstAyahSelect.dispatchEvent(new Event("change"));
+    }
+    requirTeacherInput.value = "0";
+  }
 }
 
 function addRequirToTable(row = false) {
