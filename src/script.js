@@ -4719,16 +4719,15 @@ const checkSecondSurahAyahs = (secondSurahNumber) => {
     } else {
       const secondSurahSelectedOption =
         secondSurahSelect.options[secondSurahSelect.selectedIndex];
-      quran_db
-        .exec(
-          "SELECT * FROM quran_ayat WHERE sura = " +
-            secondSurahSelectedOption.value,
-        )[0]
-        .values.forEach((row) => {
-          secondAyahSelect.appendChild(
-            createOption(row[2], `${row[2]}- ${row[3]}`),
-          );
-        });
+      const rs = quran_db.exec(
+        "SELECT * FROM quran_ayat WHERE sura = " +
+          secondSurahSelectedOption.value,
+      )[0];
+      rs.values.forEach((row) => {
+        secondAyahSelect.appendChild(
+          createOption(row[rs.columns.indexOf("ayah")], `${row[rs.columns.indexOf("ayah")]}- ${row[rs.columns.indexOf("text")]}`),
+        );
+      });
     }
 
     secondAyahSelect.lastChild.selected = true;
@@ -4760,11 +4759,11 @@ firstSurahSelect.onchange = async function () {
     firstAyahSelect.disabled = false;
     firstAyahSelect.innerHTML = "";
 
-    quran_db
+    const rs =quran_db
       .exec("SELECT * FROM quran_ayat WHERE sura = " + this.value)[0]
-      .values.forEach((row) => {
+      rs.values.forEach((row) => {
         firstAyahSelect.appendChild(
-          createOption(row[2], `${row[2]}- ${row[3]}`),
+          createOption(row[rs.columns.indexOf("ayah")], `${row[rs.columns.indexOf("ayah")]}- ${row[rs.columns.indexOf("text")]}`),
         );
       });
 
