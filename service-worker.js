@@ -18,15 +18,15 @@ workbox.precaching.precacheAndRoute(
 
     { url: "./src/style.css", revision: "5" },
     { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "39" },
+    { url: "./src/script.js", revision: "40" },
     { url: "./src/auth.js", revision: "2" },
     { url: "./src/pdfmake.js", revision: "1" },
     { url: "./src/vfs_fonts.js", revision: "1" },
     { url: "./src/yearpicker.css", revision: "1" },
     { url: "./src/yearpicker.js", revision: "1" },
 
-    { url: "./assets/default.sqlite3", revision: "1" },
-    { url: "./assets/quran.sqlite", revision: "2" },
+    { url: "./assets/default.sqlite3", revision: "2" },
+    { url: "./assets/quran.sqlite", revision: "3" },
 
     {
       url: "./assets/fonts/changa/2-cm9JNi2YuVOUckY5y-au8.woff2",

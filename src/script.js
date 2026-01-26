@@ -43,9 +43,10 @@ let classroomsTableDetailIsShow = false;
 let workingDay = new Date().toISOString().slice(0, 10);
 let workingDayID = null;
 let loadingModalShowNumber = [];
-let lastRequirements = {};
 let isGirls = null;
-let currentTime = { hours: 0, minutes: 0 };
+const currentTime = { hours: 0, minutes: 0 };
+let teachersPoints = {};
+
 const workingClassroomSelect = document.getElementById("workingClassroom");
 const dayDateInput = $("#dayDate");
 const dayNoteContainer = document.getElementById("dayNoteContainer");
@@ -63,7 +64,6 @@ const requireBookInput = document.getElementById("requirBook");
 const saveStateErrorsInput = document.getElementById("saveStateErrors");
 const requirMoyenneInput = document.getElementById("requirMoyenne");
 const requirTeacherInput = document.getElementById("requirTeacher");
-let teachersPoints = {};
 
 const studentNameInput = document.getElementById("studentName");
 const clothingInput = document.getElementById("clothing");
@@ -1567,12 +1567,16 @@ async function addNewStudyDay() {
   await loadDayStudentsList();
 }
 
-function setOptionValueByText(selector, text) {
+function setOrGetOptionValueByText(selector, text, get = false) {
   for (let i = 0; i < selector.options.length; i++) {
     if (selector.options[i].text === text) {
-      selector.selectedIndex = i;
-      selector.dispatchEvent(new Event("change"));
-      return; // Exit the loop once the option is found and selected
+      if (!get) {
+        selector.selectedIndex = i;
+        selector.dispatchEvent(new Event("change"));
+        return;
+      } else {
+        return selector.options[i].value;
+      } // Exit the loop once the option is found and selected
     }
   }
 }
@@ -1600,7 +1604,7 @@ function initRequirementFields(student_idORdetail) {
     const startSurahName = detail["التفاصيل"].split(" ").at(0);
     const finishSurahName = detail["التفاصيل"].split(" ").at(-3);
     if (detail["الكتاب"] == "القرآن الكريم") {
-      setOptionValueByText(firstSurahSelect, finishSurahName);
+      setOrGetOptionValueByText(firstSurahSelect, finishSurahName);
       firstAyahSelect.value =
         parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
       if (!firstAyahSelect.value) {
@@ -1610,7 +1614,7 @@ function initRequirementFields(student_idORdetail) {
         } else {
           requirTypeInput.value = Type == "حصيلة" ? "حفظ" : "مراجعة";
           if (Type == "مراجعة" && startSurahName !== finishSurahName) {
-            setOptionValueByText(firstSurahSelect, startSurahName);
+            setOrGetOptionValueByText(firstSurahSelect, startSurahName);
           }
           firstSurahSelect.value =
             firstSurahSelect.options[firstSurahSelect.selectedIndex - 1].value;
@@ -1779,6 +1783,7 @@ async function loadDayStudentsList() {
         }
 
         function editStudentDay(isEvaluation = true) {
+          teachersPoints = {};
           showStudentDayModal(true);
 
           maximizeModalBtn.style.display = "none";
@@ -2452,8 +2457,8 @@ function editRequirement(button) {
   const startSurahName = detail.split(" ").at(0);
   const finishSurahName = detail.split(" ").at(-3);
   if (requireBookInput.value == "القرآن الكريم") {
-    setOptionValueByText(firstSurahSelect, startSurahName);
-    setOptionValueByText(secondSurahSelect, finishSurahName);
+    setOrGetOptionValueByText(firstSurahSelect, startSurahName);
+    setOrGetOptionValueByText(secondSurahSelect, finishSurahName);
     firstAyahSelect.value = detail.split(" ").at(2);
     secondAyahSelect.value = detail.split(" ").at(-1);
     secondAyahSelect.dispatchEvent(new Event("change"));
@@ -2462,10 +2467,15 @@ function editRequirement(button) {
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
   const teacherName =
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
-  setOptionValueByText(requirTeacherInput, teacherName);
-  // row.remove();
+  setOrGetOptionValueByText(requirTeacherInput, teacherName);
   requirsMoyenneInput.value = calcRequirementsMoyenne();
   requireBookInput.scrollIntoView();
+
+  if (requirTeacherInput.value !== "0") {
+    teachersPoints[requirTeacherInput.value] =
+      (teachersPoints[requirTeacherInput.value] || 0) -
+      Math.floor(parseFloat(requirQuantityInput.value));
+  }
 
   addQuranSelectionBtn.innerText = "تحديث";
   addQuranSelectionBtn.onclick = () => {
@@ -2486,22 +2496,31 @@ function editRequirement(button) {
 
 function removeRequirItem(button, student_id = null) {
   const row = button.closest("tr");
+  const quantity = row.firstElementChild.nextElementSibling.nextElementSibling.textContent;
+  const teacherName =
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+    if (teacherName !== "المعلم") {
+    teachersPoints[setOrGetOptionValueByText(requirTeacherInput, teacherName,true)] =
+      (teachersPoints[setOrGetOptionValueByText(requirTeacherInput, teacherName,true)] || 0) -
+      Math.floor(parseFloat(quantity));
+  }
   row.remove();
   requirsMoyenneInput.value = calcRequirementsMoyenne();
   studentDayFormSubmitBtn.disabled = false;
   studentDayFormSubmitBtn.nextElementSibling.disabled = false;
 
+  console.log(student_id)
   initRequirementFields(
-    requirementsTable.rows.length > 2
+    requirementsTable.rows.length >= 2
       ? {
           الكتاب:
-            requirementsTable.rows[requirementsTable.rows.length - 2]
+            requirementsTable.rows[requirementsTable.rows.length - 1]
               .firstElementChild.textContent,
           النوع:
-            requirementsTable.rows[requirementsTable.rows.length - 2]
+            requirementsTable.rows[requirementsTable.rows.length - 1]
               .firstElementChild.nextElementSibling.textContent,
           التفاصيل:
-            requirementsTable.rows[requirementsTable.rows.length - 2]
+            requirementsTable.rows[requirementsTable.rows.length - 1]
               .firstElementChild.nextElementSibling.nextElementSibling
               .nextElementSibling.textContent,
         }
@@ -3246,7 +3265,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         .map((i) => JSON.parse(i.detail)?.length ?? 1)
         .reduce((accumulator, currentValue) => accumulator + currentValue, 0);
 
-      if (studentDataRecordsLength <= 10) {
+      if (studentDataRecordsLength <= 20) {
         studentsWithFewRecords.push(studentReport);
       } else {
         studentsWithManyRecords.push(studentReport);
@@ -3824,7 +3843,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
               marginBottom: -2,
               border: [false, true, true, true],
             }
-          : { colSpan: 2,border: [false, true, false, false], text: "" },
+          : { colSpan: 2, border: [false, true, false, false], text: "" },
       ],
       {},
       { text: "", border: [false, true, false, false] },
