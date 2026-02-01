@@ -931,7 +931,7 @@ async function loadClassRoomsList() {
         });
 
         // Add select option
-        const displayText = [place, mosque, sex, level].join(" - ");
+        const displayText = [mosque,place, sex, level].join(" - ");
         const option = new Option(displayText, classroomId);
         Object.assign(option.dataset, { sex });
         workingClassroomSelect.add(option);
@@ -3463,6 +3463,15 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         },
       },
       {
+        text: reverseArabicWords(workingClassroomSelect.selectedOptions[0].text.split("-").slice(0,2).join(" -") + "-"),
+        style: "subheader",
+        alignment: "center",
+        fontSize: isStacked ? 9 : 10,
+        absolutePosition: {
+          y: (isSecond ? 841.89 / 2 : 0) + 35,
+        },
+      },
+      {
         text: reverseArabicWords(
           `حرر  يوم: ${new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
             year: "numeric",
@@ -4151,7 +4160,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
               margin: [0, 5, 0, 8],
               alignment: "right",
               absolutePosition: {
-                y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 40,
+                y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 25,
               },
             }
           : {},
