@@ -20,6 +20,7 @@ const evaluationLaddersValues = {
   behavior: { ممتاز: 5, جيد: 4, متوسط: 3, سيء: -5, "سيئ جدا": -10 },
   clothing: { ممتاز: 5, جيد: 3, حسن: 2, "غير مقبول": -5 },
   haircut: { جيد: 5, متوسط: 2, "غير مقبول": -5 },
+  requirments: { requirReducePerRepit: 10 },
 };
 const arabicMonths = [
   "جانفي",
@@ -54,7 +55,7 @@ const statisticsDateInput = $("#statisticsrange");
 const addQuranSelectionBtn = document.getElementById("addQuranSelectionBtn");
 const retardInput = document.getElementById("retard");
 
-const requirementsTable = document.getElementById("requirementTable");
+const requirementsTable = document.getElementById("requirementsTable");
 const secondAyahSelect = document.getElementById("second-ayah");
 const firstAyahSelect = document.getElementById("first-ayah");
 const secondSurahSelect = document.getElementById("second-surah");
@@ -63,6 +64,7 @@ const requirEvaluationInput = document.getElementById("requirEvaluation");
 const requireBookInput = document.getElementById("requirBook");
 const saveStateErrorsInput = document.getElementById("saveStateErrors");
 const requirMoyenneInput = document.getElementById("requirMoyenne");
+const requirRepitInput = document.getElementById("requirRepit");
 const requirTeacherInput = document.getElementById("requirTeacher");
 
 const studentNameInput = document.getElementById("studentName");
@@ -306,6 +308,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   initPlusMinusButtons(addedPointsInput);
   initPlusMinusButtons(prayerInput);
   initPlusMinusButtons(requirMoyenneInput);
+  initPlusMinusButtons(requirRepitInput);
   // parse evaluation ladder selects
   populateEvalSelects();
 });
@@ -931,7 +934,7 @@ async function loadClassRoomsList() {
         });
 
         // Add select option
-        const displayText = [mosque,place, sex, level].join(" - ");
+        const displayText = [mosque, place, sex, level].join(" - ");
         const option = new Option(displayText, classroomId);
         Object.assign(option.dataset, { sex });
         workingClassroomSelect.add(option);
@@ -1333,6 +1336,7 @@ requireBookInput.onchange = function () {
   requirQuantityDetailInput.value = "";
   requirEvaluationInput.value = "10.00";
   saveStateErrorsInput.value = "0";
+  requirRepitInput.value = "0";
 };
 
 function setAttendanceValue(value) {
@@ -1407,7 +1411,7 @@ function calcEvaluationMoyenne(
   return moyenne.toFixed(2);
 }
 
-function calcRequirementMoyenne(quantity, evaluation, type) {
+function calcRequirementMoyenne(quantity, evaluation, type, repit) {
   let value = 0;
   if (type === "حفظ") {
     value = evaluation * quantity;
@@ -1416,7 +1420,12 @@ function calcRequirementMoyenne(quantity, evaluation, type) {
   } else if (type === "مراجعة") {
     value = evaluation * (quantity / 2);
   }
-  return value ? value.toFixed(2) : "";
+  return value
+    ? (
+        value -
+        repit * evaluationLaddersValues["requirments"]["requirReducePerRepit"]
+      ).toFixed(2)
+    : "0";
 }
 
 function calcRequirementsMoyenne() {
@@ -1427,14 +1436,12 @@ function calcRequirementsMoyenne() {
   const rows = requirementsTable.querySelectorAll("tbody tr");
   rows.forEach((row) => {
     const cells = row.querySelectorAll("td");
-    const rowData = {};
     cells.forEach((cell, index) => {
       const key = headers[index];
       if (key && key == "المعدل")
         moyenne += parseFloat(cell.textContent.trim() || "0");
     });
   });
-  // moyenne = moyenne / (rows.length || 1);
   return moyenne ? moyenne.toFixed(2) : "0.00";
 }
 
@@ -1490,10 +1497,11 @@ function setRequirEvalInput() {
     requirQuantityInput.value,
     requirEvaluationInput.value,
     requirTypeInput.value,
+    requirRepitInput.value,
   );
 }
 
-$([requirTypeInput, saveStateErrorsInput]).on(
+$([requirTypeInput, saveStateErrorsInput, requirRepitInput]).on(
   "change input",
   setRequirEvalInput,
 );
@@ -1951,6 +1959,7 @@ async function loadDayStudentsList() {
                 <td>${item["الأخطاء"] || ""}</td>
                 <td>${item["المعدل"]}</td>
                 <td>${item["المعرض"] || ""}</td>
+                <td>${item["الإعادة"] || ""}</td>
                 <td><div class="btn-group-vertical" role="group" aria-label="Vertical button group">
                     <button type="button" class="btn btn-success" onclick="editRequirement(this);"><i class="fa-solid fa-pen-to-square"></i></button>
                     <button class="btn btn-danger btn-sm" onclick="removeRequirItem(this,${student_id})"><i class="fa-solid fa-xmark"></i></button></td></div>`;
@@ -2596,8 +2605,10 @@ function editRequirement(button) {
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
   const teacherName =
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+  requirRepitInput.value =
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
   setOrGetOptionValueByText(requirTeacherInput, teacherName);
-  requirsMoyenneInput.value = calcRequirementsMoyenne();
+  setRequirEvalInput();
   requireBookInput.scrollIntoView();
 
   if (requirTeacherInput.value !== "0") {
@@ -2703,6 +2714,9 @@ function addRequirToTable(row = false) {
       ${requirTeacherInput.options[requirTeacherInput.selectedIndex].text}
     </td>
     <td>
+      ${requirRepitInput.value}
+    </td>
+    <td>
     <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
       <button type="button" class="btn btn-success" onclick="editRequirement(this);"><i class="fa-solid fa-pen-to-square"></i></button>
       <button class="btn btn-danger btn-sm" 
@@ -2804,9 +2818,11 @@ function populateEvalSelects() {
 function displayEvalLadder(evalLaddersValues = null) {
   if (!evalLaddersValues) evalLaddersValues = evaluationLaddersValues;
   document.getElementById("initialPresenceMark").value =
-    evalLaddersValues["retard"]["initialPresenceMark"];
+    evalLaddersValues.retard.initialPresenceMark;
   document.getElementById("retardPointsPerMinute").value =
-    evalLaddersValues["retard"]["retardPointsPerMinute"];
+    evalLaddersValues.retard.retardPointsPerMinute;
+  document.getElementById("requirReducePerRepit").value =
+    evalLaddersValues.requirments?.requirReducePerRepit || 10;
   for (type of ["behavior", "clothing", "haircut"]) {
     const list = document.getElementById(type + "-marksList");
     list.innerHTML = "";
@@ -2829,6 +2845,10 @@ function updateEvalLadder() {
     retard: {
       initialPresenceMark: document.getElementById("initialPresenceMark").value,
       retardPointsPerMinute: document.getElementById("retardPointsPerMinute")
+        .value,
+    },
+    requirments: {
+      requirReducePerRepit: document.getElementById("requirReducePerRepit")
         .value,
     },
   };
@@ -2940,6 +2960,7 @@ async function showTab(tabId) {
   } else if (tabId === "pills-home") {
     await loadClassRoomsList();
   } else if (tabId === "pills-preferences") {
+    document.getElementById("list-retard-list").click();
     if (!document.getElementById("behavior-marksList").innerHTML) {
       displayEvalLadder(
         JSON.parse(
@@ -2948,7 +2969,7 @@ async function showTab(tabId) {
           )[0]?.values[0] || null,
         ),
       );
-      document.getElementById("list-retard").classList.add("show", "active");
+      
     }
     if (
       loginStatus.innerHTML.includes("progress-bar") ||
@@ -3388,13 +3409,14 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     const studentsWithManyRecords = [];
 
     // First pass: categorize all students by their data length
-    const resumePagesChecked = document.getElementById("resumePagesCheck").checked
+    const resumePagesChecked =
+      document.getElementById("resumePagesCheck").checked;
     allStudentData.forEach((studentReport) => {
       const studentDataRecordsLength = studentReport.data
         .map((i) => JSON.parse(i.detail)?.length ?? 1)
         .reduce((accumulator, currentValue) => accumulator + currentValue, 0);
 
-      if (resumePagesChecked &&studentDataRecordsLength <= 20) {
+      if (resumePagesChecked && studentDataRecordsLength <= 20) {
         studentsWithFewRecords.push(studentReport);
       } else {
         studentsWithManyRecords.push(studentReport);
@@ -3463,7 +3485,12 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         },
       },
       {
-        text: reverseArabicWords(workingClassroomSelect.selectedOptions[0].text.split("-").slice(0,2).join(" -") + "-"),
+        text: reverseArabicWords(
+          workingClassroomSelect.selectedOptions[0].text
+            .split("-")
+            .slice(0, 2)
+            .join(" -") + "-",
+        ),
         style: "subheader",
         alignment: "center",
         fontSize: isStacked ? 9 : 10,
@@ -4607,7 +4634,9 @@ async function showResultsStatistics() {
           {
             text: "كشوف النقاط",
             action: async function (e, dt) {
-              const bulletinAppendsModal = new bootstrap.Modal("#bulletinAppendsModal");
+              const bulletinAppendsModal = new bootstrap.Modal(
+                "#bulletinAppendsModal",
+              );
               const bulletinAppendsModalBody = document.querySelector(
                 "#bulletinAppendsModal .modal-body",
               );
