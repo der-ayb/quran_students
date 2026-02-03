@@ -13,7 +13,7 @@ workbox.precaching.precacheAndRoute(
     { url: "./", revision: "1" },
     { url: "./favicon.ico", revision: "1" },
     { url: "./index.html", revision: "1" },
-    { url: "./app.html", revision: "25" },
+    { url: "./app.html", revision: "26" },
     { url: "./manifest.json", revision: "2" },
 
     { url: "./src/style.css", revision: "6" },
@@ -119,7 +119,11 @@ workbox.precaching.precacheAndRoute(
       revision: "1",
     },
     {
-      url: "https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css",
+      url: "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css",
+      revision: "1",
+    },
+    {
+      url: "https://cdn.jsdelivr.net/npm/flatpickr-hijri-calendar@1.0.0/dist/flatpickr-hijri-calendar.min.css",
       revision: "1",
     },
     {
@@ -183,9 +187,18 @@ workbox.precaching.precacheAndRoute(
       revision: "1",
     },
     {
-      url: "https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js",
+      url: "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js",
       revision: "1",
     },
+    {
+      url: "https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar-dz.min.js",
+      revision: "1",
+    },
+    {
+      url: "https://cdn.jsdelivr.net/npm/luxon@3.7.2/build/global/luxon.min.js",
+      revision: "1",
+    },
+
     {
       url: "https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js",
       revision: "1",
