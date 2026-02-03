@@ -12,6 +12,7 @@ if (localStorage.getItem("newUser") == true) {
 moment.updateLocale("ar_dz");
 let project_db, quran_db, SQL;
 const surahsData = [];
+let specialDates = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "quranstudentsDB";
 const QURAN_DB_KEY = "quranDB";
@@ -49,9 +50,9 @@ const currentTime = { hours: 0, minutes: 0 };
 let teachersPoints = {};
 
 const workingClassroomSelect = document.getElementById("workingClassroom");
-const dayDateInput = $("#dayDate");
+const dayDateInput = document.getElementById("dayDate");
 const dayNoteContainer = document.getElementById("dayNoteContainer");
-const statisticsDateInput = $("#statisticsrange");
+const statisticsDateInput = document.getElementById("statisticsrange");
 const addQuranSelectionBtn = document.getElementById("addQuranSelectionBtn");
 const retardInput = document.getElementById("retard");
 
@@ -808,12 +809,30 @@ async function asyncDB() {
 workingClassroomSelect.onchange = async function () {
   workingClassroomId = this.value;
   localStorage.setItem("workingClassroomId", workingClassroomId);
-  setIsCustomDate();
   isGirls = this.options[this.selectedIndex].dataset.sex === "إناث";
   haircutInput.disabled = isGirls;
   statisticType.value = "0";
   statisticType.dispatchEvent(new Event("change"));
+  getStudyDays();
 };
+
+async function getStudyDays() {
+  const result = project_db.exec(
+    `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`,
+  );
+  specialDates =
+    result.length && result[0].values.length
+      ? result[0].values.map((row) => row[0])
+      : [];
+  statisticsDateInput._flatpickr.setDate(
+    statisticsDateInput._flatpickr.selectedDates.length
+      ? [
+          statisticsDateInput._flatpickr.selectedDates[0],
+          statisticsDateInput._flatpickr.selectedDates.at(-1),
+        ]
+      : [workingDay, workingDay],
+  );
+}
 
 newClassroomInfosForm.onsubmit = (e) => {
   e.preventDefault();
@@ -2385,7 +2404,7 @@ async function loadDayStudentsList() {
   }
 }
 
-async function changeDayDate(date) {
+async function changeDayDate(date, changeInput = true) {
   if (date == new Date().toISOString().slice(0, 10)) {
     document
       .getElementsByClassName("date-icon")[0]
@@ -2394,130 +2413,140 @@ async function changeDayDate(date) {
     document.getElementsByClassName("date-icon")[0].style.color = "#00ff4c";
   }
   workingDay = date;
-  dayDateInput.val(workingDay);
-  dayDateInput.data("daterangepicker").setStartDate(workingDay);
-  dayDateInput.data("daterangepicker").setEndDate(workingDay);
+  if (changeInput) dayDateInput._flatpickr.setDate(workingDay);
   maximizeModalBtn.style.display = "none";
   await loadDayStudentsList();
 }
 
 async function InitDatePickers() {
   // day date picker
-  dayDateInput.daterangepicker(
-    {
-      singleDatePicker: true,
-      showDropdowns: true,
-      autoUpdateInput: true,
-      locale: {
-        format: "YYYY-MM-DD",
-        daysOfWeek: arabicDays,
-        monthNames: arabicMonths,
-        firstDay: 6,
-        applyLabel: "تأكيد",
-        cancelLabel: "إلغاء",
-        customRangeLabel: "تخصيص",
+  const script = document.createElement("script");
+  script.src = "src/flatpickr-hijri-calendar.js";
+  script.async = true;
+  script.onload = () => {
+    dayDateInput._flatpickr = flatpickr(dayDateInput, {
+      mode: "single",
+      altInput: true,
+      altFormat: "D j F",
+      dateFormat: "Y-m-d",
+      maxDate: "today",
+      onDayCreate: async function (dObj, dStr, fp, dayElem) {
+        if (specialDates.includes(fp.formatDate(dayElem.dateObj, "Y-m-d"))) {
+          dayElem
+            .querySelector(".flatpickr-hijri-date-date")
+            .classList.add("fs-6", "fw-bold");
+        } else {
+          dayElem
+            .querySelector(".flatpickr-hijri-date-date")
+            .classList.remove("fs-6", "fw-bold");
+        }
       },
-      maxDate: workingDay,
-    },
-    async function (start) {
-      changeDayDate(start.format("YYYY-MM-DD"));
-    },
-  );
-
-  // statistics date picker
-  const islamicDateFormatter = new Intl.DateTimeFormat(
-    "ar-DZ-u-ca-islamic-umalqura",
-    {
-      day: "numeric",
-    },
-  );
-
-  const getIslamicDayOfMonth = (date) =>
-    parseInt(islamicDateFormatter.format(date));
-
-  const today = moment();
-  const todayIslamicDay = getIslamicDayOfMonth(new Date());
-
-  // Get current Islamic month start
-  const currentMonthStart = moment()
-    .subtract(todayIslamicDay - 1, "days")
-    .toDate();
-
-  // Get previous Islamic month dates
-  const previousMonthEnd = moment(currentMonthStart).subtract(1, "days");
-  const previousMonthStart = moment(previousMonthEnd).subtract(
-    getIslamicDayOfMonth(previousMonthEnd.toDate()) - 1,
-    "days",
-  );
-
-  statisticsDateInput.daterangepicker(
-    {
-      showDropdowns: true,
-      locale: {
-        format: "YYYY-MM-DD",
-        daysOfWeek: arabicDays,
-        monthNames: arabicMonths,
-        firstDay: 6,
-        applyLabel: "تأكيد",
-        cancelLabel: "إلغاء",
-        customRangeLabel: "تخصيص",
+      onChange: async function (selectedDates, dateStr) {
+        if (selectedDates.length > 0) {
+          changeDayDate(dateStr, false);
+        }
       },
-      maxDate: workingDay,
+      disableMobile: "true",
+      locale: "ar",
+      plugins: [
+        hijriCalendarPlugin(luxon.DateTime, {
+          showHijriDates: true,
+          showHijriToggle: false,
+        }),
+      ],
+    });
+
+    // statistics date picker
+
+    const islamicDateFormatter = new Intl.DateTimeFormat(
+      "ar-DZ-u-ca-islamic-umalqura",
+      {
+        day: "numeric",
+      },
+    );
+
+    const getIslamicDayOfMonth = (date) =>
+      parseInt(islamicDateFormatter.format(date));
+
+    const today = moment();
+    const endDate = moment.min(today, moment(workingDay));
+    const todayIslamicDay = getIslamicDayOfMonth(today.toDate());
+    const currentMonthStart = today.subtract(todayIslamicDay - 1, "days");
+    const previousMonthEnd = currentMonthStart.clone().subtract(1, "days");
+    const previousMonthStartIslamicDay = getIslamicDayOfMonth(
+      previousMonthEnd.toDate(),
+    );
+    const previousMonthStart = previousMonthEnd
+      .clone()
+      .subtract(previousMonthStartIslamicDay - 1, "days");
+
+    const endDateObj = endDate.toDate();
+    const currentMonthStartDate = currentMonthStart.toDate();
+    const previousMonthStartDate = previousMonthStart.toDate();
+    const previousMonthEndDate = previousMonthEnd.toDate();
+
+    statisticsDateInput._flatpickr = flatpickr(statisticsDateInput, {
+      mode: "range",
+      dateFormat: "Y-m-d",
+      maxDate: "today",
+      onDayCreate: async function (dObj, dStr, fp, dayElem) {
+        if (specialDates.includes(fp.formatDate(dayElem.dateObj, "Y-m-d"))) {
+          dayElem
+            .querySelector(".flatpickr-hijri-date-date")
+            .classList.add("fs-6", "fw-bold");
+        } else {
+          dayElem
+            .querySelector(".flatpickr-hijri-date-date")
+            .classList.remove("fs-6", "fw-bold");
+        }
+      },
+      onChange: async function () {
+        statisticType.value = "0";
+        statisticType.dispatchEvent(new Event("change"));
+      },
+      disableMobile: "true",
+      locale: "ar",
+      plugins: [
+        hijriCalendarPlugin(luxon.DateTime, {
+          showHijriDates: true,
+          showHijriToggle: false,
+        }),
+        rangeFlatpickrPlugin,
+      ],
       ranges: {
-        اليوم: [moment(), moment()],
-        أمس: [moment().subtract(1, "days"), moment().subtract(1, "days")],
+        اليوم: [endDateObj, endDateObj],
+        أمس: [new Date().fp_incr(-1), new Date().fp_incr(-1)],
         "الأسبوع الحالي": [
-          moment()
+          today
+            .clone()
             .day(6)
-            .subtract(moment().day() < 6 ? 7 : 0, "days"),
-          moment()
-            .day(6)
-            .subtract(moment().day() < 6 ? 7 : 0, "days")
-            .add(6, "days"),
+            .subtract(today.day() < 6 ? 7 : 0, "days")
+            .toDate(),
+          endDateObj,
         ],
         "الأسبوع الماضي": [
-          moment()
+          today
+            .clone()
             .day(6)
-            .subtract(moment().day() < 6 ? 14 : 7, "days"),
-          moment()
+            .subtract(today.day() < 6 ? 14 : 7, "days")
+            .toDate(),
+          today
+            .clone()
             .day(6)
-            .subtract(moment().day() < 6 ? 14 : 7, "days")
-            .add(6, "days"),
+            .subtract(today.day() < 6 ? 14 : 7, "days")
+            .add(6, "days")
+            .toDate(),
         ],
-        "هذا الشهر": [moment(currentMonthStart), today],
-        "الشهر الماضي": [previousMonthStart, previousMonthEnd],
+        "هذا الشهر": [currentMonthStartDate, endDateObj],
+        "الشهر الماضي": [previousMonthStartDate, previousMonthEndDate],
       },
-    },
-    async function (start) {
-      statisticType.value = "0";
-      statisticType.dispatchEvent(new Event("change"));
-    },
-  );
-  setIsCustomDate();
-}
-
-function setIsCustomDate() {
-  const result = project_db.exec(
-    `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`,
-  );
-  const events =
-    result.length && result[0].values.length
-      ? result[0].values.map((row) => row[0])
-      : [];
-
-  dayDateInput.data("daterangepicker").isCustomDate = function (date) {
-    if (events.includes(date.format("YYYY-MM-DD"))) {
-      return "fs-6 fw-bold";
-    }
-    return "";
+      rangesOnly: false, // only show the ranges menu unless the custom range button is selected
+      rangesAllowCustom: true, // adds a Custom Range button to show the calendar
+      rangesCustomLabel: "تخصيص",
+    });
+    getStudyDays();
   };
-
-  statisticsDateInput.data("daterangepicker").isCustomDate = function (date) {
-    if (events.includes(date.format("YYYY-MM-DD"))) {
-      return "fs-6 fw-bold";
-    }
-    return "";
-  };
+  document.body.appendChild(script);
 }
 
 function initializeToast() {
@@ -2969,7 +2998,6 @@ async function showTab(tabId) {
           )[0]?.values[0] || null,
         ),
       );
-      
     }
     if (
       loginStatus.innerHTML.includes("progress-bar") ||
@@ -3009,12 +3037,10 @@ function getDatesInRange() {
     `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`,
   );
   if (result.length && result[0].values.length) {
-    const [startDateStr, endDateStr] = statisticsDateInput
-      .val()
-      .split(" - ")
-      .map((str) => str.trim());
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+    const selectedDates = statisticsDateInput._flatpickr.selectedDates;
+    if (selectedDates.length < 2) return [];
+    const startDate = selectedDates[0];
+    const endDate = selectedDates[1];
 
     return [
       result[0].values
