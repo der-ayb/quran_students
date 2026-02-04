@@ -816,7 +816,7 @@ workingClassroomSelect.onchange = async function () {
 };
 
 async function getStudyDays() {
-  if(typeof statisticsDateInput._flatpickr === "undefined") return
+  if (typeof statisticsDateInput._flatpickr === "undefined") return;
   const result = project_db.exec(
     `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`,
   );
@@ -2485,7 +2485,6 @@ async function InitDatePickers() {
     });
 
     // statistics date picker
-
     const islamicDateFormatter = new Intl.DateTimeFormat(
       "ar-DZ-u-ca-islamic-umalqura",
       {
@@ -2496,22 +2495,46 @@ async function InitDatePickers() {
     const getIslamicDayOfMonth = (date) =>
       parseInt(islamicDateFormatter.format(date));
 
-    const today = moment();
-    const endDate = moment.min(today, moment(workingDay));
-    const todayIslamicDay = getIslamicDayOfMonth(today.toDate());
-    const currentMonthStart = today.subtract(todayIslamicDay - 1, "days");
-    const previousMonthEnd = currentMonthStart.clone().subtract(1, "days");
-    const previousMonthStartIslamicDay = getIslamicDayOfMonth(
-      previousMonthEnd.toDate(),
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(
+      Math.min(today.getTime(), new Date(workingDay).getTime()),
     );
-    const previousMonthStart = previousMonthEnd
-      .clone()
-      .subtract(previousMonthStartIslamicDay - 1, "days");
+    const todayIslamicDay = getIslamicDayOfMonth(today);
 
-    const endDateObj = endDate.toDate();
-    const currentMonthStartDate = currentMonthStart.toDate();
-    const previousMonthStartDate = previousMonthStart.toDate();
-    const previousMonthEndDate = previousMonthEnd.toDate();
+    // Get current Islamic month start
+    const currentMonthStart = new Date(today);
+    currentMonthStart.setDate(today.getDate() - (todayIslamicDay - 1));
+
+    // Get previous Islamic month dates
+    const previousMonthEnd = new Date(currentMonthStart);
+    previousMonthEnd.setDate(previousMonthEnd.getDate() - 1);
+
+    const previousMonthStartIslamicDay = getIslamicDayOfMonth(previousMonthEnd);
+    const previousMonthStart = new Date(previousMonthEnd);
+    previousMonthStart.setDate(
+      previousMonthStart.getDate() - (previousMonthStartIslamicDay - 1),
+    );
+
+    // Helper function for date manipulation
+    const fp_incr = (date, days) => {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    };
+
+    // Helper for getting last Saturday (week end in your logic)
+    const getLastSaturday = (date) => {
+      const result = new Date(date);
+      const day = result.getDay(); // 0 = Sunday, 6 = Saturday
+      result.setDate(result.getDate() - day + (day === 6 ? 0 : -1));
+      return result;
+    };
+
+    const yesterday = fp_incr(today, -1);
+    const lastSaturday = getLastSaturday(today);
+    const prevWeekSaturday = new Date(lastSaturday);
+    prevWeekSaturday.setDate(prevWeekSaturday.getDate() - 7);
 
     statisticsDateInput._flatpickr = flatpickr(statisticsDateInput, {
       mode: "range",
@@ -2541,31 +2564,12 @@ async function InitDatePickers() {
         rangeFlatpickrPlugin,
       ],
       ranges: {
-        اليوم: [endDateObj, endDateObj],
-        أمس: [new Date().fp_incr(-1), new Date().fp_incr(-1)],
-        "الأسبوع الحالي": [
-          today
-            .clone()
-            .day(6)
-            .subtract(today.day() < 6 ? 7 : 0, "days")
-            .toDate(),
-          endDateObj,
-        ],
-        "الأسبوع الماضي": [
-          today
-            .clone()
-            .day(6)
-            .subtract(today.day() < 6 ? 14 : 7, "days")
-            .toDate(),
-          today
-            .clone()
-            .day(6)
-            .subtract(today.day() < 6 ? 14 : 7, "days")
-            .add(6, "days")
-            .toDate(),
-        ],
-        "هذا الشهر": [currentMonthStartDate, endDateObj],
-        "الشهر الماضي": [previousMonthStartDate, previousMonthEndDate],
+        اليوم: [endDate, endDate],
+        أمس: [yesterday, yesterday],
+        "الأسبوع الحالي": [lastSaturday, endDate],
+        "الأسبوع الماضي": [prevWeekSaturday, fp_incr(prevWeekSaturday, 6)],
+        "هذا الشهر": [currentMonthStart, endDate],
+        "الشهر الماضي": [previousMonthStart, previousMonthEnd],
       },
       rangesOnly: false, // only show the ranges menu unless the custom range button is selected
       rangesAllowCustom: true, // adds a Custom Range button to show the calendar
