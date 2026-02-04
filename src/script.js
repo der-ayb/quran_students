@@ -811,12 +811,12 @@ workingClassroomSelect.onchange = async function () {
   localStorage.setItem("workingClassroomId", workingClassroomId);
   isGirls = this.options[this.selectedIndex].dataset.sex === "إناث";
   haircutInput.disabled = isGirls;
-  statisticType.value = "0";
-  statisticType.dispatchEvent(new Event("change"));
+  reinitStatisticTable();
   getStudyDays();
 };
 
 async function getStudyDays() {
+  if(typeof statisticsDateInput._flatpickr === "undefined") return
   const result = project_db.exec(
     `SELECT date FROM education_day WHERE class_room_id = ${workingClassroomId};`,
   );
@@ -1707,13 +1707,41 @@ async function addNewStudyDay() {
     window.showToast("error", "يرجى اختيار وقت صحيح.");
     return;
   }
-  project_db.run(
-    "INSERT OR REPLACE INTO education_day (date,time, notes,class_room_id,evaluation_ladder_id) VALUES (?,?, ?,?,(SELECT id FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1));",
-    [workingDay, appointment_time, null, workingClassroomId],
-  );
+  try {
+    project_db.run(
+      "INSERT OR REPLACE INTO education_day (date,time, notes,class_room_id,evaluation_ladder_id,isObligatory) VALUES (?,?, ?,?,(SELECT id FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1),?);",
+      [
+        workingDay,
+        appointment_time,
+        null,
+        workingClassroomId,
+        document.getElementById("obligatoryCheck").checked,
+      ],
+    );
+  } catch (error) {
+    if (
+      String(error).includes(
+        "table education_day has no column named isObligatory",
+      )
+    ) {
+      project_db.run(
+        "ALTER TABLE education_day ADD COLUMN isObligatory BOOLEAN DEFAULT 1;",
+      );
+      project_db.run(
+        "INSERT OR REPLACE INTO education_day (date,time, notes,class_room_id,evaluation_ladder_id,isObligatory) VALUES (?,?, ?,?,(SELECT id FROM evaluation_ladder ORDER BY rowid DESC LIMIT 1),?);",
+        [
+          workingDay,
+          appointment_time,
+          null,
+          workingClassroomId,
+          document.getElementById("obligatoryCheck").checked,
+        ],
+      );
+    }
+  }
   start_time = appointment_time;
   saveToIndexedDB(project_db.export());
-  setIsCustomDate();
+  getStudyDays();
   await loadDayStudentsList();
 }
 
@@ -2386,7 +2414,7 @@ async function loadDayStudentsList() {
                           [workingDayID],
                         );
                         saveToIndexedDB(project_db.export());
-                        setIsCustomDate();
+                        getStudyDays();
                         loadDayStudentsList();
                       }
                     },
@@ -2501,8 +2529,7 @@ async function InitDatePickers() {
         }
       },
       onChange: async function () {
-        statisticType.value = "0";
-        statisticType.dispatchEvent(new Event("change"));
+        reinitStatisticTable();
       },
       disableMobile: "true",
       locale: "ar",
@@ -3047,6 +3074,8 @@ function getDatesInRange() {
         .map((row) => row[0])
         .filter((dateStr) => {
           const currentDate = new Date(dateStr);
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(0, 0, 0, 0);
           return currentDate >= startDate && currentDate <= endDate;
         }),
       startDate.getMonth() == endDate.getMonth() &&
@@ -3080,6 +3109,11 @@ statisticType.onchange = async function () {
       }
   }
 };
+
+async function reinitStatisticTable() {
+  statisticType.value = "0";
+  statisticType.dispatchEvent(new Event("change"));
+}
 
 // statistics students list
 async function fillStatistiscStudentsList(uniqueStudent = false) {
@@ -3134,8 +3168,7 @@ function statisStudentToggleAll() {
   document.querySelectorAll(".statisStudentItem").forEach((item) => {
     item.checked = statisAllCheckbox.checked;
   });
-  statisticType.value = "0";
-  statisticType.dispatchEvent(new Event("change"));
+  reinitStatisticTable();
 }
 
 function statisStudentUpdateAll() {
@@ -3144,8 +3177,7 @@ function statisStudentUpdateAll() {
     items.length ===
     document.querySelectorAll(".statisStudentItem:checked").length;
   statisAllCheckbox.checked = allChecked;
-  statisticType.value = "0";
-  statisticType.dispatchEvent(new Event("change"));
+  reinitStatisticTable();
 }
 
 function getStatisticsSelectedStudentsId() {
@@ -4281,7 +4313,7 @@ async function showAttendanceStatistics() {
 
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
-    statisticType.value = "0";
+    reinitStatisticTable();
     return;
   }
 
@@ -4471,7 +4503,7 @@ async function showResultsStatistics() {
 
   if (!dates.length) {
     window.showToast("warning", "لا توجد أيام في هذا النطاق.");
-    statisticType.value = "0";
+    reinitStatisticTable();
     return;
   }
 
