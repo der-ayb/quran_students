@@ -278,6 +278,7 @@
               startDate.isSame(range[0], "day") &&
               endDate.isSame(range[1], "day")
             ) {
+              fp.altInput.value=label;
               pluginData.rangesButtons[label].addClass("active");
               isPredefinedRange = true;
               break;

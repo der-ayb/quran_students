@@ -587,7 +587,7 @@ async function initOrReloadDataTable(
           const g = monthGroups[monthIndex];
           if (g) {
             const th = document.createElement("th");
-            th.className = `text-center`;
+            th.className = `text-center no-sort`;
             th.colSpan = g.count;
 
             const monthName = g.month;
@@ -831,6 +831,7 @@ async function getStudyDays() {
           statisticsDateInput._flatpickr.selectedDates.at(-1),
         ]
       : [workingDay, workingDay],
+    true,
   );
 }
 
@@ -2046,17 +2047,20 @@ async function loadDayStudentsList() {
             this.nextElementSibling.disabled = true;
           };
         }
-        // edit button
-        const editBtn = document.createElement("i");
-        editBtn.className = "fa-solid fa-square-plus";
-        editBtn.style.cssText = "transform: scale(1.5); cursor: pointer;";
-        editBtn.onclick = () => editStudentDay(false);
 
         const attendance_value = attendance;
-
-        let evaluationDayContainer = "/";
+        // edit button
+        const editBtn = attendance_value ? document.createElement("i") : "";
         if (attendance_value) {
-          evaluationDayContainer = document.createElement("div");
+          editBtn.className = "fa-solid fa-square-plus";
+          editBtn.style.cssText = "transform: scale(1.5); cursor: pointer;";
+          editBtn.onclick = () => editStudentDay(false);
+        }
+
+        const evaluationDayContainer = attendance_value
+          ? document.createElement("div")
+          : "/";
+        if (attendance_value) {
           const evaluationDayIcon = document.createElement("i");
           evaluationDayIcon.className = "fa-solid fa-pen-to-square";
           evaluationDayIcon.onclick = () => editStudentDay(true);
@@ -2075,12 +2079,11 @@ async function loadDayStudentsList() {
           evaluationDayContainer.append(evaluationDayIcon);
         }
 
-        let requirmentsDayValue = "/";
-        if (attendance_value) {
-          requirmentsDayValue = `${
-            row[result.columns.indexOf("requirsMoyenne")] || "0.00"
-          }    <i onclick="showRequirementsHistory(${student_id})" class="fa-solid fa-clock-rotate-left"></i>`;
-        }
+        const requirmentsDayValue = attendance_value
+          ? `${
+              row[result.columns.indexOf("requirsMoyenne")] || "0.00"
+            }    <i onclick="showRequirementsHistory(${student_id})" class="fa-solid fa-clock-rotate-left"></i>`
+          : "/";
 
         const thisDay = new Date().toISOString().slice(0, 10);
         data.push({
@@ -2441,7 +2444,7 @@ async function changeDayDate(date, changeInput = true) {
     document.getElementsByClassName("date-icon")[0].style.color = "#00ff4c";
   }
   workingDay = date;
-  if (changeInput) dayDateInput._flatpickr.setDate(workingDay);
+  if (changeInput) dayDateInput._flatpickr.setDate(workingDay, true);
   maximizeModalBtn.style.display = "none";
   await loadDayStudentsList();
 }
@@ -2452,6 +2455,14 @@ async function InitDatePickers() {
   script.src = "src/flatpickr-hijri-calendar.js";
   script.async = true;
   script.onload = () => {
+    function formatHijriDate(date, isRange = false) {
+      const formatter = new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
+        day: "numeric",
+        month: "long",
+        // year: "numeric",
+      });
+      return `${formatter.format(date)} ${isRange ? "" : `(${date.toDateString() === new Date().toDateString() ? "اليوم" : fromNow(date).replace("منذ", "قبل")})`}`;
+    }
     dayDateInput._flatpickr = flatpickr(dayDateInput, {
       mode: "single",
       altInput: true,
@@ -2469,9 +2480,10 @@ async function InitDatePickers() {
             .classList.remove("fs-6", "fw-bold");
         }
       },
-      onChange: async function (selectedDates, dateStr) {
+      onChange: async function (selectedDates, dateStr, instance) {
         if (selectedDates.length > 0) {
           changeDayDate(dateStr, false);
+          instance.altInput.value = formatHijriDate(selectedDates[0]);
         }
       },
       disableMobile: "true",
@@ -2483,7 +2495,6 @@ async function InitDatePickers() {
         }),
       ],
     });
-
     // statistics date picker
     const islamicDateFormatter = new Intl.DateTimeFormat(
       "ar-DZ-u-ca-islamic-umalqura",
@@ -2538,6 +2549,7 @@ async function InitDatePickers() {
 
     statisticsDateInput._flatpickr = flatpickr(statisticsDateInput, {
       mode: "range",
+      altInput: true,
       dateFormat: "Y-m-d",
       maxDate: "today",
       onDayCreate: async function (dObj, dStr, fp, dayElem) {
@@ -2551,7 +2563,24 @@ async function InitDatePickers() {
             .classList.remove("fs-6", "fw-bold");
         }
       },
-      onChange: async function () {
+      onChange: async function (selectedDates, dateStr, instance) {
+        if (
+          ![
+            "اليوم",
+            "أمس",
+            "الأسبوع الحالي",
+            "الأسبوع الماضي",
+            "هذا الشهر",
+            "الشهر الماضي",
+          ].includes(instance.altInput.value)
+        )
+          if (selectedDates.length === 2) {
+            const startHijri = formatHijriDate(selectedDates[0], true);
+            const endHijri = formatHijriDate(selectedDates[1], true);
+            instance.altInput.value = `${startHijri} - ${endHijri}`;
+          } else if (selectedDates.length === 1) {
+            instance.altInput.value = formatHijriDate(selectedDates[0], true);
+          }
         reinitStatisticTable();
       },
       disableMobile: "true",
@@ -3070,16 +3099,17 @@ function getDatesInRange() {
   if (result.length && result[0].values.length) {
     const selectedDates = statisticsDateInput._flatpickr.selectedDates;
     if (selectedDates.length < 2) return [];
-    const startDate = selectedDates[0];
-    const endDate = selectedDates[1];
+    const startDate = new Date(selectedDates[0].toDateString());
+    const endDate = new Date(selectedDates[1].toDateString());
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
 
     return [
       result[0].values
         .map((row) => row[0])
         .filter((dateStr) => {
           const currentDate = new Date(dateStr);
-          startDate.setHours(0, 0, 0, 0);
-          endDate.setHours(0, 0, 0, 0);
+          currentDate.setHours(0, 0, 0, 0);
           return currentDate >= startDate && currentDate <= endDate;
         }),
       startDate.getMonth() == endDate.getMonth() &&
@@ -4809,7 +4839,13 @@ async function setStatisticsTable(query, tableColumns, buttons = []) {
           fixedColumns: {
             start: 1,
           },
-          columnDefs: [{ targets: 0, visible: false }],
+          columnDefs: [
+            { targets: 0, visible: false },
+            {
+              targets: "no-sort", // Target columns with the 'no-sort' class
+              orderable: false,
+            },
+          ],
           searching: false,
           scrollX: true,
           info: false,
