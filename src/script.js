@@ -2456,6 +2456,7 @@ async function InitDatePickers() {
   script.async = true;
   script.onload = () => {
     function formatHijriDate(date, isRange = false) {
+      date.setHours(new Date().getHours())
       const formatter = new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
         day: "numeric",
         month: "long",
