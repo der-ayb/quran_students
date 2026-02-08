@@ -23,21 +23,6 @@ const evaluationLaddersValues = {
   haircut: { جيد: 5, متوسط: 2, "غير مقبول": -5 },
   requirments: { requirReducePerRepit: 10 },
 };
-const arabicMonths = [
-  "جانفي",
-  "فيفري",
-  "مارس",
-  "أفريل",
-  "ماي",
-  "جوان",
-  "جويلية",
-  "أوت",
-  "سبتمبر",
-  "أكتوبر",
-  "نوفمبر",
-  "ديسمبر",
-];
-const arabicDays = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 let workingClassroomId = localStorage.getItem("workingClassroomId");
 let studentsTableDetailIsShow = false;
 let studentsDayTableDetailIsShow = false;
@@ -694,7 +679,7 @@ async function checkForUpdates() {
     if (registration) {
       await registration.update();
     }
-    loadingModal.hide();
+    hideLoadingModal();
   }
 }
 
@@ -1816,10 +1801,19 @@ async function showStudentDayModal(isUniqueStudent = true) {
   retardInput.disabled = !isUniqueStudent;
 }
 
-function parseRequirment(requir){
-  const reqlist = requir.split(" ")
-  if(reqlist[0]==reqlist[4]) return`${reqlist[0]} [${reqlist[2]} - ${reqlist[6]}]`
-  return requir
+function parseRequirment(requir) {
+  const reqlist = requir.split(" ");
+  if (reqlist[0] == reqlist[4]) {
+    const numberOfAyahs = surahsData.find(
+      (surah) => surah.name == reqlist[0],
+    ).numberOfAyahs;
+    if (numberOfAyahs == reqlist[6]) {
+      if (reqlist[2] == 1) return `${reqlist[0]} (كاملة)`;
+      else return `${reqlist[0]} (${reqlist[2]} - النهاية)`;
+    }
+    return `${reqlist[0]} (${reqlist[2]} - ${reqlist[6]})`;
+  }
+  return requir;
 }
 
 function showRequirementsHistory(student_id) {
@@ -1837,8 +1831,8 @@ function showRequirementsHistory(student_id) {
     "المتطلبات السابقة",
     `
               <ul> ${requirs
-                .map((item) =>
-                  JSON.parse(item)
+                .map((i) =>
+                  JSON.parse(i)
                     .map(
                       (i) =>
                         `<li> ${i["النوع"]} - ${parseRequirment(i["التفاصيل"])} - الأخطاء: ${
@@ -2081,14 +2075,14 @@ async function loadDayStudentsList() {
             ? row[result.columns.indexOf("requirsMoyenne")] || "0.00"
             : ""
         }    <i onclick="showRequirementsHistory(${student_id})" class="fa-solid fa-clock-rotate-left"></i>`;
-        
+
         const editBtn = attendance_value ? document.createElement("i") : "";
         if (attendance_value) {
           editBtn.className = "fa-solid fa-square-plus";
           editBtn.style.cssText = "transform: scale(1.5); cursor: pointer;";
           editBtn.onclick = () => editStudentDay(false);
         }
-        
+
         const thisDay = new Date().toISOString().slice(0, 10);
         data.push({
           select: "",
@@ -4318,7 +4312,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         item["النوع"] +
         " " +
         (item["الكتاب"] == "القرآن الكريم" ? "" : item["الكتاب"]) +
-        "  ]" +
+        " ]  " +
         item["التفاصيل"] +
         " [ " +
         (errorsCount > 0
