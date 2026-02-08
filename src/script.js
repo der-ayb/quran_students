@@ -1848,6 +1848,22 @@ function showRequirementsHistory(student_id) {
   );
 }
 
+function chageObligatory(switchElement) {
+  if (!project_db) {
+    window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+    return;
+  }
+  try {
+    project_db.run("UPDATE education_day SET isObligatory = ? WHERE id = ?;", [
+      switchElement.checked,
+      workingDayID,
+    ]);
+    saveToIndexedDB(project_db.export());
+  } catch (e) {
+    window.showToast("error", "Error: " + e.message);
+  }
+}
+
 async function loadDayStudentsList() {
   dayNoteContainer.style.display = "none";
   if (!project_db) {
@@ -1894,6 +1910,8 @@ async function loadDayStudentsList() {
     dayResult[0].values[0][dayResult[0].columns.indexOf("notes")] || "";
   dayNoteContainer.style.display = dayNote ? "block" : "none";
   dayNoteContainer.innerHTML = `<em>${dayNote}</em>`;
+
+  const isObligatory = dayResult[0].values[0][dayResult[0].columns.indexOf("isObligatory")]
 
   document.getElementById("dayListTable").style.display = "block";
   document.getElementById("addNewDayBtn").style.display = "none";
@@ -2352,7 +2370,7 @@ async function loadDayStudentsList() {
                     text: '<i class="fa-regular fa-comment"></i> ملاحظة اليوم',
                     action: async function () {
                       let note = prompt("أكتب ملاحظة:", dayNote);
-                      if (note !== null) {
+                      if (note) {
                         if (!project_db) {
                           window.showToast(
                             "info",
@@ -2384,16 +2402,20 @@ async function loadDayStudentsList() {
                       showOffCanvas(
                         "معلومات الحصة",
                         `
-                      <p>وقت بدء الحصة: <strong>${
-                        start_time || "غير محدد"
-                      }</strong><br>
-                      عدد التلاميذ الحاضرين: <strong>${
-                        project_db.exec(
-                          `SELECT COUNT(*) FROM day_evaluations WHERE day_id = ${workingDayID} AND attendance = 1;`,
-                        )[0].values[0][0]
-                      }</strong><br>
-                       ملاحظة اليوم: <em>${dayNote || "لا توجد ملاحظة"}</em><br>
-                      </p>
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" role="switch" onchange="chageObligatory(this)" ${isObligatory?"checked":""}>
+                          <label class="form-check-label" >حصة إلزامية</label>
+                        </div>
+                        <p>وقت بدء الحصة: <strong>${
+                          start_time || "غير محدد"
+                        }</strong><br>
+                        عدد التلاميذ الحاضرين: <strong>${
+                          project_db.exec(
+                            `SELECT COUNT(*) FROM day_evaluations WHERE day_id = ${workingDayID} AND attendance = 1;`,
+                          )[0].values[0][0]
+                        }</strong><br>
+                        ملاحظة اليوم: <em>${dayNote || "لا توجد ملاحظة"}</em><br>
+                        </p>
                       `,
                       );
                     },
