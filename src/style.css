@@ -307,10 +307,10 @@ th.header-rotated>div>span {
   }
 }
 
-.flatpickr-calendar.flatpickr-has-predefined-ranges {
+/* .flatpickr-calendar.flatpickr-has-predefined-ranges {
   width: auto;
   display: grid;
-}
+} */
 
 .flatpickr-calendar.flatpickr-has-predefined-ranges .flatpickr-predefined-ranges {
   grid-column: 1;

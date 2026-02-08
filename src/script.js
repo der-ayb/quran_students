@@ -1816,13 +1816,19 @@ async function showStudentDayModal(isUniqueStudent = true) {
   retardInput.disabled = !isUniqueStudent;
 }
 
+function parseRequirment(requir){
+  const reqlist = requir.split(" ")
+  if(reqlist[0]==reqlist[4]) return`${reqlist[0]} [${reqlist[2]} - ${reqlist[6]}]`
+  return requir
+}
+
 function showRequirementsHistory(student_id) {
   let requirs = [];
   project_db
     .exec(
       ` SELECT detail FROM day_requirements
-                  WHERE student_id = ${student_id} ORDER BY day_id DESC
-                  LIMIT 5`,
+        WHERE student_id = ${student_id} ORDER BY day_id DESC
+        LIMIT 5`,
     )[0]
     .values.forEach((row) => {
       requirs.push(row[0]);
@@ -1835,7 +1841,7 @@ function showRequirementsHistory(student_id) {
                   JSON.parse(item)
                     .map(
                       (i) =>
-                        `<li> ${i["النوع"]} - ${i["التفاصيل"]} - الأخطاء: ${
+                        `<li> ${i["النوع"]} - ${parseRequirment(i["التفاصيل"])} - الأخطاء: ${
                           i["الأخطاء"] || 0
                         }</li>`,
                     )
@@ -2050,41 +2056,39 @@ async function loadDayStudentsList() {
 
         const attendance_value = attendance;
         // edit button
+        const evaluationDayContainer = document.createElement("div");
+        const evaluationDayIcon = document.createElement("i");
+        evaluationDayIcon.className = "fa-solid fa-pen-to-square";
+        evaluationDayIcon.onclick = () => editStudentDay(true);
+        if (!attendance_value) {
+          ("pass");
+        } else if (
+          row[result.columns.indexOf("clothing")] == null &&
+          row[result.columns.indexOf("haircut")] == null &&
+          row[result.columns.indexOf("behavior")] == null
+        ) {
+          evaluationDayIcon.textContent =
+            "   " + row[result.columns.indexOf("evalMoyenne")];
+        } else {
+          evaluationDayContainer.append(
+            row[result.columns.indexOf("evalMoyenne")] + "   ",
+          );
+        }
+        evaluationDayContainer.append(evaluationDayIcon);
+
+        const requirmentsDayValue = `${
+          attendance_value
+            ? row[result.columns.indexOf("requirsMoyenne")] || "0.00"
+            : ""
+        }    <i onclick="showRequirementsHistory(${student_id})" class="fa-solid fa-clock-rotate-left"></i>`;
+        
         const editBtn = attendance_value ? document.createElement("i") : "";
         if (attendance_value) {
           editBtn.className = "fa-solid fa-square-plus";
           editBtn.style.cssText = "transform: scale(1.5); cursor: pointer;";
           editBtn.onclick = () => editStudentDay(false);
         }
-
-        const evaluationDayContainer = attendance_value
-          ? document.createElement("div")
-          : "/";
-        if (attendance_value) {
-          const evaluationDayIcon = document.createElement("i");
-          evaluationDayIcon.className = "fa-solid fa-pen-to-square";
-          evaluationDayIcon.onclick = () => editStudentDay(true);
-          if (
-            row[result.columns.indexOf("clothing")] == null &&
-            row[result.columns.indexOf("haircut")] == null &&
-            row[result.columns.indexOf("behavior")] == null
-          ) {
-            evaluationDayIcon.textContent =
-              "   " + row[result.columns.indexOf("evalMoyenne")];
-          } else {
-            evaluationDayContainer.append(
-              row[result.columns.indexOf("evalMoyenne")] + "   ",
-            );
-          }
-          evaluationDayContainer.append(evaluationDayIcon);
-        }
-
-        const requirmentsDayValue = attendance_value
-          ? `${
-              row[result.columns.indexOf("requirsMoyenne")] || "0.00"
-            }    <i onclick="showRequirementsHistory(${student_id})" class="fa-solid fa-clock-rotate-left"></i>`
-          : "/";
-
+        
         const thisDay = new Date().toISOString().slice(0, 10);
         data.push({
           select: "",
@@ -2107,7 +2111,7 @@ async function loadDayStudentsList() {
                   : "")
               : attendance_value == 0
                 ? "غياب مبرر"
-                : `<button onclick="markPresence(${student_id})" class="btn fa-solid fa-square-check px-1" style="transform: scale(1.3); cursor: pointer;"></button>` +
+                : `<button onclick="const cscy=window.scrollY;markPresence(${student_id});window.scrollTo({top: cscy,behavior: 'instant'});" class="btn fa-solid fa-square-check px-1" style="transform: scale(1.3); cursor: pointer;"></button>` +
                   (row[result.columns.indexOf("parentPhone")]
                     ? `<input type="checkbox" id="sms_btn${student_id}" onclick="window.location.href='sms:${
                         row[result.columns.indexOf("parentPhone")]
@@ -2116,7 +2120,7 @@ async function loadDayStudentsList() {
                       } غائب${
                         isGirls ? "ة" : ""
                       } عن حصة تحفيظ القرآن اليوم'" class="btn-check" autocomplete="off">
-              <label class="btn fa-solid fa-comment-sms px-2" for="sms_btn${student_id}"></label>`
+                    <label class="btn fa-solid fa-comment-sms px-2" for="sms_btn${student_id}"></label>`
                     : ""),
           evaluation: attendance_value
             ? calcGlobalMoyenne(
@@ -2456,7 +2460,7 @@ async function InitDatePickers() {
   script.async = true;
   script.onload = () => {
     function formatHijriDate(date, isRange = false) {
-      date.setHours(new Date().getHours())
+      date.setHours(new Date().getHours());
       const formatter = new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
         day: "numeric",
         month: "long",
