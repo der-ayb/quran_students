@@ -1801,17 +1801,17 @@ async function showStudentDayModal(isUniqueStudent = true) {
   retardInput.disabled = !isUniqueStudent;
 }
 
-function parseRequirment(requir) {
+function parseRequirment(requir,bulletin=false) {
   const reqlist = requir.split(" ");
   if (reqlist[0] == reqlist[4]) {
     const numberOfAyahs = surahsData.find(
       (surah) => surah.name == reqlist[0],
     ).numberOfAyahs;
     if (numberOfAyahs == reqlist[6]) {
-      if (reqlist[2] == 1) return `${reqlist[0]} (كاملة)`;
-      else return `${reqlist[0]} (${reqlist[2]} - النهاية)`;
+      if (reqlist[2] == 1) return `${reqlist[0]} ${bulletin?")":"("}كاملة${bulletin?"(":")"}`;
+      else return `${reqlist[0]} ${bulletin?") ":"("}${reqlist[2]} -  النهاية${bulletin?"(":")"}`;
     }
-    return `${reqlist[0]} (${reqlist[2]} - ${reqlist[6]})`;
+    return `${reqlist[0]} ${bulletin?") ":"("}${reqlist[2]} - ${reqlist[6]}${bulletin?" (":")"}`;
   }
   return requir;
 }
@@ -1911,7 +1911,8 @@ async function loadDayStudentsList() {
   dayNoteContainer.style.display = dayNote ? "block" : "none";
   dayNoteContainer.innerHTML = `<em>${dayNote}</em>`;
 
-  const isObligatory = dayResult[0].values[0][dayResult[0].columns.indexOf("isObligatory")]
+  const isObligatory =
+    dayResult[0].values[0][dayResult[0].columns.indexOf("isObligatory")];
 
   document.getElementById("dayListTable").style.display = "block";
   document.getElementById("addNewDayBtn").style.display = "none";
@@ -2403,7 +2404,7 @@ async function loadDayStudentsList() {
                         "معلومات الحصة",
                         `
                         <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" role="switch" onchange="chageObligatory(this)" ${isObligatory?"checked":""}>
+                          <input class="form-check-input" type="checkbox" role="switch" onchange="chageObligatory(this)" ${isObligatory ? "checked" : ""}>
                           <label class="form-check-label" >حصة إلزامية</label>
                         </div>
                         <p>وقت بدء الحصة: <strong>${
@@ -3102,9 +3103,20 @@ async function showTab(tabId) {
       //     "2026-01-21",
       //     "2026-01-23",
       //     "2026-01-24",
-      //     "2026-01-26"
+      //     "2026-01-26",
+      //     "2026-01-27",
+      //     "2026-01-28",
+      //     "2026-01-30",
+      //     "2026-01-31",
+      //     "2026-02-02",
+      //     "2026-02-03",
+      //     "2026-02-04",
+      //     "2026-02-06",
+      //     "2026-02-07",
+      //     "2026-02-08",
+      //     "2026-02-09",
       //   ],
-      //   "43,48",
+      //   "43,76",
       // );
     }
   } else {
@@ -3381,7 +3393,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     createMultiStudentPDF(allStudentData, dates);
   } catch (error) {
     console.error("Error generating PDF:", error);
-    window.showToast("warning", "حدث خطأ في إنشاء التقرير");
+    window.showToast("warning", "حدث خطأ في إنشاء كشوف النقاط");
   }
 
   // Get data for a single student
@@ -3531,8 +3543,10 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
       if (resumePagesChecked && studentDataRecordsLength <= 20) {
         studentsWithFewRecords.push(studentReport);
-      } else {
+      } else if (studentDataRecordsLength < 52) {
         studentsWithManyRecords.push(studentReport);
+      } else {
+        throw new Error("عدد الصفوف تجاوز الحد الأقصى");
       }
     });
 
@@ -3571,7 +3585,6 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           return i.detail ? JSON.parse(i.detail).length : 1;
         })
         .reduce((accumulator, current) => accumulator + current, 0) + 3;
-
     const tableCellHeight = isStacked ? 5 : 33 - recordCounts / 2;
     const tableBody = createTableBody(data, tableCellHeight / 3, isStacked);
 
@@ -3633,17 +3646,17 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         table: {
           headerRows: 2,
           heights: tableCellHeight,
-          widths: [32, 26, 30, 30, 20, 27, 284, 33, 20],
+          widths: [32, 26, 30, 30, 20, 25, 35, 245, 33, 20],
           body: tableBody,
         },
         absolutePosition: {
           y:
             (isStacked
-              ? 841.89 / 4 + (isSecond ? 841.89 / 2 : 0)
-              : 841.89 / 2) -
-            (10 +
-              (recordCounts / (isStacked ? 2 : recordCounts)) *
-                (isStacked ? 13 : 345)),
+              ? 841.89 / 4 + (isSecond ? 841.89 / 2 : 0) - 10
+              : 841.89 / 2 -
+                (recordCounts <= 25 ? -1.5 * recordCounts : recordCounts / 2)) -
+            (recordCounts / (isStacked ? 2 : recordCounts)) *
+              (isStacked ? 13 : 345),
           x: 18,
         },
         layout: {
@@ -3680,14 +3693,14 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
   }
 
   // Create compact table body for stacked layout
-  function createTableBody(studentData, marginTopBottom, isStacked = false) {
+  function createTableBody(studentData, marginTop, isStacked = false) {
     // Arabic headers - two rows for date
     const topHeaderRows = [
       {
         text: "المجموع",
         style: "tableHeader",
         alignment: "center",
-        marginTop: marginTopBottom * 4,
+        marginTop: marginTop * 4,
         marginBottom: -2,
         rowSpan: 2,
       },
@@ -3696,7 +3709,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         style: "tableHeader",
         alignment: "center",
         colSpan: 4,
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
       },
       {},
@@ -3706,10 +3719,11 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         text: "المطلوب",
         style: "tableHeader",
         alignment: "center",
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
-        colSpan: 2,
+        colSpan: 3,
       },
+      {},
       {},
       {
         text: "اليوم",
@@ -3717,7 +3731,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         alignment: "center",
         colSpan: 2,
         rowSpan: 2,
-        marginTop: marginTopBottom * 4,
+        marginTop: marginTop * 4,
         marginBottom: -2,
       },
       {}, // empty for the second part of date
@@ -3728,42 +3742,49 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         text: "إضافية",
         style: "tableHeader",
         alignment: "center",
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
       },
       {
         text: "الهندام",
         style: "tableHeader",
         alignment: "center",
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
       },
       {
         text: "السلوك",
         style: "tableHeader",
         alignment: "center",
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
       },
       {
         text: "التأخر",
         style: "tableHeader",
         alignment: "center",
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
       },
       {
         text: "الرصيد",
         style: "tableHeader",
         alignment: "center",
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
+        marginBottom: -2,
+      },
+      {
+        text: "المقدار",
+        style: "tableHeader",
+        alignment: "center",
+        marginTop: marginTop,
         marginBottom: -2,
       },
       {
         text: "التفصيل",
         style: "tableHeader",
         alignment: "center",
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
       },
       {
@@ -3771,7 +3792,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         style: "tableHeader",
         alignment: "center",
         colSpan: 2,
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
       },
       {}, // empty for the second part of date
@@ -3798,10 +3819,10 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
         // Handle absence
         if (record.attendance !== 1) {
-          const row = createEmptyArray(9); // Create array with correct number of columns
+          const row = createEmptyArray(10); // Create array with correct number of columns
 
           // Set values for the row (RTL order - from right to left)
-          const baseIndex = 8;
+          const baseIndex = 9;
 
           row[baseIndex] =
             recordIndex === 0
@@ -3818,7 +3839,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             text: day,
             style: "tableCell",
             alignment: "center",
-            margin: [-2, marginTopBottom, -2, -2],
+            margin: [-2, marginTop, -2, -2],
           };
 
           row[0] = {
@@ -3826,16 +3847,16 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             style: "tableCell",
             alignment: "center",
             bold: true,
-            colSpan: 7,
-            margin: [0, marginTopBottom, 0, -2],
+            colSpan: 8,
+            margin: [0, marginTop, 0, -2],
           };
 
           body.push(row);
           return;
         }
 
-        record.moyennes = getDetailMoyennes(record.detail);
-        record.detail = formatDetail(record.detail);
+        record.detail = JSON.parse(record.detail || "[]");
+        const recordDetailLength = record.detail.length;
         const clothingOption = document.querySelector(
           `#clothing option[value='${record.clothing}']`,
         );
@@ -3847,9 +3868,9 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             ? `${parseInt(record.retard)}  د`
             : "بلا  تأخر";
 
-        if (record.detail.length == 1) {
-          const row = createEmptyArray(9);
-          const baseIndex = 8;
+        if (recordDetailLength < 2) {
+          const row = createEmptyArray(10);
+          const baseIndex = 9;
 
           // Month (only for first record in month group)
           row[baseIndex] =
@@ -3868,77 +3889,84 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             text: day,
             style: "tableCell",
             alignment: "center",
-            margin: [-2, marginTopBottom, -2, -2],
+            margin: [-2, marginTop, -2, -2],
           };
 
           // Details
           row[baseIndex - 2] = {
-            text: record.detail[0],
+            text: formatDetail(record.detail[0]),
             style: "tableCell",
             alignment: "right",
-            margin: [0, marginTopBottom, 0, -2],
+            margin: [0, marginTop, 0, -2],
           };
           row[baseIndex - 3] = {
-            text: record.moyennes[0],
+            text: recordDetailLength
+              ? formatQuantity(record.detail[0])
+              : "-",
+            style: "tableCell",
+            alignment: "center",
+            margin: [-3, marginTop, -3, -2],
+          };
+          row[baseIndex - 4] = {
+            text: recordDetailLength ? record.detail[0]["المعدل"] : "-",
             style: "tableCell",
             bold: true,
             alignment: "center",
-            margin: [0, marginTopBottom, 0, -2],
+            margin: [-1, marginTop, -1, -2],
           };
 
           // retard
-          row[baseIndex - 4] = {
+          row[baseIndex - 5] = {
             text: retardOption,
             style: "tableCell",
             alignment: "center",
-            margin: [-2, marginTopBottom, -2, -2],
+            margin: [-2, marginTop, -2, -2],
           };
 
           // Behavior
-          const behaviorIndex = baseIndex - 5;
+          const behaviorIndex = baseIndex - 6;
           row[behaviorIndex] = {
             text: behaviorOption ? behaviorOption.textContent : "-",
             style: "tableCell",
             alignment: "center",
-            margin: [-2, marginTopBottom, -2, -2],
+            margin: [-2, marginTop, -2, -2],
           };
 
           // Clothing
-          const clothingIndex = baseIndex - 6;
+          const clothingIndex = baseIndex - 7;
           row[clothingIndex] = {
             text: clothingOption ? clothingOption.textContent : "-",
             style: "tableCell",
             alignment: "center",
-            margin: [-2, marginTopBottom, -2, -2],
+            margin: [-2, marginTop, -2, -2],
           };
 
           // Additional points
-          const pointsIndex = baseIndex - 7;
+          const pointsIndex = baseIndex - 8;
           row[pointsIndex] = {
             text: record.added_points ? record.added_points : "-",
             style: "tableCell",
             alignment: "center",
-            margin: [-2, marginTopBottom, -2, -2],
+            margin: [-2, marginTop, -2, -2],
           };
 
           // day moyenne points
-          const moyenneIndex = baseIndex - 8;
-          row[moyenneIndex] = {
+          row[baseIndex - 9] = {
             text: (
               (record.requirements_score || 0) + (record.evaluation_score || 0)
             ).toFixed(2),
             bold: true,
             style: "tableCell",
             alignment: "center",
-            margin: [-2, marginTopBottom, -2, -2],
+            margin: [-2, marginTop, -2, -2],
           };
 
           body.push(row);
         } else {
           // For multiple details, create multiple rows
           record.detail.forEach((detail, detailIndex) => {
-            const row = createEmptyArray(9);
-            const baseIndex = 8;
+            const row = createEmptyArray(10);
+            const baseIndex = 9;
 
             // Month (only for first record and first detail in month group)
             row[baseIndex] =
@@ -3959,10 +3987,10 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     text: day,
                     style: "tableCell",
                     alignment: "center",
-                    rowSpan: record.detail.length,
+                    rowSpan: recordDetailLength,
                     margin: [
                       -2,
-                      marginTopBottom + 4.5 * record.detail.length,
+                      marginTop + 4.5 * recordDetailLength,
                       -2,
                       -2,
                     ],
@@ -3971,72 +3999,78 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
             // Detail
             row[baseIndex - 2] = {
-              text: detail || "-",
+              text: formatDetail(detail),
               style: "tableCell",
               alignment: "right",
-              margin: [0, marginTopBottom, 0, -2],
+              margin: [0, marginTop, 0, -2],
             };
             row[baseIndex - 3] = {
-              text: record.moyennes[detailIndex] || "-",
+              text: formatQuantity(detail),
+              style: "tableCell",
+              alignment: "center",
+              margin: [-3, marginTop, -3, -2],
+            };
+            row[baseIndex - 4] = {
+              text: detail["المعدل"] || "-",
               style: "tableCell",
               bold: true,
               alignment: "center",
-              margin: [0, marginTopBottom, 0, -2],
+              margin: [-1, marginTop, -1, -2],
             };
 
             // retard
-            row[baseIndex - 4] =
+            row[baseIndex - 5] =
               detailIndex === 0
                 ? {
                     text: retardOption,
                     style: "tableCell",
                     alignment: "center",
-                    rowSpan: record.detail.length,
-                    margin: [-2, 5 * record.detail.length, -2, -2],
+                    rowSpan: recordDetailLength,
+                    margin: [-2, 5 * recordDetailLength, -2, -2],
                   }
                 : {};
 
             // Behavior (only for first detail)
-            const behaviorIndex = baseIndex - 5;
+            const behaviorIndex = baseIndex - 6;
             row[behaviorIndex] =
               detailIndex === 0
                 ? {
                     text: behaviorOption ? behaviorOption.textContent : "-",
                     style: "tableCell",
                     alignment: "center",
-                    rowSpan: record.detail.length,
-                    margin: [-2, 5 * record.detail.length, -2, -2],
+                    rowSpan: recordDetailLength,
+                    margin: [-2, 5 * recordDetailLength, -2, -2],
                   }
                 : {};
 
             // Clothing (only for first detail)
-            const clothingIndex = baseIndex - 6;
+            const clothingIndex = baseIndex - 7;
             row[clothingIndex] =
               detailIndex === 0
                 ? {
                     text: clothingOption ? clothingOption.textContent : "-",
                     style: "tableCell",
                     alignment: "center",
-                    rowSpan: record.detail.length,
-                    margin: [-2, 5 * record.detail.length, -2, -2],
+                    rowSpan: recordDetailLength,
+                    margin: [-2, 5 * recordDetailLength, -2, -2],
                   }
                 : {};
 
             // Additional points (only for first detail)
-            const pointsIndex = baseIndex - 7;
+            const pointsIndex = baseIndex - 8;
             row[pointsIndex] =
               detailIndex === 0
                 ? {
                     text: record.added_points ? record.added_points : "-",
                     style: "tableCell",
                     alignment: "center",
-                    rowSpan: record.detail.length,
-                    margin: [-2, 5 * record.detail.length, -2, -2],
+                    rowSpan: recordDetailLength,
+                    margin: [-2, 5 * recordDetailLength, -2, -2],
                   }
                 : {};
 
             // day moyenne  (only for first detail)
-            const moyenneIndex = baseIndex - 8;
+            const moyenneIndex = baseIndex - 9;
             row[moyenneIndex] =
               detailIndex === 0
                 ? {
@@ -4047,8 +4081,8 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     bold: true,
                     style: "tableCell",
                     alignment: "center",
-                    rowSpan: record.detail.length,
-                    margin: [-2, 5 * record.detail.length, -2, -2],
+                    rowSpan: recordDetailLength,
+                    margin: [-2, 5 * recordDetailLength, -2, -2],
                   }
                 : {};
 
@@ -4079,7 +4113,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         text: total.toFixed(2),
         style: "tableHeader",
         alignment: "center",
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
         marginRight: -3,
         fontSize: 9,
@@ -4091,7 +4125,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         alignment: "left",
         border: [false, true, true, true],
         fontSize: 9,
-        marginTop: marginTopBottom,
+        marginTop: marginTop,
         marginBottom: -2,
         marginLeft: -3,
         colSpan: 2,
@@ -4103,7 +4137,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
               text: fullAddedPoints,
               style: "tableHeader",
               alignment: "right",
-              marginTop: marginTopBottom,
+              marginTop: marginTop,
               marginBottom: -2,
               border: [true, true, false, true],
             }
@@ -4115,7 +4149,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
               text: "رصيد إضافي:",
               style: "tableHeader",
               alignment: "left",
-              marginTop: marginTopBottom,
+              marginTop: marginTop,
               marginLeft: -3,
               colSpan: 2,
               marginBottom: -2,
@@ -4124,6 +4158,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           : { colSpan: 2, border: [false, true, false, false], text: "" },
       ],
       {},
+      { text: "", border: [false, true, false, false] },
       { text: "", border: [false, true, false, false] },
       { text: "", border: [false, true, false, false] },
       { text: "", border: [false, true, false, false] }, // empty for the second part of date
@@ -4323,36 +4358,34 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     return str.split(" ").reverse().join(" ");
   }
 
+  function formatQuantity(detail) {
+    if(detail["النوع"]=="حفظ") return detail["المقدار"] + "  سطر"
+    else return (detail["المقدار"]/15).toFixed(1) + "  صفحة"
+  }
+
   function formatDetail(detail) {
     if (!detail) return "-";
-    detail = JSON.parse(detail).map((item) => {
-      const errorsCount = item["الأخطاء"].includes(" ")
-        ? parseInt(item["الأخطاء"].split(" ")[0]) +
-          parseInt(item["الأخطاء"].split(" ")[4])
-        : parseInt(item["الأخطاء"]);
-      return (
-        item["النوع"] +
-        " " +
-        (item["الكتاب"] == "القرآن الكريم" ? "" : item["الكتاب"]) +
-        " ]  " +
-        item["التفاصيل"] +
-        " [ " +
-        (errorsCount > 0
-          ? errorsCount == 1
-            ? " بخطأ واحد"
-            : " بأخطاء: " + errorsCount
-          : " بدون أخطاء") +
-        " | " +
-        " بتقدير: " +
-        item["التقدير"] +
-        "/10"
-      );
-    });
-    return detail;
-  }
-  function getDetailMoyennes(detail) {
-    if (!detail) return "-";
-    return JSON.parse(detail).map((item) => item["المعدل"]);
+    const errorsCount = detail["الأخطاء"].includes(" ")
+      ? parseInt(detail["الأخطاء"].split(" ")[0]) +
+        parseInt(detail["الأخطاء"].split(" ")[4])
+      : parseInt(detail["الأخطاء"]);
+    return (
+      detail["النوع"] +
+      " " +
+      (detail["الكتاب"] == "القرآن الكريم" ? "" : detail["الكتاب"]) +
+      " ]  " +
+      parseRequirment(detail["التفاصيل"],true) +
+      " [ " +
+      (errorsCount > 0
+        ? errorsCount == 1
+          ? " بخطأ واحد"
+          : " بأخطاء: " + errorsCount
+        : " بدون أخطاء") +
+      " | " +
+      " بتقدير: " +
+      detail["التقدير"] +
+      "/10"
+    );
   }
 }
 
