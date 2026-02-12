@@ -1801,17 +1801,19 @@ async function showStudentDayModal(isUniqueStudent = true) {
   retardInput.disabled = !isUniqueStudent;
 }
 
-function parseRequirment(requir,bulletin=false) {
+function parseRequirment(requir, bulletin = false) {
   const reqlist = requir.split(" ");
   if (reqlist[0] == reqlist[4]) {
     const numberOfAyahs = surahsData.find(
       (surah) => surah.name == reqlist[0],
     ).numberOfAyahs;
     if (numberOfAyahs == reqlist[6]) {
-      if (reqlist[2] == 1) return `${reqlist[0]} ${bulletin?")":"("}كاملة${bulletin?"(":")"}`;
-      else return `${reqlist[0]} ${bulletin?") ":"("}${reqlist[2]} -  النهاية${bulletin?"(":")"}`;
+      if (reqlist[2] == 1)
+        return `${reqlist[0]} ${bulletin ? ")" : "("}كاملة${bulletin ? "(" : ")"}`;
+      else
+        return `${reqlist[0]} ${bulletin ? ") " : "("}${reqlist[2]} -  النهاية${bulletin ? "(" : ")"}`;
     }
-    return `${reqlist[0]} ${bulletin?") ":"("}${reqlist[2]} - ${reqlist[6]}${bulletin?" (":")"}`;
+    return `${reqlist[0]} ${bulletin ? ") " : "("}${reqlist[2]} - ${reqlist[6]}${bulletin ? " (" : ")"}`;
   }
   return requir;
 }
@@ -3100,9 +3102,9 @@ async function showTab(tabId) {
       fillStatistiscStudentsList();
       // showStudentsBulletins(
       //   [
-      //     "2026-01-21",
-      //     "2026-01-23",
-      //     "2026-01-24",
+      //     // "2026-01-21",
+      //     // "2026-01-23",
+      //     // "2026-01-24",
       //     "2026-01-26",
       //     "2026-01-27",
       //     "2026-01-28",
@@ -3646,7 +3648,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         table: {
           headerRows: 2,
           heights: tableCellHeight,
-          widths: [32, 26, 30, 30, 20, 25, 35, 245, 33, 20],
+          widths: [32, 26, 30, 30, 20, 50, 35, 220, 33, 20],
           body: tableBody,
         },
         absolutePosition: {
@@ -3767,7 +3769,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         marginBottom: -2,
       },
       {
-        text: "الرصيد",
+        text: "التقدير",
         style: "tableHeader",
         alignment: "center",
         marginTop: marginTop,
@@ -3831,7 +3833,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                   style: "tableCell",
                   alignment: "center",
                   rowSpan: monthRowSpan,
-                  margin: [-2, 2 * monthRowSpan, -1, -3],
+                  margin: [-2, marginTop * monthRowSpan, -1, -3],
                 }
               : {};
 
@@ -3843,7 +3845,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           };
 
           row[0] = {
-            text: "غـــــــــائـــب" + (isGirls ? "ة" : ""),
+            text: "غــــــــــــــــــــائــــــــب" + (isGirls ? "ـــة" : ""),
             style: "tableCell",
             alignment: "center",
             bold: true,
@@ -3880,7 +3882,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                   style: "tableCell",
                   alignment: "center",
                   rowSpan: monthRowSpan,
-                  margin: [-2, 2 * monthRowSpan, -1, -3],
+                  margin: [-2, marginTop * monthRowSpan, -1, -3],
                 }
               : {};
 
@@ -3900,19 +3902,17 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             margin: [0, marginTop, 0, -2],
           };
           row[baseIndex - 3] = {
-            text: recordDetailLength
-              ? formatQuantity(record.detail[0])
-              : "-",
+            text: recordDetailLength ? formatQuantity(record.detail[0]) : "-",
             style: "tableCell",
             alignment: "center",
             margin: [-3, marginTop, -3, -2],
           };
           row[baseIndex - 4] = {
-            text: recordDetailLength ? record.detail[0]["المعدل"] : "-",
+            text: recordDetailLength ? formatEval(record.detail[0]) : "-",
             style: "tableCell",
             bold: true,
             alignment: "center",
-            margin: [-1, marginTop, -1, -2],
+            margin: [-2, marginTop, -2, -2],
           };
 
           // retard
@@ -3963,6 +3963,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
           body.push(row);
         } else {
+          const marginTopMulti = marginTop + 4.5 * recordDetailLength;
           // For multiple details, create multiple rows
           record.detail.forEach((detail, detailIndex) => {
             const row = createEmptyArray(10);
@@ -3988,12 +3989,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: recordDetailLength,
-                    margin: [
-                      -2,
-                      marginTop + 4.5 * recordDetailLength,
-                      -2,
-                      -2,
-                    ],
+                    margin: [-2, marginTopMulti, -2, -2],
                   }
                 : {};
 
@@ -4011,11 +4007,11 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
               margin: [-3, marginTop, -3, -2],
             };
             row[baseIndex - 4] = {
-              text: detail["المعدل"] || "-",
+              text: formatEval(detail) || "-",
               style: "tableCell",
               bold: true,
               alignment: "center",
-              margin: [-1, marginTop, -1, -2],
+              margin: [-2, marginTop, -2, -2],
             };
 
             // retard
@@ -4026,7 +4022,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: recordDetailLength,
-                    margin: [-2, 5 * recordDetailLength, -2, -2],
+                    margin: [-2, marginTopMulti, -2, -2],
                   }
                 : {};
 
@@ -4039,7 +4035,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: recordDetailLength,
-                    margin: [-2, 5 * recordDetailLength, -2, -2],
+                    margin: [-2, marginTopMulti, -2, -2],
                   }
                 : {};
 
@@ -4052,7 +4048,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: recordDetailLength,
-                    margin: [-2, 5 * recordDetailLength, -2, -2],
+                    margin: [-2, marginTopMulti, -2, -2],
                   }
                 : {};
 
@@ -4065,7 +4061,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: recordDetailLength,
-                    margin: [-2, 5 * recordDetailLength, -2, -2],
+                    margin: [-2, marginTopMulti, -2, -2],
                   }
                 : {};
 
@@ -4082,7 +4078,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: recordDetailLength,
-                    margin: [-2, 5 * recordDetailLength, -2, -2],
+                    margin: [-2, marginTopMulti, -2, -2],
                   }
                 : {};
 
@@ -4358,9 +4354,19 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     return str.split(" ").reverse().join(" ");
   }
 
+  function formatEval(detail) {
+    const rating = detail["التقدير"];
+    if (rating == 10) return "مــمــتــاز";
+    if (rating >= 9) return "جــيــد  جــدا";
+    if (rating >= 7) return "جـــيـــد";
+    if (rating >= 6) return "حـــســـن";
+    if (rating >= 5) return "مـتــوســط";
+    return "دون  المتوسط";
+  }
+
   function formatQuantity(detail) {
-    if(detail["النوع"]=="حفظ") return detail["المقدار"] + "  سطر"
-    else return (detail["المقدار"]/15).toFixed(1) + "  صفحة"
+    if (detail["النوع"] == "حفظ") return detail["المقدار"] + "  سطر";
+    else return (detail["المقدار"] / 15).toFixed(1) + "  صفحة";
   }
 
   function formatDetail(detail) {
@@ -4374,17 +4380,13 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       " " +
       (detail["الكتاب"] == "القرآن الكريم" ? "" : detail["الكتاب"]) +
       " ]  " +
-      parseRequirment(detail["التفاصيل"],true) +
+      parseRequirment(detail["التفاصيل"], true) +
       " [ " +
       (errorsCount > 0
         ? errorsCount == 1
           ? " بخطأ واحد"
           : " بأخطاء: " + errorsCount
-        : " بدون أخطاء") +
-      " | " +
-      " بتقدير: " +
-      detail["التقدير"] +
-      "/10"
+        : " بدون أخطاء")
     );
   }
 }
