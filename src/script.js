@@ -1601,16 +1601,18 @@ function checkAuthorizedOut(time, requirsMoyenne, minutesToAdd) {
 }
 
 async function showOffCanvas(title, body, side = "top") {
-  const bsOffcanvas = new bootstrap.Offcanvas("#offcanvasTop");
-  document.getElementById("offcanvasTop").classList.remove(`offcanvas-top`);
-  document.getElementById("offcanvasTop").classList.remove(`offcanvas-end`);
-  document.getElementById("offcanvasTop").classList.remove(`offcanvas-start`);
-  document.getElementById("offcanvasTop").classList.remove(`offcanvas-bottom`);
-  document.getElementById("offcanvasTop").classList.add(`offcanvas-${side}`);
-
-  document.getElementById("offcanvasTopLabel").innerText = `${title}:`;
+  const myOffcanvas = document.getElementById("offcanvasTop");
+  myOffcanvas.classList.remove(
+    "offcanvas-top",
+    "offcanvas-end",
+    "offcanvas-start",
+    "offcanvas-bottom",
+  );
+  myOffcanvas.classList.add(`offcanvas-${side}`);
+  document.getElementById("offcanvasTopLabel").textContent = `${title}:`;
   document.getElementById("offcanvas-body").innerHTML = body;
-  bsOffcanvas.show();
+  if (!myOffcanvas.classList.contains("show"))
+    new bootstrap.Offcanvas(myOffcanvas).show();
 }
 
 async function markPresence(studentId) {
@@ -1818,34 +1820,35 @@ function parseRequirment(requir, bulletin = false) {
   return requir;
 }
 
-function showRequirementsHistory(student_id) {
+function showRequirementsHistory(student_id, page = 1) {
   let requirs = [];
   project_db
     .exec(
       ` SELECT detail FROM day_requirements
         WHERE student_id = ${student_id} ORDER BY day_id DESC
-        LIMIT 5`,
+        LIMIT ${page * 5}`,
     )[0]
     .values.forEach((row) => {
       requirs.push(row[0]);
     });
   showOffCanvas(
     "المتطلبات السابقة",
-    `
-              <ul> ${requirs
-                .map((i) =>
-                  JSON.parse(i)
-                    .map(
-                      (i) =>
-                        `<li> ${i["النوع"]} - ${parseRequirment(i["التفاصيل"])} - الأخطاء: ${
-                          i["الأخطاء"] || 0
-                        }</li>`,
-                    )
-                    .reverse()
-                    .join(""),
-                )
-                .join("")}</ul>
-              `,
+    `<ul> ${requirs
+      .map((i) =>
+        JSON.parse(i)
+          .map(
+            (i) =>
+              `<li> ${i["النوع"]} - ${parseRequirment(i["التفاصيل"])} - الأخطاء: ${
+                i["الأخطاء"] || 0
+              }</li>`,
+          )
+          .reverse()
+          .join(""),
+      )
+      .join(
+        "",
+      )}</ul><button class="btn btn-link" onclick="showRequirementsHistory(${student_id},${page + 1})">أقدم...</button>
+      `,
     "start",
   );
 }
@@ -3809,6 +3812,8 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     groupedRecords.forEach((monthGroup) => {
       const { monthYear, records } = monthGroup;
       const monthRowSpan = calculateMonthRowSpan(records);
+      const monthMarginTop =
+        marginTop + (isStacked ? 10 : marginTop * 3) * (monthRowSpan / 2);
 
       records.forEach((record, recordIndex) => {
         const recordDate = new Date(record.day);
@@ -3833,7 +3838,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                   style: "tableCell",
                   alignment: "center",
                   rowSpan: monthRowSpan,
-                  margin: [-2, marginTop * monthRowSpan, -1, -3],
+                  margin: [-2, monthMarginTop, -1, -3],
                 }
               : {};
 
@@ -3882,7 +3887,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                   style: "tableCell",
                   alignment: "center",
                   rowSpan: monthRowSpan,
-                  margin: [-2, marginTop * monthRowSpan, -1, -3],
+                  margin: [-2, monthMarginTop, -1, -3],
                 }
               : {};
 
@@ -3963,7 +3968,10 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
           body.push(row);
         } else {
-          const marginTopMulti = marginTop + 4.5 * recordDetailLength;
+          const marginTopMulti =
+            marginTop +
+            (isStacked ? 7 : marginTop * 3) *
+              (recordDetailLength / (isStacked ? 1.5 : 2.5));
           // For multiple details, create multiple rows
           record.detail.forEach((detail, detailIndex) => {
             const row = createEmptyArray(10);
@@ -3977,7 +3985,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: monthRowSpan,
-                    margin: [-2, 2 * monthRowSpan, -1, -3],
+                    margin: [-2, monthMarginTop, -1, -3],
                   }
                 : {};
 
