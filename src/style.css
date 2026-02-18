@@ -377,3 +377,8 @@ th.header-rotated>div>span {
   margin-bottom: 0;
   border-radius: 0 0 5px 5px;
 }
+
+.collapsing {
+  -webkit-transition: none !important;
+  transition: none !important;
+}

@@ -83,7 +83,8 @@
   <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.5/css/fixedColumns.bootstrap5.min.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.bootstrap5.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr-hijri-calendar@1.0.0/dist/flatpickr-hijri-calendar.min.css">
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/flatpickr-hijri-calendar@1.0.0/dist/flatpickr-hijri-calendar.min.css">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel='stylesheet' href='src/yearpicker.css' />
 </head>
@@ -348,7 +349,8 @@
                     </button>
 
                   </div>
-                  <div class="tab-pane fade" id="list-requirment" role="tabpanel" aria-labelledby="list-requirment-list">
+                  <div class="tab-pane fade" id="list-requirment" role="tabpanel"
+                    aria-labelledby="list-requirment-list">
                     <div class="input-group mb-3">
                       <span class="input-group-text">الخصم لكل إعادة</span>
                       <input id="requirReducePerRepit" type="number" class="form-control text-center px-0" value="10"
@@ -946,17 +948,30 @@
       <div class="modal-content">
         <div class="modal-header">
           <h1 class="modal-title fs-5">إضافات كشوف النقاط</h1>
+          <button class="btn btn-secondary mx-1 px-1" id="resetBulletinConfig">إعادة تعيين</button>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
 
         </div>
-        <div class="modal-footer d-flex justify-content-between py-2">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="resumePagesCheck" checked>
-            <label class="form-check-label" for="resumePagesCheck">تقليص الصفحات إذا أمكن</label>
+        <div class="collapse" id="bulletinAppendsCollapse">
+          <div class="card card-body">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="resumePagesCheck" checked>
+              <label class="form-check-label" for="resumePagesCheck">تقليص الصفحات إذا أمكن</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="signatureCheck" checked>
+              <label class="form-check-label" for="signatureCheck">تضمين إمضاء الولي</label>
+            </div>
           </div>
-            <button type="button" class="btn btn-primary" id="createBulletinBtn">إنشاء</button>
+        </div>
+        <div class="modal-footer d-flex justify-content-between py-2">
+          <button class="btn btn-primary" type="button" data-bs-toggle="collapse"
+            data-bs-target="#bulletinAppendsCollapse" aria-expanded="false" aria-controls="bulletinAppendsCollapse">
+            تخصيص
+          </button>
+          <button type="button" class="btn btn-primary" id="createBulletinBtn">إنشاء</button>
         </div>
       </div>
     </div>
