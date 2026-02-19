@@ -3107,7 +3107,7 @@ async function showTab(tabId) {
       studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      // showStudentsBulletins2(
+      // showStudentsBulletins(
       //   [
       //     // "2026-01-21",
       //     // "2026-01-23",
@@ -3126,10 +3126,11 @@ async function showTab(tabId) {
       //     "2026-02-14",
       //     "2026-02-15",
       //     "2026-02-16",
-      //     "2026-02-17"
+      //     "2026-02-17",
+      //     "2026-02-18",
       //   ],
-      //   "83,82,84",
-      //   // "43,76",
+      //   // "83,82,84",
+      //   "43,76",
       // );
     }
   } else {
@@ -3860,7 +3861,9 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           };
 
           row[0] = {
-            text: "غــــــــــــــــــــائــــــــب" + (isGirls ? "ـــة" : ""),
+            text:
+              "غــــــــــــــــــــــــــــــــــــائــــــــــــــــــب" +
+              (isGirls ? "ــــــة" : ""),
             style: "tableCell",
             alignment: "center",
             bold: true,
@@ -4265,6 +4268,21 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     const presentDays = validRecords.filter(
       (record) => record.attendance === 1,
     ).length;
+
+    const totalQuantity = (
+      validRecords.reduce(
+        (sum, record) =>
+          sum +
+          (record.detail?.reduce(
+            (acc, val) =>
+              acc +
+              parseFloat(val["المقدار"] || 0),
+            0,
+          ) || 0),
+        0,
+      ) / 15
+    ).toFixed(1);
+    
     const total =
       validRecords.reduce(
         (sum, record) =>
@@ -4291,12 +4309,12 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         absolutePosition: {
           y:
             841.89 / (isStacked && !isSecond ? 2 : 1) -
-            (tableWithins.withinSignature ? 75 : 55),
+            (tableWithins.withinSignature || fullNote ? 75 : 55),
         },
       },
       {
         table: {
-          widths: [70, "*", "*", "*", "*"],
+          widths: [70, 100, 140, 100, "*"],
           body: [
             [
               {
@@ -4320,7 +4338,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                 marginTop: 3,
               },
               {
-                text: `نسبة الحضور: ${attendanceRate}%`,
+                text: `إجمالي الصفحات: ${totalQuantity}  صفحة`,
                 style: "tableCell",
                 alignment: "center",
                 border: [true, false, false, false],
@@ -4328,7 +4346,15 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                 marginTop: 3,
               },
               {
-                text: `إجمالي الأيام: ${totalDays}`,
+                text: `نسبة  الحضور: ${attendanceRate}%`,
+                style: "tableCell",
+                alignment: "center",
+                border: [true, false, false, false],
+                fontSize: 10,
+                marginTop: 3,
+              },
+              {
+                text: `إجمالي  الأيام: ${totalDays}`,
                 style: "tableCell",
                 alignment: "center",
                 border: [true, false, false, false],
@@ -4341,7 +4367,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         absolutePosition: {
           y:
             841.89 / (isStacked && !isSecond ? 2 : 1) -
-            (tableWithins.withinSignature ? 60 : 40),
+            (tableWithins.withinSignature || fullNote ? 60 : 40),
           x: 18,
         },
         margin: [0, 0, 0, 5],
@@ -4822,7 +4848,7 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
                 (recordCounts <= 25 ? -1.5 * recordCounts : recordCounts / 2)) -
             (recordCounts / (isStacked ? 2 : recordCounts)) *
               (isStacked ? 13 : 345),
-          x: 50,
+          x: 60,
         },
         layout: {
           paddingLeft: function (i, node) {
@@ -5116,7 +5142,7 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
     return [
       {
         table: {
-          widths: [50, 100, 310],
+          widths: [50, 100, 330],
           body: [
             [
               {
@@ -5140,7 +5166,7 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
               ...[
                 !fullNote
                   ? {
-                      text: "الملاحظة:  تلميذة مجتهدة نسأل الله أن يحفظك",
+                      text: "الملاحظة:  تلميذة خلوقة نسأل الله أن يحفظكِ بما يحفظ به عباده الصالحين",
                       // text: reverseArabicWords(`الملاحظة:  ${fullNote}`),
                       style: "tableCell",
                       alignment: "right",
@@ -5156,22 +5182,10 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
         },
         absolutePosition: {
           y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 60,
-          x: 50,
+          x: 40,
         },
         margin: [0, 0, 0, 5],
       },
-      ...[
-        fullNote
-          ? {
-              text: reverseArabicWords(`الملاحظة:  ${fullNote}`),
-              margin: [0, 5, 0, 8],
-              alignment: "right",
-              absolutePosition: {
-                y: 841.89 / (isStacked && !isSecond ? 2 : 1) - 25,
-              },
-            }
-          : {},
-      ],
     ];
   }
 
