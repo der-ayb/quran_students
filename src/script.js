@@ -1747,42 +1747,6 @@ function setOrGetOptionValueByText(selector, text, get = false) {
   }
 }
 
-function initRequirementFields(detail = null) {
-  if (detail) {
-    requireBookInput.value = detail["الكتاب"];
-    requireBookInput.dispatchEvent(new Event("change"));
-    const Type = detail["النوع"];
-    const startSurahName = detail["التفاصيل"].split(" ").at(0);
-    const finishSurahName = detail["التفاصيل"].split(" ").at(-3);
-    if (detail["الكتاب"] == "القرآن الكريم") {
-      setOrGetOptionValueByText(firstSurahSelect, finishSurahName);
-      firstAyahSelect.value =
-        parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
-      if (!firstAyahSelect.value) {
-        if (Type == "حفظ") {
-          requirTypeInput.value = "حصيلة";
-          firstAyahSelect.value = "1";
-        } else {
-          requirTypeInput.value = Type == "حصيلة" ? "حفظ" : "مراجعة";
-          if (Type == "مراجعة" && startSurahName !== finishSurahName) {
-            setOrGetOptionValueByText(firstSurahSelect, startSurahName);
-          }
-          firstSurahSelect.value =
-            firstSurahSelect.options[firstSurahSelect.selectedIndex - 1].value;
-          firstSurahSelect.dispatchEvent(new Event("change"));
-        }
-      } else {
-        requirTypeInput.value = Type;
-      }
-      firstAyahSelect.dispatchEvent(new Event("change"));
-    }
-  } else {
-    requireBookInput.value = "";
-    requireBookInput.dispatchEvent(new Event("change"));
-  }
-  requirTeacherInput.value = "0";
-}
-
 async function showStudentDayModal(isUniqueStudent = true) {
   studentDayModal.show();
   studentDayFormSubmitBtn.disabled = true;
@@ -1803,7 +1767,8 @@ async function showStudentDayModal(isUniqueStudent = true) {
   retardInput.disabled = !isUniqueStudent;
 }
 
-function parseRequirment(requir, bulletin = false) {
+function parseRequirment(requir, book, bulletin = false) {
+  if (book !== "القرآن الكريم") return `${book} [${requir}]`;
   const reqlist = requir.split(" ");
   if (reqlist[0] == reqlist[4]) {
     const numberOfAyahs = surahsData.find(
@@ -1826,28 +1791,39 @@ function parseRequirment(requir, bulletin = false) {
 
 function showRequirementsHistory(student_id, page = 1) {
   let requirs = [];
+  let requirsDates = [];
   project_db
     .exec(
-      ` SELECT detail FROM day_requirements
-        WHERE student_id = ${student_id} ORDER BY day_id DESC
+      ` SELECT dr.detail,(SELECT date FROM education_day WHERE id = dr.day_id) AS day_date FROM day_requirements dr
+        WHERE dr.student_id = ${student_id} ORDER BY dr.day_id DESC
         LIMIT ${page * 5}`,
     )[0]
     .values.forEach((row) => {
       requirs.push(row[0]);
+      requirsDates.push(row[1]);
     });
+    requirsDates = requirsDates.map(date => new Date(date));
   showOffCanvas(
     "المتطلبات السابقة",
     `<ul> ${requirs
-      .map((i) =>
-        JSON.parse(i)
-          .map(
-            (i) =>
-              `<li> ${i["النوع"]} - ${parseRequirment(i["التفاصيل"])} - الأخطاء: ${
-                i["الأخطاء"] || 0
-              }</li>`,
-          )
-          .reverse()
-          .join(""),
+      .map(
+        (i, index) =>
+          `<li><strong>${new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
+            day: "numeric",
+            month: "long",
+            weekday: "long",
+          }).format(
+            requirsDates[index],
+          )} (${requirsDates[index].toDateString() === new Date().toDateString() ? "اليوم" : fromNow(requirsDates[index]).replace("منذ", "قبل")})</strong>` +
+          `<ul>` +
+          JSON.parse(i)
+            .map(
+              (i) =>
+                `<li>${i["النوع"]} - ${parseRequirment(i["التفاصيل"], i["الكتاب"])}</li>`,
+            )
+            .reverse()
+            .join("") +
+          `</ul></li>`,
       )
       .join(
         "",
@@ -2411,21 +2387,22 @@ async function loadDayStudentsList() {
                     action: async function (e, dt) {
                       showOffCanvas(
                         "معلومات الحصة",
-                        `
-                        <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" role="switch" onchange="chageObligatory(this)" ${isObligatory ? "checked" : ""}>
-                          <label class="form-check-label" >حصة إلزامية</label>
+                        `<div class="mx-3">
+                          <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" onchange="chageObligatory(this)" ${isObligatory ? "checked" : ""}>
+                            <label class="form-check-label" >حصة إلزامية</label>
+                          </div>
+                          <p>وقت بدء الحصة: <strong>${
+                            start_time || "غير محدد"
+                          }</strong><br>
+                          عدد التلاميذ الحاضرين: <strong>${
+                            project_db.exec(
+                              `SELECT COUNT(*) FROM day_evaluations WHERE day_id = ${workingDayID} AND attendance = 1;`,
+                            )[0].values[0][0]
+                          }</strong><br>
+                          ملاحظة اليوم: <em>${dayNote || "لا توجد ملاحظة"}</em><br>
+                          </p>
                         </div>
-                        <p>وقت بدء الحصة: <strong>${
-                          start_time || "غير محدد"
-                        }</strong><br>
-                        عدد التلاميذ الحاضرين: <strong>${
-                          project_db.exec(
-                            `SELECT COUNT(*) FROM day_evaluations WHERE day_id = ${workingDayID} AND attendance = 1;`,
-                          )[0].values[0][0]
-                        }</strong><br>
-                        ملاحظة اليوم: <em>${dayNote || "لا توجد ملاحظة"}</em><br>
-                        </p>
                       `,
                       );
                     },
@@ -2483,7 +2460,7 @@ async function InitDatePickers() {
   // day date picker
   const script = document.createElement("script");
   script.src = "src/flatpickr-hijri-calendar.js";
-  script.async = true;
+  // script.async = true;
   script.onload = () => {
     function formatHijriDate(date, isRange = false) {
       date.setHours(new Date().getHours());
@@ -2703,6 +2680,46 @@ function initializeToast() {
     window._toastQueue.length = 0;
   }
 }
+
+function initRequirementFields(detail = null) {
+  if (detail) {
+    requireBookInput.value = detail["الكتاب"];
+    requireBookInput.dispatchEvent(new Event("change"));
+    const Type = detail["النوع"];
+    const startSurahName = detail["التفاصيل"].split(" ").at(0);
+    const finishSurahName = detail["التفاصيل"].split(" ").at(-3);
+    if (detail["الكتاب"] == "القرآن الكريم") {
+      setOrGetOptionValueByText(firstSurahSelect, finishSurahName);
+      firstAyahSelect.value =
+        parseInt(detail["التفاصيل"].split(" ").at(-1)) + 1;
+      if (!firstAyahSelect.value) {
+        if (Type == "حفظ") {
+          requirTypeInput.value = "حصيلة";
+          firstAyahSelect.value = "1";
+        } else {
+          requirTypeInput.value = Type == "حصيلة" ? "حفظ" : "مراجعة";
+          if (Type == "مراجعة" && startSurahName !== finishSurahName) {
+            setOrGetOptionValueByText(firstSurahSelect, startSurahName);
+          }
+          firstSurahSelect.value =
+            firstSurahSelect.options[firstSurahSelect.selectedIndex - 1].value;
+          firstSurahSelect.dispatchEvent(new Event("change"));
+        }
+      } else {
+        requirTypeInput.value = Type;
+      }
+      firstAyahSelect.dispatchEvent(new Event("change"));
+    } else {
+      requirTypeInput.value = Type;
+      requirQuantityInput.value = "0";
+    }
+  } else {
+    requireBookInput.value = "";
+    requireBookInput.dispatchEvent(new Event("change"));
+  }
+  requirTeacherInput.value = "0";
+}
+
 function editRequirement(button) {
   const row = button.closest("tr");
   requireBookInput.value = row.firstElementChild.textContent;
@@ -2712,14 +2729,18 @@ function editRequirement(button) {
   const detail =
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
 
-  const startSurahName = detail.split(" ").at(0);
-  const finishSurahName = detail.split(" ").at(-3);
   if (requireBookInput.value == "القرآن الكريم") {
+    const startSurahName = detail.split(" ").at(0);
+    const finishSurahName = detail.split(" ").at(-3);
     setOrGetOptionValueByText(firstSurahSelect, startSurahName);
     setOrGetOptionValueByText(secondSurahSelect, finishSurahName);
     firstAyahSelect.value = detail.split(" ").at(2);
     secondAyahSelect.value = detail.split(" ").at(-1);
     secondAyahSelect.dispatchEvent(new Event("change"));
+  } else {
+    requirQuantityDetailInput.value = detail;
+    requirQuantityInput.value =
+      row.firstElementChild.nextElementSibling.nextElementSibling.textContent;
   }
   saveStateErrorsInput.value =
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
@@ -3137,6 +3158,7 @@ async function showTab(tabId) {
     showTab("pills-home");
     window.showToast("warning", "الرجاء إختيار قسم.");
   }
+  window.scrollTo({ top: 0, behavior: "instant" });
 }
 
 function getDatesInRange() {
@@ -4269,20 +4291,41 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       (record) => record.attendance === 1,
     ).length;
 
-    const totalQuantity = (
+    const totalSaveQuantity = (
       validRecords.reduce(
         (sum, record) =>
           sum +
           (record.detail?.reduce(
             (acc, val) =>
               acc +
-              parseFloat(val["المقدار"] || 0),
+              (val["النوع"] === "حفظ" ? parseFloat(val["المقدار"] || 0) : 0),
             0,
           ) || 0),
         0,
       ) / 15
     ).toFixed(1);
-    
+    const totalReviseQuantity = (
+      validRecords.reduce(
+        (sum, record) =>
+          sum +
+          (record.detail?.reduce(
+            (acc, val) =>
+              acc +
+              (val["النوع"] !== "حفظ" ? parseFloat(val["المقدار"] || 0) : 0),
+            0,
+          ) || 0),
+        0,
+      ) / 15
+    ).toFixed(1);
+
+    const totalQuantity =
+      (totalSaveQuantity > 0 ? totalSaveQuantity + "  حفظ" : "") +
+      (totalReviseQuantity > 0
+        ? (totalSaveQuantity > 0 ? " و " : "") +
+          totalReviseQuantity +
+          "  مراجعة"
+        : "");
+
     const total =
       validRecords.reduce(
         (sum, record) =>
@@ -4314,7 +4357,13 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       },
       {
         table: {
-          widths: [70, 100, 140, 100, "*"],
+          widths: [
+            70,
+            100,
+            totalSaveQuantity > 0 && totalReviseQuantity > 0 ? 170 : 140,
+            100,
+            "*",
+          ],
           body: [
             [
               {
@@ -4338,7 +4387,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
                 marginTop: 3,
               },
               {
-                text: `إجمالي الصفحات: ${totalQuantity}  صفحة`,
+                text: `إجمالي الصفحات: ${totalQuantity}`,
                 style: "tableCell",
                 alignment: "center",
                 border: [true, false, false, false],
@@ -4432,7 +4481,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       " " +
       (detail["الكتاب"] == "القرآن الكريم" ? "" : detail["الكتاب"]) +
       " ]  " +
-      parseRequirment(detail["التفاصيل"], true) +
+      parseRequirment(detail["التفاصيل"], detail["الكتاب"], true) +
       " [ " +
       (errorsCount > 0
         ? errorsCount == 1
@@ -5223,7 +5272,7 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
       " " +
       (detail["الكتاب"] == "القرآن الكريم" ? "" : detail["الكتاب"]) +
       " ]  " +
-      parseRequirment(detail["التفاصيل"], true) +
+      parseRequirment(detail["التفاصيل"], detail["الكتاب"], true) +
       " [ "
     );
   }
