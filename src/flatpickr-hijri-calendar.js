@@ -126,12 +126,12 @@
         }
         var d = new Date(fp.currentYear, fp.currentMonth);
         var dt = dateTime.fromJSDate(d);
-        if (
-          typeof fp.config.locale === "string" &&
-          fp.config.locale.startsWith("ar")
-        ) {
-          dt = dt.setLocale(fp.config.locale);
-        }
+        // if (
+        //   typeof fp.config.locale === "string" &&
+        //   fp.config.locale.startsWith("ar")
+        // ) {
+          dt = dt.setLocale("ar");
+        // }
         dt = dt.reconfigure({
           outputCalendar: "islamic-umalqura",
         });

@@ -1802,17 +1802,20 @@ function showRequirementsHistory(student_id, page = 1) {
       requirs.push(row[0]);
       requirsDates.push(row[1]);
     });
-    requirsDates = requirsDates.map(date => new Date(date));
+  requirsDates = requirsDates.map((date) => new Date(date));
   showOffCanvas(
     "المتطلبات السابقة",
     `<ul> ${requirs
       .map(
         (i, index) =>
-          `<li><strong>${new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
-            day: "numeric",
-            month: "long",
-            weekday: "long",
-          }).format(
+          `<li><strong>${new Intl.DateTimeFormat(
+            "ar-DZ-u-ca-islamic-umalqura",
+            {
+              day: "numeric",
+              month: "long",
+              weekday: "long",
+            },
+          ).format(
             requirsDates[index],
           )} (${requirsDates[index].toDateString() === new Date().toDateString() ? "اليوم" : fromNow(requirsDates[index]).replace("منذ", "قبل")})</strong>` +
           `<ul>` +
@@ -2467,7 +2470,6 @@ async function InitDatePickers() {
       const formatter = new Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
         day: "numeric",
         month: "long",
-        // year: "numeric",
       });
       return `${formatter.format(date)} ${isRange ? "" : `(${date.toDateString() === new Date().toDateString() ? "اليوم" : fromNow(date).replace("منذ", "قبل")})`}`;
     }
@@ -2495,7 +2497,10 @@ async function InitDatePickers() {
         }
       },
       disableMobile: "true",
-      locale: "ar",
+      locale: {
+        ...flatpickr.l10ns.ar,
+        firstDayOfWeek: 6,
+      },
       plugins: [
         hijriCalendarPlugin(luxon.DateTime, {
           showHijriDates: true,
@@ -2592,7 +2597,10 @@ async function InitDatePickers() {
         reinitStatisticTable();
       },
       disableMobile: "true",
-      locale: "ar",
+      locale: {
+        ...flatpickr.l10ns.ar,
+        firstDayOfWeek: 6,
+      },
       plugins: [
         hijriCalendarPlugin(luxon.DateTime, {
           showHijriDates: true,

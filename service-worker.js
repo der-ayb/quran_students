@@ -18,9 +18,9 @@ workbox.precaching.precacheAndRoute(
 
     { url: "./src/style.css", revision: "9" },
     { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "58" },
+    { url: "./src/script.js", revision: "59" },
     { url: "./src/auth.js", revision: "2" },
-    { url: "./src/flatpickr-hijri-calendar.js", revision: "2" },
+    { url: "./src/flatpickr-hijri-calendar.js", revision: "3" },
     { url: "./src/pdfmake.js", revision: "1" },
     { url: "./src/vfs_fonts.js", revision: "1" },
     { url: "./src/yearpicker.css", revision: "1" },
