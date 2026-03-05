@@ -1300,7 +1300,7 @@ document
 
 document
   .getElementById("newStudentInfosModal")
-  .addEventListener("shown.bs.modal", function () {
+  .addEventListener("show.bs.modal", function () {
     const submitButton = document.querySelector(
       "#newStudentInfosModal [type='submit']",
     );
@@ -1313,7 +1313,7 @@ document
 
 document
   .getElementById("newClassroomInfosModal")
-  .addEventListener("shown.bs.modal", function () {
+  .addEventListener("show.bs.modal", function () {
     const submitButton = document.querySelector(
       "#newClassroomInfosModal [type='submit']",
     );
@@ -1768,7 +1768,8 @@ async function showStudentDayModal(isUniqueStudent = true) {
 }
 
 function parseRequirment(requir, book, bulletin = false) {
-  if (book !== "القرآن الكريم") return `${book} [${requir}]`;
+  if (book !== "القرآن الكريم")
+    return `${book} ${bulletin ? "]" : "["} ${requir}${bulletin ? "[" : "]"}`;
   const reqlist = requir.split(" ");
   if (reqlist[0] == reqlist[4]) {
     const numberOfAyahs = surahsData.find(
@@ -1877,13 +1878,13 @@ async function loadDayStudentsList() {
     !studentDayModalElement.classList.contains("show") &&
     maximizeModalBtn.style.display === "none"
   ) {
-    const newEvalLaddersValues = JSON.parse(
-      project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
-        dayResult[0].values[0][
-          dayResult[0].columns.indexOf("evaluation_ladder_id")
-        ],
-      ])[0].values[0],
-    );
+  const newEvalLaddersValues = JSON.parse(
+    project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
+      dayResult[0].values[0][
+        dayResult[0].columns.indexOf("evaluation_ladder_id")
+      ],
+    ])[0].values[0],
+  );
     if (newEvalLaddersValues !== evaluationLaddersValues) {
       Object.assign(evaluationLaddersValues, newEvalLaddersValues);
       populateEvalSelects();
@@ -1894,7 +1895,7 @@ async function loadDayStudentsList() {
   start_time =
     dayResult[0].values[0][dayResult[0].columns.indexOf("time")] || null;
 
-  const dayNote =
+  let dayNote =
     dayResult[0].values[0][dayResult[0].columns.indexOf("notes")] || "";
   dayNoteContainer.style.display = dayNote ? "block" : "none";
   dayNoteContainer.innerHTML = `<em>${dayNote}</em>`;
@@ -2358,31 +2359,48 @@ async function loadDayStudentsList() {
                   {
                     text: '<i class="fa-regular fa-comment"></i> ملاحظة اليوم',
                     action: async function () {
-                      let note = prompt("أكتب ملاحظة:", dayNote);
-                      if (note) {
-                        if (!project_db) {
-                          window.showToast(
-                            "info",
-                            "لا يوجد قاعدة بيانات مفتوحة.",
-                          );
-                          return;
+                      swal("أكتب ملاحظة:", {
+                        content: {
+                          element: "input",
+                          attributes: {
+                            placeholder: dayNote,
+                          },
+                        },
+                        buttons: [
+                          {
+                            text: "إلغاء",
+                            value: false,
+                            visible: true,
+                            className: "",
+                            closeModal: true,
+                          },
+                          "حفظ",
+                        ],
+                      }).then((value) => {
+                        if (value !== false) {
+                          if (!project_db) {
+                            window.showToast(
+                              "info",
+                              "لا يوجد قاعدة بيانات مفتوحة.",
+                            );
+                            return;
+                          }
+                          try {
+                            project_db.run(
+                              "UPDATE education_day SET notes = ? WHERE id = ?;",
+                              [value || null, workingDayID],
+                            );
+                            saveToIndexedDB(project_db.export());
+                            dayNoteContainer.style.display = value
+                              ? "block"
+                              : "none";
+                            dayNoteContainer.innerHTML = `<em>${value}</em>`;
+                            dayNote = value;
+                          } catch (e) {
+                            window.showToast("error", "Error: " + e.message);
+                          }
                         }
-                        try {
-                          project_db.run(
-                            "UPDATE education_day SET notes = ? WHERE id = ?;",
-                            [note, workingDayID],
-                          );
-                          saveToIndexedDB(project_db.export());
-                          dayNoteContainer.style.display = note
-                            ? "block"
-                            : "none";
-                          dayNoteContainer.innerHTML = `<em>${note}</em>`;
-                        } catch (e) {
-                          window.showToast("error", "Error: " + e.message);
-                        }
-                      } else {
-                        window.showToast("error", "لم يتم حفظ الملاحظة.");
-                      }
+                      });
                     },
                   },
                   {
@@ -2445,7 +2463,7 @@ async function loadDayStudentsList() {
   }
 }
 
-async function changeDayDate(date, changeInput = true) {
+async function changeDayDate(date) {
   if (date == new Date().toISOString().slice(0, 10)) {
     document
       .getElementsByClassName("date-icon")[0]
@@ -2454,7 +2472,6 @@ async function changeDayDate(date, changeInput = true) {
     document.getElementsByClassName("date-icon")[0].style.color = "#00ff4c";
   }
   workingDay = date;
-  if (changeInput) dayDateInput._flatpickr.setDate(workingDay, true);
   maximizeModalBtn.style.display = "none";
   await loadDayStudentsList();
 }
@@ -2492,7 +2509,7 @@ async function InitDatePickers() {
       },
       onChange: async function (selectedDates, dateStr, instance) {
         if (selectedDates.length > 0) {
-          changeDayDate(dateStr, false);
+          changeDayDate(dateStr);
           instance.altInput.value = formatHijriDate(selectedDates[0]);
         }
       },
@@ -2540,6 +2557,12 @@ async function InitDatePickers() {
       previousMonthStart.getDate() - (previousMonthStartIslamicDay - 1),
     );
 
+    const firstDayOfLastOctober = new Date(
+      today.getMonth() < 10 ? today.getFullYear() - 1 : today.getFullYear(),
+      9,
+      1,
+    );
+
     // Helper function for date manipulation
     const fp_incr = (date, days) => {
       const result = new Date(date);
@@ -2555,7 +2578,6 @@ async function InitDatePickers() {
       return result;
     };
 
-    const yesterday = fp_incr(today, -1);
     const lastSaturday = getLastSaturday(today);
     const prevWeekSaturday = new Date(lastSaturday);
     prevWeekSaturday.setDate(prevWeekSaturday.getDate() - 7);
@@ -2610,11 +2632,11 @@ async function InitDatePickers() {
       ],
       ranges: {
         اليوم: [endDate, endDate],
-        أمس: [yesterday, yesterday],
         "الأسبوع الحالي": [lastSaturday, endDate],
         "الأسبوع الماضي": [prevWeekSaturday, fp_incr(prevWeekSaturday, 6)],
         "هذا الشهر": [currentMonthStart, endDate],
         "الشهر الماضي": [previousMonthStart, previousMonthEnd],
+        "الموسم الحالي": [firstDayOfLastOctober, endDate],
       },
       rangesOnly: false, // only show the ranges menu unless the custom range button is selected
       rangesAllowCustom: true, // adds a Custom Range button to show the calendar
@@ -2774,7 +2796,7 @@ function editRequirement(button) {
     addQuranSelectionBtn.onclick = () => addRequirToTable();
   };
   studentDayModalElement.addEventListener(
-    "hidden.bs.modal",
+    "hide.bs.modal",
     (event) => {
       addQuranSelectionBtn.innerText = "إضافة";
       addQuranSelectionBtn.onclick = () => addRequirToTable();
@@ -3132,34 +3154,23 @@ async function showTab(tabId) {
       newStudentInfosForm.reset();
       studentIdInput.value = "";
     } else if (tabId === "pills-new_day") {
-      changeDayDate(workingDay);
+      dayDateInput._flatpickr.setDate(workingDay, true);
       studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
       // showStudentsBulletins(
       //   [
-      //     // "2026-01-21",
-      //     // "2026-01-23",
-      //     // "2026-01-24",
-      //     // "2026-01-26",
-      //     // "2026-01-27",
-      //     // "2026-01-28",
-      //     // "2026-01-30",
-      //     // "2026-01-31",
-      //     // "2026-02-02",
-      //     // "2026-02-03",
-      //     // "2026-02-04",
-      //     // "2026-02-06",
-      //     // "2026-02-07",
-      //     // "2026-02-08",
-      //     "2026-02-14",
-      //     "2026-02-15",
-      //     "2026-02-16",
-      //     "2026-02-17",
-      //     "2026-02-18",
+      //     "2026-02-24",
+      //     "2026-02-25",
+      //     "2026-02-26",
+      //     "2026-02-27",
+      //     "2026-02-28",
+      //     "2026-03-02",
+      //     "2026-03-03",
+      //     "2026-03-04",
       //   ],
       //   // "83,82,84",
-      //   "43,76",
+      //   // "43,76",
       // );
     }
   } else {
@@ -4368,7 +4379,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           widths: [
             70,
             100,
-            totalSaveQuantity > 0 && totalReviseQuantity > 0 ? 170 : 140,
+            totalSaveQuantity > 0 && totalReviseQuantity > 0 ? 175 : 140,
             100,
             "*",
           ],
@@ -4480,23 +4491,30 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
   function formatDetail(detail) {
     if (!detail) return "-";
-    const errorsCount = detail["الأخطاء"].includes(" ")
-      ? parseInt(detail["الأخطاء"].split(" ")[0]) +
-        parseInt(detail["الأخطاء"].split(" ")[4])
-      : parseInt(detail["الأخطاء"]);
-    return (
-      detail["النوع"] +
-      " " +
-      (detail["الكتاب"] == "القرآن الكريم" ? "" : detail["الكتاب"]) +
-      " ]  " +
-      parseRequirment(detail["التفاصيل"], detail["الكتاب"], true) +
-      " [ " +
-      (errorsCount > 0
-        ? errorsCount == 1
-          ? " بخطأ واحد"
-          : " بأخطاء: " + errorsCount
-        : " بدون أخطاء")
-    );
+    if (detail["الكتاب"] !== "القرآن الكريم") {
+      return (
+        detail["النوع"] +
+        " -  " +
+        parseRequirment(detail["التفاصيل"], detail["الكتاب"], true)
+      );
+    } else {
+      const errorsCount = detail["الأخطاء"].includes(" ")
+        ? parseInt(detail["الأخطاء"].split(" ")[0]) +
+          parseInt(detail["الأخطاء"].split(" ")[4])
+        : parseInt(detail["الأخطاء"]);
+      return (
+        detail["النوع"] +
+        " " +
+        " ]  " +
+        parseRequirment(detail["التفاصيل"], detail["الكتاب"], true) +
+        " [ " +
+        (errorsCount > 0
+          ? errorsCount == 1
+            ? " بخطأ واحد"
+            : " بأخطاء: " + errorsCount
+          : " بدون أخطاء")
+      );
+    }
   }
 }
 

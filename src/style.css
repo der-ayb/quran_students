@@ -382,3 +382,8 @@ th.header-rotated>div>span {
   -webkit-transition: none !important;
   transition: none !important;
 }
+
+/* Custom class to minimize the modal */
+.no-backdrop {
+    display: none !important;
+}
