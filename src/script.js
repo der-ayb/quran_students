@@ -1878,13 +1878,13 @@ async function loadDayStudentsList() {
     !studentDayModalElement.classList.contains("show") &&
     maximizeModalBtn.style.display === "none"
   ) {
-  const newEvalLaddersValues = JSON.parse(
-    project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
-      dayResult[0].values[0][
-        dayResult[0].columns.indexOf("evaluation_ladder_id")
-      ],
-    ])[0].values[0],
-  );
+    const newEvalLaddersValues = JSON.parse(
+      project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
+        dayResult[0].values[0][
+          dayResult[0].columns.indexOf("evaluation_ladder_id")
+        ],
+      ])[0].values[0],
+    );
     if (newEvalLaddersValues !== evaluationLaddersValues) {
       Object.assign(evaluationLaddersValues, newEvalLaddersValues);
       populateEvalSelects();
@@ -3082,45 +3082,6 @@ function removeEvalLadder(type, key) {
 }
 
 async function showTab(tabId) {
-  // ----
-  // let alllist = [];
-  // let savelist = [];
-  // let reviselist = [];
-  // let hasilalist = [];
-  // const lsR = project_db.exec(`
-  //           SELECT dr.detail
-  //           FROM day_requirements dr
-  //           INNER JOIN education_day ed ON dr.day_id = ed.id
-  //           WHERE dr.student_id = 43
-  //           ORDER BY ed.date DESC`);
-  // if (lsR.length)
-  //   detail = lsR[0].values.forEach((item) => {
-  //     alllist.push(...JSON.parse(item[0]).reverse());
-  //   });
-  // alllist.forEach((item) => {
-  //   switch (item["النوع"]) {
-  //     case "حفظ":
-  //       savelist.push(item["التفاصيل"]);
-  //       break;
-  //     case "مراجعة":
-  //       reviselist.push(item["التفاصيل"]);
-  //       break;
-  //     case "حصيلة":
-  //       hasilalist.push(item["التفاصيل"]);
-  //       break;
-  //   }
-  // });
-
-  // console.table(savelist);
-  // SELECT quran_ayat.id,quran_index.sura FROM quran_ayat
-  // INNER JOIN quran_index ON quran_index.id_sura = quran_ayat.sura
-  // WHERE quran_ayat.id BETWEEN
-  // (SELECT id FROM quran_ayat  WHERE ayah = 12
-  // AND sura = (SELECT id_sura FROM quran_index WHERE sura = "النساء"))
-  // AND
-  // (SELECT id FROM quran_ayat  WHERE ayah = 18
-  // AND sura = (SELECT id_sura FROM quran_index WHERE sura = "النساء"));
-  // ------
   document
     .querySelectorAll(".tab-pane")
     .forEach((el) => el.classList.remove("show", "active"));
@@ -5593,6 +5554,79 @@ async function showResultsStatistics() {
     ORDER BY s.id;
 `;
   const buttons = [
+    {
+      text: '<i class="fa-solid fa-dice-six"></i>',
+      action: async function (e, dt) {
+        const studentIDs = getStatisticsSelectedStudentsId().split(",");
+        studentIDs.forEach((selectedStudentID) => {
+          if (!project_db) {
+            window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+            return;
+          }
+
+          const dateList = dates.map((date) => `'${date}'`).join(", ");
+
+          let name = "";
+          let allAyatlist = [];
+          let allRequirlist = [];
+          let savelist = [];
+          let reviselist = [];
+          let hasilalist = [];
+          const lsR = project_db.exec(`
+            SELECT dr.detail,(SELECT fname || ' ' || lname FROM students WHERE id = dr.student_id) as student_name
+            FROM day_requirements dr
+            INNER JOIN education_day ed ON dr.day_id = ed.id
+            WHERE dr.student_id = ${selectedStudentID} AND ed.date IN (${dateList})
+            ORDER BY ed.date DESC`);
+          if (lsR.length)
+            detail = lsR[0].values.forEach((item) => {
+              name = item[1];
+              allRequirlist.push(...JSON.parse(item[0]).reverse());
+            });
+          allRequirlist.forEach((item) => {
+            switch (item["النوع"]) {
+              case "حفظ":
+                savelist.push(item["التفاصيل"]);
+                break;
+              case "مراجعة":
+                reviselist.push(item["التفاصيل"]);
+                break;
+              case "حصيلة":
+                hasilalist.push(item["التفاصيل"]);
+                break;
+            }
+          });
+
+          allRequirlist.forEach((item) => {
+            if (item["الكتاب"] !== "القرآن الكريم") return;
+            const requirDetail = item["التفاصيل"].split(" ");
+            const lsRr = quran_db.exec(`
+              SELECT quran_ayat.id,quran_index.sura FROM quran_ayat
+              INNER JOIN quran_index ON quran_index.id_sura = quran_ayat.sura
+              WHERE quran_ayat.id BETWEEN
+              (SELECT id FROM quran_ayat  WHERE ayah = ${requirDetail[2]}
+              AND sura = (SELECT id_sura FROM quran_index WHERE sura = "${requirDetail[0]}"))
+              AND
+              (SELECT id FROM quran_ayat  WHERE ayah = ${requirDetail[6]}
+              AND sura = (SELECT id_sura FROM quran_index WHERE sura = "${requirDetail[4]}"));
+            `);
+            lsRr[0].values.forEach((item) => {
+              allAyatlist.push(item[0]);
+            });
+          });
+          allAyatlist = [...new Set(allAyatlist)];
+          const randomAyatID =
+            allAyatlist[Math.floor(Math.random() * allAyatlist.length)];
+
+          const rs = quran_db.exec(
+            "SELECT * FROM quran_ayat WHERE id = " + randomAyatID,
+          )[0];
+          rs.values.forEach((row) => {
+            alert(`${name} : ${row[3]}`);
+          });
+        });
+      },
+    },
     ...(dates.length > 13
       ? []
       : [
