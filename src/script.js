@@ -3158,9 +3158,10 @@ async function showTab(tabId) {
       studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      // showStudentsBulletins(
+      // showStudentsBulletins2(
       //   [
-      //     "2026-02-24",
+      //     "2026-02-20",
+      //     "2026-02-21",
       //     "2026-02-25",
       //     "2026-02-26",
       //     "2026-02-27",
