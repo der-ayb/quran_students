@@ -120,12 +120,17 @@ const evaluationCollapse = new bootstrap.Collapse(
   document.getElementById("evaluationCollapse"),
 );
 
-maximizeModalBtn.onclick = async (e) => {
-  studentDayModal.show();
+function hideMaximizeModalBtn() {
+  studentDayModalElement.style.display = "block";
+  document.querySelector(".modal-backdrop")?.classList.remove("no-backdrop");
   maximizeModalBtn.style.display = "none";
-};
+}
+
+maximizeModalBtn.onclick = hideMaximizeModalBtn;
 
 async function minimizeModal() {
+  studentDayModalElement.style.display = "none";
+  document.querySelector(".modal-backdrop")?.classList.add("no-backdrop");
   maximizeModalBtn.style.removeProperty("display");
 }
 
@@ -1749,6 +1754,7 @@ function setOrGetOptionValueByText(selector, text, get = false) {
 
 async function showStudentDayModal(isUniqueStudent = true) {
   studentDayModal.show();
+  studentDayModalElement.dispatchEvent(new Event("show.bs.modal"));
   studentDayFormSubmitBtn.disabled = true;
   studentDayFormSubmitBtn.nextElementSibling.disabled = true;
 
@@ -1874,10 +1880,6 @@ async function loadDayStudentsList() {
   }
 
   // fill evaluation ladder
-  if (
-    !studentDayModalElement.classList.contains("show") &&
-    maximizeModalBtn.style.display === "none"
-  ) {
     const newEvalLaddersValues = JSON.parse(
       project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
         dayResult[0].values[0][
@@ -1885,10 +1887,23 @@ async function loadDayStudentsList() {
         ],
       ])[0].values[0],
     );
+
+  const updateEvaluation = () => {
     if (newEvalLaddersValues !== evaluationLaddersValues) {
       Object.assign(evaluationLaddersValues, newEvalLaddersValues);
       populateEvalSelects();
     }
+  };
+
+  if (
+    !studentDayModalElement.classList.contains("show") &&
+    maximizeModalBtn.style.display === "none"
+  ) {
+    updateEvaluation();
+  } else {
+    studentDayModalElement.addEventListener("show.bs.modal", updateEvaluation, {
+      once: true,
+    });
   }
 
   workingDayID = dayResult[0].values[0][dayResult[0].columns.indexOf("id")];
@@ -1957,9 +1972,8 @@ async function loadDayStudentsList() {
 
         function editStudentDay(isEvaluation = true) {
           teachersPoints = {};
+          hideMaximizeModalBtn();
           showStudentDayModal(true);
-
-          maximizeModalBtn.style.display = "none";
 
           for (const option of requirTeacherInput.options) {
             option.disabled = option.value == student_id;
@@ -2472,7 +2486,7 @@ async function changeDayDate(date) {
     document.getElementsByClassName("date-icon")[0].style.color = "#00ff4c";
   }
   workingDay = date;
-  maximizeModalBtn.style.display = "none";
+  // maximizeModalBtn.style.display = "none";
   await loadDayStudentsList();
 }
 
@@ -3053,7 +3067,7 @@ function updateEvalLadder() {
   );
   saveToIndexedDB(project_db.export());
   displayEvalLadder();
-  maximizeModalBtn.style.display = "none";
+  // hideMaximizeModalBtn();
 
   window.showToast("info", "تم تحديث سلم النقيط بنجاح!");
 }
@@ -3116,7 +3130,7 @@ async function showTab(tabId) {
       studentIdInput.value = "";
     } else if (tabId === "pills-new_day") {
       dayDateInput._flatpickr.setDate(workingDay, true);
-      studentDayModal.hide();
+      if(maximizeModalBtn.style.display === "none") studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
       // showStudentsBulletins2(
@@ -5201,10 +5215,10 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
                 marginTop: 3,
               },
               ...[
-                !fullNote
+                fullNote
                   ? {
-                      text: "الملاحظة:  تلميذة خلوقة نسأل الله أن يحفظكِ بما يحفظ به عباده الصالحين",
-                      // text: reverseArabicWords(`الملاحظة:  ${fullNote}`),
+                      // text: "الملاحظة:  تلميذة خلوقة نسأل الله أن يحفظكِ بما يحفظ به عباده الصالحين",
+                      text: reverseArabicWords(`الملاحظة:  ${fullNote}`),
                       style: "tableCell",
                       alignment: "right",
                       bold: true,
