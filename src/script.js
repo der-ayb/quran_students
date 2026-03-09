@@ -21,7 +21,7 @@ const evaluationLaddersValues = {
   behavior: { ممتاز: 5, جيد: 4, متوسط: 3, سيء: -5, "سيئ جدا": -10 },
   clothing: { ممتاز: 5, جيد: 3, حسن: 2, "غير مقبول": -5 },
   haircut: { جيد: 5, متوسط: 2, "غير مقبول": -5 },
-  requirments: { requirReducePerRepit: 10 },
+  requirments: { requirReducePerRepit: 10, requirReducePerAlert: 2 },
 };
 let workingClassroomId = localStorage.getItem("workingClassroomId");
 let studentsTableDetailIsShow = false;
@@ -49,6 +49,7 @@ const firstSurahSelect = document.getElementById("first-surah");
 const requirEvaluationInput = document.getElementById("requirEvaluation");
 const requireBookInput = document.getElementById("requirBook");
 const saveStateErrorsInput = document.getElementById("saveStateErrors");
+const saveStateAlertsInput = document.getElementById("saveStateAlerts");
 const requirMoyenneInput = document.getElementById("requirMoyenne");
 const requirRepitInput = document.getElementById("requirRepit");
 const requirTeacherInput = document.getElementById("requirTeacher");
@@ -296,6 +297,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // init Plus Minus buttons
   initPlusMinusButtons(saveStateErrorsInput);
+  initPlusMinusButtons(saveStateAlertsInput);
   initPlusMinusButtons(addedPointsInput);
   initPlusMinusButtons(prayerInput);
   initPlusMinusButtons(requirMoyenneInput);
@@ -1346,6 +1348,7 @@ requireBookInput.onchange = function () {
   requirQuantityDetailInput.value = "";
   requirEvaluationInput.value = "10.00";
   saveStateErrorsInput.value = "0";
+  saveStateAlertsInput.value = "0";
   requirRepitInput.value = "0";
 };
 
@@ -1388,14 +1391,14 @@ function onChangeAttendanceState(radio = null) {
   if (selectedRadio.id !== "present") {
     newStudentDayModalBody.style.display = "none";
   } else {
-    evalMoyenne.value = calcEvaluationMoyenne(
-      retardInput.value,
-      clothingInput.value,
-      haircutInput.value,
-      behaviorInput.value,
-      prayerInput.value,
-      addedPointsInput.value,
-    );
+    // evalMoyenne.value = calcEvaluationMoyenne(
+    //   retardInput.value,
+    //   clothingInput.value,
+    //   haircutInput.value,
+    //   behaviorInput.value,
+    //   prayerInput.value,
+    //   addedPointsInput.value,
+    // );
     newStudentDayModalBody.style.display = "block";
   }
 }
@@ -1421,7 +1424,7 @@ function calcEvaluationMoyenne(
   return moyenne.toFixed(2);
 }
 
-function calcRequirementMoyenne(quantity, evaluation, type, repit) {
+function calcRequirementMoyenne(quantity, evaluation, type, repit, alerts) {
   let value = 0;
   if (type === "حفظ") {
     value = evaluation * quantity;
@@ -1433,26 +1436,42 @@ function calcRequirementMoyenne(quantity, evaluation, type, repit) {
   return value
     ? (
         value -
-        repit * evaluationLaddersValues["requirments"]["requirReducePerRepit"]
+        repit *
+          (evaluationLaddersValues.requirments?.requirReducePerRepit || 10) -
+        alerts *
+          (evaluationLaddersValues.requirments?.requirReducePerAlert || 2)
       ).toFixed(2)
-    : "0";
+    : 0;
 }
 
 function calcRequirementsMoyenne() {
-  let moyenne = 0;
   const headers = Array.from(
     requirementsTable.querySelectorAll("thead th"),
   ).map((header) => header.textContent.trim());
-  const rows = requirementsTable.querySelectorAll("tbody tr");
-  rows.forEach((row) => {
+  const moyenneIndex = headers.indexOf("المعدل");
+  const quantityIndex = headers.indexOf("المقدار");
+
+  let moyenne = 0;
+  let totalQuantity = 0;
+
+  requirementsTable.querySelectorAll("tbody tr").forEach((row) => {
     const cells = row.querySelectorAll("td");
-    cells.forEach((cell, index) => {
-      const key = headers[index];
-      if (key && key == "المعدل")
-        moyenne += parseFloat(cell.textContent.trim() || "0");
-    });
+    if (moyenneIndex !== -1) {
+      moyenne += parseFloat(cells[moyenneIndex]?.textContent.trim() || "0");
+    }
+    if (quantityIndex !== -1) {
+      totalQuantity += parseFloat(
+        cells[quantityIndex]?.textContent.trim() || "0",
+      );
+    }
   });
-  return moyenne ? moyenne.toFixed(2) : "0.00";
+
+  return moyenne
+    ? (
+        moyenne +
+        totalQuantity / requirementsTable.querySelectorAll("tbody tr").length
+      ).toFixed(2)
+    : "0.00";
 }
 
 function calcRequirementEvaluation(
@@ -1508,13 +1527,16 @@ function setRequirEvalInput() {
     requirEvaluationInput.value,
     requirTypeInput.value,
     requirRepitInput.value,
+    saveStateAlertsInput.value,
   );
 }
 
-$([requirTypeInput, saveStateErrorsInput, requirRepitInput]).on(
-  "change input",
-  setRequirEvalInput,
-);
+$([
+  requirTypeInput,
+  saveStateErrorsInput,
+  saveStateAlertsInput,
+  requirRepitInput,
+]).on("change input", setRequirEvalInput);
 
 function update_student_day_notes(studentId, working_day_id) {
   if (!project_db) {
@@ -2906,7 +2928,7 @@ function addRequirToTable(row = false) {
       <button type="button" class="btn btn-success" onclick="editRequirement(this);"><i class="fa-solid fa-pen-to-square"></i></button>
       <button class="btn btn-danger btn-sm" 
         onclick="teachersPoints[requirTeacherInput.value] = teachersPoints[requirTeacherInput.value] -
-                Math.floor(parseFloat(this.parentNode.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.textContent));
+                Math.floor(parseFloat(this.parentNode.parentNode.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.textContent));
                 removeRequirItem(this);"><i class="fa-solid fa-xmark"></i></button>
     </div>
     </td>`;
@@ -3008,6 +3030,8 @@ function displayEvalLadder(evalLaddersValues = null) {
     evalLaddersValues.retard.retardPointsPerMinute;
   document.getElementById("requirReducePerRepit").value =
     evalLaddersValues.requirments?.requirReducePerRepit || 10;
+  document.getElementById("requirReducePerAlert").value =
+    evalLaddersValues.requirments?.requirReducePerAlert || 2;
   for (type of ["behavior", "clothing", "haircut"]) {
     const list = document.getElementById(type + "-marksList");
     list.innerHTML = "";
@@ -3034,6 +3058,8 @@ function updateEvalLadder() {
     },
     requirments: {
       requirReducePerRepit: document.getElementById("requirReducePerRepit")
+        .value,
+      requirReducePerAlert: document.getElementById("requirReducePerAlert")
         .value,
     },
   };
@@ -3133,21 +3159,22 @@ async function showTab(tabId) {
       if (maximizeModalBtn.style.display === "none") studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      if (devMode) showStudentsBulletins(
-        [
-          "2026-02-20",
-          "2026-02-21",
-          "2026-02-25",
-          "2026-02-26",
-          "2026-02-27",
-          "2026-02-28",
-          "2026-03-02",
-          "2026-03-03",
-          "2026-03-04",
-        ],
-        // "83,82,84",
-        // "43,76",
-      );
+      if (devMode)
+        showStudentsBulletins(
+          [
+            "2026-02-20",
+            "2026-02-21",
+            "2026-02-25",
+            "2026-02-26",
+            "2026-02-27",
+            "2026-02-28",
+            "2026-03-02",
+            "2026-03-03",
+            "2026-03-04",
+          ],
+          // "83,82,84",
+          // "43,76",
+        );
     }
   } else {
     showTab("pills-home");
@@ -3498,7 +3525,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           // Add separator between students (except for the first one)
           content.push({
             text: "ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ",
-            bold:true,
+            bold: true,
             absolutePosition: {
               y: 841.89 / 2 - 7,
               x: 20,
