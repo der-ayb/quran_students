@@ -1,10 +1,10 @@
 //service workers
+const devMode =
+  window.location.hostname == "localhost" ||
+  window.location.hostname.includes("ngrok-free");
 let sw_path = null;
 if ("serviceWorker" in navigator) {
-  if (
-    window.location.hostname == "localhost" ||
-    window.location.hostname.includes("ngrok-free")
-  ) {
+  if (devMode) {
     sw_path = "./utils/dev-service-worker.js";
   } else {
     sw_path = "./service-worker.js";
@@ -26,7 +26,7 @@ if (sw_path) {
             ) {
               window.showToast(
                 "info",
-                "تم التماس تحديث جديد، يرجى <button type='button' class='btn btn-dark' onclick='window.location.reload()'>تحديث</button> الصفحة."
+                "تم التماس تحديث جديد، يرجى <button type='button' class='btn btn-dark' onclick='window.location.reload()'>تحديث</button> الصفحة.",
               );
             }
           });

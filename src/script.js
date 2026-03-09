@@ -3133,7 +3133,7 @@ async function showTab(tabId) {
       if (maximizeModalBtn.style.display === "none") studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      showStudentsBulletins(
+      if (devMode) showStudentsBulletins(
         [
           "2026-02-20",
           "2026-02-21",
