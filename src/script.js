@@ -1775,7 +1775,7 @@ async function showStudentDayModal(isUniqueStudent = true) {
 
 function parseRequirment(requir, book, bulletin = false) {
   if (book !== "القرآن الكريم")
-    return `${book} ${bulletin ? "]" : "["} ${requir}${bulletin ? "[" : "]"}`;
+    return `${book} ${bulletin ? ")" : "("} ${requir.length > 35 ? requir.slice(0, 35) + "... " : requir}${bulletin ? "(" : ")"}`;
   const reqlist = requir.split(" ");
   if (reqlist[0] == reqlist[4]) {
     const numberOfAyahs = surahsData.find(
@@ -1880,13 +1880,13 @@ async function loadDayStudentsList() {
   }
 
   // fill evaluation ladder
-    const newEvalLaddersValues = JSON.parse(
-      project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
-        dayResult[0].values[0][
-          dayResult[0].columns.indexOf("evaluation_ladder_id")
-        ],
-      ])[0].values[0],
-    );
+  const newEvalLaddersValues = JSON.parse(
+    project_db.exec("SELECT detail FROM evaluation_ladder WHERE id = ?;", [
+      dayResult[0].values[0][
+        dayResult[0].columns.indexOf("evaluation_ladder_id")
+      ],
+    ])[0].values[0],
+  );
 
   const updateEvaluation = () => {
     if (newEvalLaddersValues !== evaluationLaddersValues) {
@@ -3130,24 +3130,24 @@ async function showTab(tabId) {
       studentIdInput.value = "";
     } else if (tabId === "pills-new_day") {
       dayDateInput._flatpickr.setDate(workingDay, true);
-      if(maximizeModalBtn.style.display === "none") studentDayModal.hide();
+      if (maximizeModalBtn.style.display === "none") studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      // showStudentsBulletins2(
-      //   [
-      //     "2026-02-20",
-      //     "2026-02-21",
-      //     "2026-02-25",
-      //     "2026-02-26",
-      //     "2026-02-27",
-      //     "2026-02-28",
-      //     "2026-03-02",
-      //     "2026-03-03",
-      //     "2026-03-04",
-      //   ],
-      //   // "83,82,84",
-      //   // "43,76",
-      // );
+      showStudentsBulletins(
+        [
+          "2026-02-20",
+          "2026-02-21",
+          "2026-02-25",
+          "2026-02-26",
+          "2026-02-27",
+          "2026-02-28",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-04",
+        ],
+        // "83,82,84",
+        // "43,76",
+      );
     }
   } else {
     showTab("pills-home");
@@ -3498,6 +3498,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           // Add separator between students (except for the first one)
           content.push({
             text: "ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ",
+            bold:true,
             absolutePosition: {
               y: 841.89 / 2 - 7,
               x: 20,
@@ -3530,18 +3531,18 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
         header: {
           fontSize: 14,
           bold: true,
-          color: "#2c3e50",
+          // color: "#2c3e50",
         },
         subheader: {
           fontSize: 10,
           bold: true,
-          color: "#34495e",
+          // color: "#34495e",
           margin: [0, 2, 0, 2],
         },
         tableHeader: {
           fontSize: 8,
           bold: true,
-          color: "#2c3e50",
+          // color: "#2c3e50",
           fillColor: "#ecf0f1",
         },
         tableCell: {
@@ -3552,7 +3553,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           fontSize: 10,
           bold: true,
           margin: [0, 8, 0, 4],
-          color: "#2c3e50",
+          // color: "#2c3e50",
         },
       },
       defaultStyle: {
@@ -4467,30 +4468,24 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
   function formatDetail(detail) {
     if (!detail) return "-";
-    if (detail["الكتاب"] !== "القرآن الكريم") {
-      return (
-        detail["النوع"] +
-        " -  " +
-        parseRequirment(detail["التفاصيل"], detail["الكتاب"], true)
-      );
-    } else {
-      const errorsCount = detail["الأخطاء"].includes(" ")
-        ? parseInt(detail["الأخطاء"].split(" ")[0]) +
-          parseInt(detail["الأخطاء"].split(" ")[4])
-        : parseInt(detail["الأخطاء"]);
-      return (
-        detail["النوع"] +
-        " " +
-        " ]  " +
-        parseRequirment(detail["التفاصيل"], detail["الكتاب"], true) +
-        " [ " +
-        (errorsCount > 0
+    const errorsCount = detail["الأخطاء"].includes(" ")
+      ? parseInt(detail["الأخطاء"].split(" ")[0]) +
+        parseInt(detail["الأخطاء"].split(" ")[4])
+      : parseInt(detail["الأخطاء"]);
+    return (
+      detail["النوع"] +
+      " " +
+      " ]  " +
+      parseRequirment(detail["التفاصيل"], detail["الكتاب"], true) +
+      " [ " +
+      (detail["الكتاب"] !== "القرآن الكريم"
+        ? ""
+        : errorsCount > 0
           ? errorsCount == 1
             ? " بخطأ واحد"
             : " بأخطاء: " + errorsCount
           : " بدون أخطاء")
-      );
-    }
+    );
   }
 }
 
