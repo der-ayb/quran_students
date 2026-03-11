@@ -13,12 +13,12 @@ workbox.precaching.precacheAndRoute(
     { url: "./", revision: "1" },
     { url: "./favicon.ico", revision: "1" },
     { url: "./index.html", revision: "1" },
-    { url: "./app.html", revision: "36" },
+    { url: "./app.html", revision: "37" },
     { url: "./manifest.json", revision: "2" },
 
     { url: "./src/style.css", revision: "10" },
     { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "64" },
+    { url: "./src/script.js", revision: "65" },
     { url: "./src/auth.js", revision: "2" },
     { url: "./src/flatpickr-hijri-calendar.js", revision: "3" },
     { url: "./src/pdfmake.js", revision: "1" },
@@ -213,7 +213,7 @@ workbox.precaching.precacheAndRoute(
 // Cache-first for precached local and CDN files
 workbox.routing.registerRoute(
   ({ url }) =>
-    url.origin === location.origin ||
+    // url.origin === location.origin ||
     url.origin === "https://fonts.googleapis.com" ||
     url.origin === "https://cdnjs.cloudflare.com" ||
     url.origin === "https://www.gstatic.com" ||

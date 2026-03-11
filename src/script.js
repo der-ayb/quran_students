@@ -1433,15 +1433,15 @@ function calcRequirementMoyenne(quantity, evaluation, type, repit, alerts) {
   } else if (type === "مراجعة") {
     value = evaluation * (quantity / 2);
   }
-  return value
-    ? (
-        value -
+  return (
+    value
+      ? value -
         repit *
           (evaluationLaddersValues.requirments?.requirReducePerRepit || 10) -
         alerts *
           (evaluationLaddersValues.requirments?.requirReducePerAlert || 2)
-      ).toFixed(2)
-    : 0;
+      : 0
+  ).toFixed(2);
 }
 
 function calcRequirementsMoyenne() {
@@ -1466,12 +1466,12 @@ function calcRequirementsMoyenne() {
     }
   });
 
-  return moyenne
-    ? (
-        moyenne +
+  return (
+    moyenne
+      ? moyenne +
         totalQuantity / requirementsTable.querySelectorAll("tbody tr").length
-      ).toFixed(2)
-    : "0.00";
+      : 0
+  ).toFixed(2);
 }
 
 function calcRequirementEvaluation(
@@ -1485,7 +1485,7 @@ function calcRequirementEvaluation(
         (requirType === "حفظ" ? 2 : requirType === "مراجعة" ? 1 : 0.8)),
   );
   const result = parseFloat(10 - errorValue * parseFloat(saveStateErrors));
-  return result ? (result < 0 ? 0 : result.toFixed(2)) : "";
+  return result > 0 ? result.toFixed(2) : 0;
 }
 
 function calcGlobalMoyenne(requirsMoyenne, evalMoyenne) {
@@ -2049,6 +2049,7 @@ async function loadDayStudentsList() {
                 <td style="white-space: normal;">${item["التفاصيل"]}</td>
                 <td>${item["التقدير"]}</td>
                 <td>${item["الأخطاء"] || ""}</td>
+                <td>${item["التنبيهات"] || ""}</td>
                 <td>${item["المعدل"]}</td>
                 <td>${item["المعرض"] || ""}</td>
                 <td>${item["الإعادة"] || ""}</td>
@@ -2808,12 +2809,22 @@ function editRequirement(button) {
     requirQuantityInput.value =
       row.firstElementChild.nextElementSibling.nextElementSibling.textContent;
   }
-  saveStateErrorsInput.value =
-    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+  const saveStateErrors =
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim() ||
+    "0";
+  saveStateErrorsInput.value = !saveStateErrors.includes("+")
+    ? saveStateErrors
+    : parseInt(saveStateErrors.split(" ")[0]) +
+      parseInt(saveStateErrors.split(" ")[4]);
+  saveStateAlertsInput.value =
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim() ||
+    "0";
+
   const teacherName =
-    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
-  requirRepitInput.value =
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+  requirRepitInput.value =
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim() ||
+    "0";
   setOrGetOptionValueByText(requirTeacherInput, teacherName);
   setRequirEvalInput();
   requireBookInput.scrollIntoView();
@@ -2913,6 +2924,9 @@ function addRequirToTable(row = false) {
     <td>${requirEvaluationInput.value}</td>
     <td>
       ${saveStateErrorsInput.value}
+    </td>
+    <td>
+      ${saveStateAlertsInput.value}
     </td>
     <td>
       ${requirMoyenneInput.value}
