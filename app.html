@@ -82,7 +82,7 @@
   <link rel="stylesheet" href="https://cdn.datatables.net/select/3.1.3/css/select.bootstrap5.min.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.5/css/fixedColumns.bootstrap5.min.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.bootstrap5.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
   <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/flatpickr-hijri-calendar@1.0.0/dist/flatpickr-hijri-calendar.min.css">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -179,7 +179,7 @@
         <div class="date-input-group">
           <span class="date-input-label">التاريخ:</span>
           <input type="text" id="dayDate" class="date-input-field" readonly>
-          <i class="fas fa-calendar-alt date-icon" onclick="changeDayDate(new Date().toISOString().slice(0, 10));"></i>
+          <i class="fas fa-calendar-alt date-icon" onclick="dayDateInput._flatpickr.setDate(new Date().toISOString().slice(0, 10), true);;"></i>
         </div>
       </div>
       <p id="dayNoteContainer" class="border px-2 py-2 mx-2 my-2"></p>
@@ -1010,7 +1010,7 @@
   });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/sql-wasm.js"></script>
 <script src="https://cdn.datatables.net/2.3.4/js/dataTables.js"></script>
@@ -1028,10 +1028,10 @@
 <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/fixedHeader.bootstrap5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/locale/ar-dz.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar-dz.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/luxon@3.7.2/build/global/luxon.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/ar-dz.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.7.2/luxon.min.js"></script>
 <script src='src/yearpicker.js'></script>
 <script src="src/pdfmake.js"></script>
 <script src="src/vfs_fonts.js"></script>

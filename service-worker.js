@@ -12,13 +12,14 @@ workbox.precaching.precacheAndRoute(
   [
     { url: "./", revision: "1" },
     { url: "./favicon.ico", revision: "1" },
-    { url: "./index.html", revision: "1" },
-    { url: "./app.html", revision: "37" },
+    { url: "./index.html", revision: "2" },
+    { url: "./app.html", revision: "38" },
     { url: "./manifest.json", revision: "2" },
+    { url: "./install.js", revision: "2" },
 
     { url: "./src/style.css", revision: "10" },
     { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "65" },
+    { url: "./src/script.js", revision: "66" },
     { url: "./src/auth.js", revision: "2" },
     { url: "./src/flatpickr-hijri-calendar.js", revision: "3" },
     { url: "./src/pdfmake.js", revision: "1" },
@@ -49,7 +50,7 @@ workbox.precaching.precacheAndRoute(
       url: "./assets/fonts/rubik/iJWKBXyIfDnIV7nErXyi0A.woff2",
       revision: "1",
     },
-
+    
     {
       url: "./assets/images/manifest-icon-192.maskable.png",
       revision: "1",
@@ -85,7 +86,7 @@ workbox.precaching.precacheAndRoute(
       url: "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/solar/bootstrap.rtl.min.css",
       revision: "1",
     },
-    // other cdn
+    // other CDNs
     {
       url: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css",
       revision: "1",
@@ -119,7 +120,7 @@ workbox.precaching.precacheAndRoute(
       revision: "1",
     },
     {
-      url: "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css",
+      url: "https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css",
       revision: "1",
     },
     {
@@ -131,7 +132,7 @@ workbox.precaching.precacheAndRoute(
       revision: "1",
     },
     {
-      url: "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js",
+      url: "https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js",
       revision: "1",
     },
     {
@@ -187,20 +188,19 @@ workbox.precaching.precacheAndRoute(
       revision: "1",
     },
     {
-      url: "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js",
+      url: "https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js",
       revision: "1",
     },
     {
-      url: "https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar-dz.min.js",
+      url: "https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/ar-dz.min.js",
       revision: "1",
     },
     {
-      url: "https://cdn.jsdelivr.net/npm/luxon@3.7.2/build/global/luxon.min.js",
+      url: "https://cdnjs.cloudflare.com/ajax/libs/luxon/3.7.2/luxon.min.js",
       revision: "1",
     },
-
     {
-      url: "https://cdn.jsdelivr.net/npm/downloadjs@1.4.7/download.min.js",
+      url: "https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js",
       revision: "1",
     },
   ],
@@ -213,30 +213,23 @@ workbox.precaching.precacheAndRoute(
 // Cache-first for precached local and CDN files
 workbox.routing.registerRoute(
   ({ url }) =>
-    // url.origin === location.origin ||
     url.origin === "https://fonts.googleapis.com" ||
     url.origin === "https://cdnjs.cloudflare.com" ||
     url.origin === "https://www.gstatic.com" ||
     url.origin === "https://cdn.datatables.net" ||
     url.origin === "https://cdn.jsdelivr.net",
-  new workbox.strategies.NetworkFirst({
+  new workbox.strategies.StaleWhileRevalidate({
     cacheName: "core-cache",
-    plugins: [
-      new workbox.expiration.ExpirationPlugin({
-        maxAgeSeconds: 30 * 24 * 60 * 60,
-        maxEntries: 100,
-      }),
-    ],
   })
 );
 
 // Cache images
-workbox.routing.registerRoute(
-  ({ request }) => request.destination === "image",
-  new workbox.strategies.StaleWhileRevalidate({
-    cacheName: "image-cache",
-  })
-);
+// workbox.routing.registerRoute(
+//   ({ request }) => request.destination === "image",
+//   new workbox.strategies.StaleWhileRevalidate({
+//     cacheName: "image-cache",
+//   })
+// );
 
 // Serve Cached Resources
 workbox.routing.registerRoute(
@@ -252,34 +245,34 @@ workbox.routing.registerRoute(
 );
 
 // Serve HTML pages with Network First and offline fallback
-workbox.routing.registerRoute(
-  ({ request }) => request.mode === "navigate",
-  async ({ event }) => {
-    try {
-      const response = await workbox.strategies
-        .networkFirst({
-          cacheName: "pages-cache",
-          plugins: [
-            new workbox.expiration.ExpirationPlugin({
-              maxEntries: 50,
-            }),
-          ],
-        })
-        .handle({ event });
-      return response || (await caches.match("./index.html"));
-    } catch (error) {
-      return await caches.match("./index.html");
-    }
-  }
-);
+// workbox.routing.registerRoute(
+//   ({ request }) => request.mode === "navigate",
+//   async ({ event }) => {
+//     try {
+//       const response = await workbox.strategies
+//         .networkFirst({
+//           cacheName: "pages-cache",
+//           plugins: [
+//             new workbox.expiration.ExpirationPlugin({
+//               maxEntries: 50,
+//             }),
+//           ],
+//         })
+//         .handle({ event });
+//       return response || (await caches.match("./index.html"));
+//     } catch (error) {
+//       return await caches.match("./index.html");
+//     }
+//   }
+// );
 
 // Clean up old/unused caches during activation
 self.addEventListener("activate", (event) => {
   const currentCaches = [
     workbox.core.cacheNames.precache,
     "core-cache",
-    "image-cache",
-    "pages-cache",
+    // "image-cache",
+    // "pages-cache",
     "static-cache",
   ];
 

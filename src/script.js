@@ -10,6 +10,9 @@ if (localStorage.getItem("newUser") == true) {
 }
 
 moment.updateLocale("ar_dz");
+const devMode =
+  window.location.hostname == "localhost" ||
+  window.location.hostname.includes("ngrok-free");
 let project_db, quran_db, SQL;
 const surahsData = [];
 let specialDates = [];
@@ -433,6 +436,43 @@ async function exportDB() {
   download(data, "quran_students.sqlite3", "application/x-sqlite3");
 }
 
+async function addServiceWorker() {
+  //service workers
+  let sw_path = null;
+  if ("serviceWorker" in navigator) {
+    if (devMode) {
+      sw_path = "./utils/dev-service-worker.js";
+    } else {
+      sw_path = "./service-worker.js";
+    }
+  }
+
+  if (sw_path) {
+    navigator.serviceWorker
+      .register(sw_path)
+      .then((registration) => {
+        console.log("Service Worker registered:", registration.scope);
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener("statechange", () => {
+            if (
+              newWorker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
+              window.showToast(
+                "info",
+                "تم التماس تحديث جديد، يرجى <button type='button' class='btn btn-dark' onclick='window.location.reload()'>تحديث</button> التطبيق.",
+              );
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.error("Service Worker registration failed:", error);
+      });
+  }
+}
+
 // --- Initialization Async ---
 async function init() {
   SQL = await initSqlJs({
@@ -460,6 +500,7 @@ async function init() {
       await InitDatePickers();
       showTab("pills-home");
       nav_bar.style.removeProperty("display");
+      addServiceWorker();
       // display synchronization badge
       if (localStorage.getItem("newSaveExists"))
         document.querySelectorAll(".syncBadge").forEach((syncBadge) => {
@@ -2500,19 +2541,6 @@ async function loadDayStudentsList() {
   }
 }
 
-async function changeDayDate(date) {
-  if (date == new Date().toISOString().slice(0, 10)) {
-    document
-      .getElementsByClassName("date-icon")[0]
-      .style.removeProperty("color");
-  } else {
-    document.getElementsByClassName("date-icon")[0].style.color = "#00ff4c";
-  }
-  workingDay = date;
-  // maximizeModalBtn.style.display = "none";
-  await loadDayStudentsList();
-}
-
 async function InitDatePickers() {
   // day date picker
   const script = document.createElement("script");
@@ -2546,7 +2574,17 @@ async function InitDatePickers() {
       },
       onChange: async function (selectedDates, dateStr, instance) {
         if (selectedDates.length > 0) {
-          changeDayDate(dateStr);
+          if (dateStr == new Date().toISOString().slice(0, 10)) {
+            document
+              .getElementsByClassName("date-icon")[0]
+              .style.removeProperty("color");
+          } else {
+            document.getElementsByClassName("date-icon")[0].style.color =
+              "#00ff4c";
+          }
+          workingDay = dateStr;
+          // maximizeModalBtn.style.display = "none";
+          await loadDayStudentsList();
           instance.altInput.value = formatHijriDate(selectedDates[0]);
         }
       },
@@ -3173,7 +3211,7 @@ async function showTab(tabId) {
       if (maximizeModalBtn.style.display === "none") studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
       fillStatistiscStudentsList();
-      if (devMode)
+      if (devMode && 4 == 5)
         showStudentsBulletins(
           [
             "2026-02-20",
@@ -5332,58 +5370,45 @@ async function showAttendanceStatistics() {
     return;
   }
 
-  const dateCtes = dates
+  const dateColumns = dates
     .map(
-      (date, index) =>
-        `day_id${index} AS ( SELECT id FROM education_day WHERE date = '${date}' )`,
+      (date) => `
+        MAX(CASE 
+            WHEN d.date = '${date}' AND de.attendance = 1 THEN 'ح'
+            WHEN d.date = '${date}' AND de.attendance = 0 THEN 'غ م'
+            ELSE ' غ'
+        END) AS '${new Date(date)
+          .toLocaleDateString("ar-DZ-u-ca-islamic-umalqura", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "long",
+          })
+          .replace("،", "")}'
+`,
     )
     .join(",\n");
 
-  const dateColumns = dates
-    .map(
-      (date, index) =>
-        `CASE 
-        WHEN de${index}.id IS NULL THEN 'غ'
-        WHEN de${index}.attendance = 1 THEN 'ح'
-        WHEN de${index}.attendance = 0 THEN 'غ م'
-        ELSE 'غ'
-    END as '${Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "long",
-    })
-      .format(new Date(date))
-      .replace("،", "")}'`,
-    )
-    .join(",\n    ");
-
-  const dateJoins = dates
-    .map(
-      (date, index) =>
-        `LEFT JOIN day_evaluations de${index} ON s.id = de${index}.student_id AND de${index}.day_id IN (SELECT id FROM day_id${index})`,
-    )
-    .join("\n");
-
-  const attendanceSum = dates
-    .map((_, index) => `CASE WHEN de${index}.attendance = 1 THEN 1 ELSE 0 END`)
-    .join(" +\n        ");
+  const attendanceSum = `SUM(CASE WHEN de.attendance = 1 THEN 1 ELSE 0 END)`;
 
   const query = `
-    WITH ${dateCtes}
     SELECT
-        ROW_NUMBER() OVER (ORDER BY s.id) as "#",
-        s.fname || ' ' || s.lname as "اسم الطالب",
-        ${dateColumns},
-        -- مجموع الحضور (Total Present Days Count)
-        (${attendanceSum}) as "المجموع (/${dates.length})",
-        -- نسبة الحضور (Attendance Percentage)
-        ROUND(
-            ((${attendanceSum}) * 100.0 / ${dates.length}), 1
-        ) as "النسبة (%)"
+    ROW_NUMBER() OVER (ORDER BY s.id) as "#",
+    s.fname || ' ' || s.lname as "اسم الطالب",
+
+    ${dateColumns},
+
+    ${attendanceSum} as "المجموع (/${dates.length})",
+
+    ROUND(
+        (${attendanceSum} * 100.0 / ${dates.length}), 1
+    ) as "النسبة (%)"
     FROM students s
-    ${dateJoins}
-    WHERE s.id in (${studentsList})
+    LEFT JOIN day_evaluations de ON s.id = de.student_id
+    LEFT JOIN education_day d ON d.id = de.day_id
+
+    WHERE s.id IN (${studentsList})
+
     GROUP BY s.id
     ORDER BY s.id;
 `;
@@ -5534,16 +5559,16 @@ async function showResultsStatistics() {
     .map(
       (date, index) =>
         `COALESCE(ROUND(
-              (SELECT SUM(moyenne) FROM day_evaluations WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
+              (SELECT CASE WHEN attendance = 1 THEN SUM(moyenne) ELSE NULL END FROM day_evaluations WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
               + 
               (SELECT COALESCE(SUM(moyenne), 0) FROM day_requirements WHERE student_id = s.id AND day_id IN (SELECT id FROM day_id${index}))
-          , 2), "غ") as '${Intl.DateTimeFormat("ar-DZ-u-ca-islamic-umalqura", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            weekday: "long",
-          })
-            .format(new Date(date))
+          , 2), "غ") as '${new Date(date)
+            .toLocaleDateString("ar-DZ-u-ca-islamic-umalqura", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              weekday: "long",
+            })
             .replace("،", "")}'`,
     )
     .join(",\n    ");
@@ -5951,6 +5976,8 @@ async function setStatisticsTable(query, tableColumns, buttons = []) {
         false,
         true,
       );
+      const scrollBody = $("#pills-statistics  div.dt-scroll-body");
+      scrollBody.scrollLeft(scrollBody[0].scrollWidth * -1);
     } else {
       console.log("لاتوجد معلومات");
     }
