@@ -179,7 +179,8 @@
         <div class="date-input-group">
           <span class="date-input-label">التاريخ:</span>
           <input type="text" id="dayDate" class="date-input-field" readonly>
-          <i class="fas fa-calendar-alt date-icon" onclick="dayDateInput._flatpickr.setDate(new Date().toISOString().slice(0, 10), true);;"></i>
+          <i class="fas fa-calendar-alt date-icon"
+            onclick="dayDateInput._flatpickr.setDate(new Date().toISOString().slice(0, 10), true);;"></i>
         </div>
       </div>
       <p id="dayNoteContainer" class="border px-2 py-2 mx-2 my-2"></p>
@@ -222,11 +223,72 @@
           aria-label="Default select example">
           <option value="0">-- اختر نوع الإحصاء --</option>
           <option value="attendance">الحضور</option>
-          <option value="results">النتائج</option>
+          <option value="results" data-bs-toggle="tab" data-bs-target="#profile-tab-pane">النتائج</option>
+          <option value="avance_chart">التقدم</option>
         </select>
       </div>
 
-      <table id="statisticsTable" class="table table-striped display" style="width:100%"></table>
+      <div class="tab-content pt-2" id="statisticsTabContent">
+        <div class="tab-pane fade" id="empty-tab-pane" role="tabpanel" aria-labelledby="empty-tab" tabindex="0">
+          <div class="d-flex flex-column align-items-center justify-content-center" style="height: 50vh;">
+            <i class="fas fa-chart-bar fa-3x mb-3 text-muted"></i>
+            <p class="text-muted">يرجى اختيار نوع الإحصاء لعرض البيانات</p>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="statisticsTable-tab-pane" role="tabpanel" aria-labelledby="statisticsTable-tab"
+          tabindex="0">
+          <table id="statisticsTable" class="table table-striped display" style="width:100%"></table>
+        </div>
+        <div class="tab-pane fade" id="avance_chart-tab-pane" role="tabpanel" aria-labelledby="avance_chart-tab"
+          tabindex="0">
+
+          <div id="tooltip">
+            <span class="t-surah"></span>
+            <span class="t-verse"></span>
+          </div>
+
+          <!-- ── TOP PANEL ── -->
+          <div class="top-panel">
+            <div class="d-flex align-items-start flex-wrap gap-0">
+
+              <!-- Group-by section -->
+              <div class="ps-0">
+                <div class="panel-label">النوع</div>
+                <div class="btn-group tb-group" role="group">
+                  <button class="btn btn-sm active" data-tby="all">الكل</button>
+                  <button class="btn btn-sm" data-tby="save">حفظ</button>
+                  <button class="btn btn-sm" data-tby="revise">مراجعة</button>
+                  </div>
+              </div>
+
+              <div class="v-divider"></div>
+
+              <!-- Group-by section -->
+              <div class="ps-0">
+                <div class="panel-label">تجميع حسب</div>
+                <div class="btn-group gb-group" role="group">
+                  <button class="btn btn-sm active" data-by="none">بدون</button>
+                  <button class="btn btn-sm" data-by="surah">السور</button>
+                  <button class="btn btn-sm" data-by="hizb">الأحزاب</button>
+                  <button class="btn btn-sm" data-by="page">الصفحات</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── STATUS BAR ── -->
+          <div class="status-bar d-flex justify-content-between">
+            <span id="status-right">لم يتم تحديد آيات</span>
+          </div>
+
+          <!-- ── MAIN ── -->
+          <div class="canvas-wrap border border-top-0">
+            <div id="verse-grid"></div>
+          </div>
+
+        </div>
+      </div>
 
     </div>
 

@@ -13,13 +13,13 @@ workbox.precaching.precacheAndRoute(
     { url: "./", revision: "1" },
     { url: "./favicon.ico", revision: "1" },
     { url: "./index.html", revision: "2" },
-    { url: "./app.html", revision: "38" },
+    { url: "./app.html", revision: "39" },
     { url: "./manifest.json", revision: "2" },
     { url: "./install.js", revision: "2" },
 
-    { url: "./src/style.css", revision: "10" },
+    { url: "./src/style.css", revision: "11" },
     { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "66" },
+    { url: "./src/script.js", revision: "67" },
     { url: "./src/auth.js", revision: "2" },
     { url: "./src/flatpickr-hijri-calendar.js", revision: "3" },
     { url: "./src/pdfmake.js", revision: "1" },
@@ -28,7 +28,7 @@ workbox.precaching.precacheAndRoute(
     { url: "./src/yearpicker.js", revision: "1" },
 
     { url: "./assets/default.sqlite3", revision: "2" },
-    { url: "./assets/quran.sqlite", revision: "3" },
+    { url: "./assets/quran.sqlite", revision: "4" },
 
     {
       url: "./assets/fonts/changa/2-cm9JNi2YuVOUckY5y-au8.woff2",

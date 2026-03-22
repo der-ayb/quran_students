@@ -14,7 +14,7 @@ const devMode =
   window.location.hostname == "localhost" ||
   window.location.hostname.includes("ngrok-free");
 let project_db, quran_db, SQL;
-const surahsData = [];
+const quranData = { surahs: [], pages: [], ahzab: [], athman: [] };
 let specialDates = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "quranstudentsDB";
@@ -1841,7 +1841,7 @@ function parseRequirment(requir, book, bulletin = false) {
     return `${book} ${bulletin ? ")" : "("} ${requir.length > 35 ? requir.slice(0, 35) + "... " : requir}${bulletin ? "(" : ")"}`;
   const reqlist = requir.split(" ");
   if (reqlist[0] == reqlist[4]) {
-    const numberOfAyahs = surahsData.find(
+    const numberOfAyahs = quranData.surahs.find(
       (surah) => surah.name == reqlist[0],
     ).numberOfAyahs;
     if (numberOfAyahs == reqlist[6]) {
@@ -1852,7 +1852,7 @@ function parseRequirment(requir, book, bulletin = false) {
     }
     return `سورة ${reqlist[0]} ${bulletin ? ") " : "("}${reqlist[2]} - ${reqlist[6]}${bulletin ? " (" : ")"}`;
   } else {
-    const numberOfAyahs = surahsData.find(
+    const numberOfAyahs = quranData.surahs.find(
       (surah) => surah.name == reqlist[4],
     ).numberOfAyahs;
     return `من ${reqlist[0]} (${reqlist[2]})  إلى ${reqlist[4]} ${bulletin ? ") " : "("}${numberOfAyahs == reqlist[6] ? "النهاية" : reqlist[6]}${bulletin ? "(" : ")"}`;
@@ -3175,7 +3175,7 @@ function removeEvalLadder(type, key) {
 
 async function showTab(tabId) {
   document
-    .querySelectorAll(".tab-pane")
+    .querySelectorAll(".tab-pane:not(#statisticsTabContent .tab-pane)")
     .forEach((el) => el.classList.remove("show", "active"));
   document.getElementById(tabId).classList.add("show", "active");
 
@@ -3266,20 +3266,40 @@ function getDatesInRange() {
 }
 
 statisticType.onchange = async function () {
+  document
+    .querySelectorAll("#statisticsTabContent .tab-pane")
+    .forEach((el) => el.classList.remove("show", "active"));
   switch (this.value) {
     case "attendance":
+      if (!statisAllCheckbox) fillStatistiscStudentsList();
       await showLoadingModal("جاري تحميل الإحصائيات");
+      document
+        .getElementById("statisticsTable-tab-pane")
+        .classList.add("show", "active");
       showAttendanceStatistics();
       hideLoadingModal();
       break;
     case "results":
-      // fillStatistiscStudentsList(true);
+      if (!statisAllCheckbox) fillStatistiscStudentsList();
       await showLoadingModal("جاري تحميل الإحصائيات");
+      document
+        .getElementById("statisticsTable-tab-pane")
+        .classList.add("show", "active");
       showResultsStatistics();
       hideLoadingModal();
       break;
+    case "avance_chart":
+      if (statisAllCheckbox) fillStatistiscStudentsList(true);
+      await showLoadingModal("جاري تحميل الإحصائيات");
+      document
+        .getElementById("avance_chart-tab-pane")
+        .classList.add("show", "active");
+      showAvanceChart();
+      hideLoadingModal();
+      break;
     default:
-      // fillStatistiscStudentsList();
+      if (!statisAllCheckbox) fillStatistiscStudentsList();
+      document.getElementById("empty-tab-pane").classList.add("show", "active");
       if ($.fn.DataTable.isDataTable("#statisticsTable")) {
         $("#statisticsTable").DataTable().destroy();
         $("#statisticsTable").empty();
@@ -3307,14 +3327,16 @@ async function fillStatistiscStudentsList(uniqueStudent = false) {
     if (results.length) {
       const result = results[0];
       const dropdown = document.querySelector(".statisticsStudentsMenu");
-      dropdown.innerHTML = !uniqueStudent
-        ? `
+      dropdown.innerHTML =
+        `<button onclick='statisticType.dispatchEvent(new Event("change"))' class="btn btn-sm btn-secondary mb-2 w-100">موافق</button>` +
+        (!uniqueStudent
+          ? `
         <div class="form-check">
             <input class="form-check-input" type="checkbox" id="statisAllCheckbox" onchange="statisStudentToggleAll()" checked>
             <label class="form-check-label">الجميع</label>
         </div>
-        <hr>`
-        : "";
+        <hr class="my-0">`
+          : "");
       statisAllCheckbox = document.getElementById("statisAllCheckbox");
       result.values.forEach((row) => {
         const newItem = document.createElement("div");
@@ -3324,9 +3346,7 @@ async function fillStatistiscStudentsList(uniqueStudent = false) {
                         !uniqueStudent
                           ? `type="checkbox"`
                           : `type="radio" name="radioDefault"`
-                      } value="${
-                        row[0]
-                      }" checked onchange="statisStudentUpdateAll()">
+                      } value="${row[0]}" checked>
                       <label class="form-check-label">${
                         row[result.columns.indexOf("fname")] +
                         " " +
@@ -3353,7 +3373,7 @@ function statisStudentUpdateAll() {
   const allChecked =
     items.length ===
     document.querySelectorAll(".statisStudentItem:checked").length;
-  statisAllCheckbox.checked = allChecked;
+  if (statisAllCheckbox) statisAllCheckbox.checked = allChecked;
   reinitStatisticTable();
 }
 
@@ -5631,7 +5651,7 @@ async function showResultsStatistics() {
   const buttons = [
     {
       text: '<i class="fa-solid fa-dice-six"></i>',
-      action: async function (e, dt) {
+      action: async function () {
         const studentIDs = getStatisticsSelectedStudentsId().split(",");
         studentIDs.forEach((selectedStudentID) => {
           if (!project_db) {
@@ -5912,6 +5932,315 @@ async function showResultsStatistics() {
   setStatisticsTable(query, tableColumns, buttons);
 }
 
+async function showAvanceChart() {
+  const studentID = getStatisticsSelectedStudentsId();
+  if (!studentID) {
+    window.showToast("warning", "يرجى اخيار طلاب من القائمة.");
+    return;
+  }
+
+  let [dates, isFullMonth] = getDatesInRange();
+  dates = dates.sort((a, b) => new Date(a) - new Date(b));
+
+  if (!dates.length) {
+    window.showToast("warning", "لا توجد أيام في هذا النطاق.");
+    reinitStatisticTable();
+    return;
+  }
+
+  if (quranData.pages.length === 0) {
+    quran_db.exec("SELECT * FROM quran_pages")[0].values.forEach((row) => {
+      quranData.pages.push({
+        n: row[0],
+        ss: row[1],
+        sa: row[2],
+        es: row[3],
+        ea: row[4],
+      });
+    });
+    quran_db.exec("SELECT * FROM quran_ahzab")[0].values.forEach((row) => {
+      quranData.ahzab.push({
+        n: row[0],
+        ss: row[1],
+        sa: row[2],
+        es: row[3],
+        ea: row[4],
+      });
+    });
+  }
+
+  const SURAHS = quranData.surahs;
+  const PAGES = quranData.pages;
+  const AHZAB = quranData.ahzab;
+
+  // ── PRECOMPUTE ───────────────────────────────────────────────────────────────
+  const surahOffsets = [0];
+  for (const s of SURAHS)
+    surahOffsets.push(surahOffsets.at(-1) + s.numberOfAyahs);
+  const TOTAL = surahOffsets[114];
+
+  const verseInfo = [];
+  for (const s of SURAHS)
+    for (let a = 1; a <= s.numberOfAyahs; a++)
+      verseInfo.push({ surah: s.number, ayah: a, name: s.name });
+
+  const SURAH_NAME_MAP = new Map();
+  SURAHS.forEach((s) => SURAH_NAME_MAP.set(s.name, s.number));
+
+  // Helper: convert surah+ayah (1-based) to 0-based global verse index
+  function toGlobal(surah, ayah) {
+    return surahOffsets[surah - 1] + ayah - 1;
+  }
+
+  // Build per-verse lookup arrays for fast O(1) access
+  const versePageIdx = new Int16Array(TOTAL); // 0-based page index
+  const verseHizbIdx = new Int8Array(TOTAL); // 0-based hizb index
+
+  (function buildLookups() {
+    // Pages
+    for (let pi = 0; pi < PAGES.length; pi++) {
+      const p = PAGES[pi];
+      const startG = toGlobal(p.ss, p.sa);
+      const endG = toGlobal(p.es, p.ea);
+      for (let g = startG; g <= endG && g < TOTAL; g++) versePageIdx[g] = pi;
+    }
+    // Ahzab
+    for (let hi = 0; hi < AHZAB.length; hi++) {
+      const h = AHZAB[hi];
+      const startG = toGlobal(h.ss, h.sa);
+      const endG = toGlobal(h.es, h.ea);
+      for (let g = startG; g <= endG && g < TOTAL; g++) verseHizbIdx[g] = hi;
+    }
+  })();
+
+  // ── GROUPING ─────────────────────────────────────────────────────────────────
+  function getGroupIndex(i, by) {
+    if (by === "surah") return verseInfo[i].surah - 1;
+    if (by === "hizb") return verseHizbIdx[i];
+    if (by === "page") return versePageIdx[i];
+    return 0;
+  }
+  function getGroupCount(by) {
+    if (by === "surah") return 114;
+    if (by === "hizb") return AHZAB.length;
+    if (by === "page") return PAGES.length;
+    return 1;
+  }
+  function getGroupLabel(gi, by) {
+    if (by === "surah") return `${SURAHS[gi].number}. ${SURAHS[gi].name}`;
+    if (by === "hizb") return `الحزب ${AHZAB[gi].n}`;
+    if (by === "page") return `صفحة ${PAGES[gi].n}`;
+    return "";
+  }
+
+  // ── STATE ────────────────────────────────────────────────────────────────────
+  let indices = [],
+    groupBy = "none",
+    typeBy = "all",
+    gridBuilt = false;
+
+  // ── GRID ─────────────────────────────────────────────────────────────────────
+  const gridEl = document.getElementById("verse-grid");
+  const tooltip = document.getElementById("tooltip");
+
+  function buildGrid() {
+    gridEl.innerHTML = "";
+    const frag = document.createDocumentFragment();
+
+    if (groupBy === "none") {
+      // reversed: last verse on top
+      for (let i = TOTAL - 1; i >= 0; i--) frag.appendChild(makeSq(i));
+    } else {
+      const count = getGroupCount(groupBy);
+      // reversed: last group on top
+      for (let gi = count - 1; gi >= 0; gi--) {
+        const hdr = document.createElement("div");
+        hdr.className = "group-header";
+        hdr.innerHTML = `<span class="group-header-label">${getGroupLabel(gi, groupBy)}</span><div class="group-header-line"></div>`;
+        frag.appendChild(hdr);
+        // collect verses for this group in reversed order
+        const groupVerses = [];
+        for (let i = 0; i < TOTAL; i++)
+          if (getGroupIndex(i, groupBy) === gi) groupVerses.push(i);
+        for (let k = groupVerses.length - 1; k >= 0; k--)
+          frag.appendChild(makeSq(groupVerses[k]));
+      }
+    }
+
+    gridEl.appendChild(frag);
+    gridBuilt = true;
+    applyColors();
+  }
+
+  function makeSq(i) {
+    const sq = document.createElement("div");
+    sq.className = "verse-sq";
+    sq.dataset.idx = i;
+    return sq;
+  }
+
+  // ── TOOLTIP ───────────────────────────────────────────────────────────────────
+  function showTooltip(sq, clientX, clientY) {
+    const i = +sq.dataset.idx;
+    const vi = verseInfo[i];
+
+    tooltip.querySelector(".t-surah").textContent = `${vi.name} - ${vi.ayah}`;
+    tooltip.querySelector(".t-verse").textContent = `......`;
+
+    let x = clientX + 14,
+      y = clientY - 80;
+    if (x + 100 > window.innerWidth) x = clientX - 240;
+    if (y < 0) y = clientY + 14;
+    if (y + 110 > window.innerHeight) y = clientY - 120;
+    tooltip.style.left = x + "px";
+    tooltip.style.top = y + "px";
+    tooltip.style.display = "block";
+  }
+
+  function hideTooltip() {
+    tooltip.style.display = "none";
+  }
+
+  // Pointer events — work on both mouse and touch
+  gridEl.addEventListener("click", (e) => {
+    const sq = e.target.closest(".verse-sq");
+    if (!sq) {
+      hideTooltip();
+      return;
+    }
+    showTooltip(sq, e.clientX, e.clientY);
+  });
+  gridEl.addEventListener("pointerleave", hideTooltip);
+  gridEl.addEventListener("touchend", hideTooltip);
+  gridEl.addEventListener("touchcancel", hideTooltip);
+
+  // ── PARSE ────────────────────────────────────────────────────────────────────
+
+  // Resolve a token that is either a number or an Arabic surah name → surah number
+  function resolveSurah(token) {
+    const n = +token;
+    if (!isNaN(n) && n >= 1 && n <= 114) return n;
+    return SURAH_NAME_MAP.get(token) ?? null;
+  }
+
+  function parseEntry(entry) {
+    if (!entry) return null;
+
+    const [sn1, , a1, , sn2, , a2] = entry.split(" ");
+    const s1 = resolveSurah(sn1.trim()),
+      s2 = resolveSurah(sn2.trim());
+    if (!s1 || !s2) return null;
+    const startG = toGlobal(s1, +a1),
+      endG = toGlobal(s2, +a2);
+    if (startG > endG || startG < 0 || endG >= TOTAL) return null;
+    const set = new Set();
+    for (let g = startG; g <= endG; g++) set.add(g);
+    return set;
+  }
+  // ── HIGHLIGHT ────────────────────────────────────────────────────────────────
+  function applyHighlight() {
+    if (!project_db) {
+      window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
+      return;
+    }
+
+    const dateList = dates.map((date) => `'${date}'`).join(", ");
+
+    const allAyatlist = [];
+    const lsR = project_db.exec(`
+            SELECT dr.detail
+            FROM day_requirements dr
+            INNER JOIN education_day ed ON dr.day_id = ed.id
+            WHERE dr.student_id = ${studentID} AND ed.date IN (${dateList})
+            ORDER BY ed.date DESC`);
+    if (lsR.length)
+      detail = lsR[0].values.forEach((item) => {
+        JSON.parse(item[0])
+          .reverse()
+          .forEach((item) => {
+            if (item["الكتاب"] === "القرآن الكريم") {
+              const type = item["النوع"];
+              const detail = item["التفاصيل"];
+
+              if (
+                typeBy === "all" ||
+                (typeBy === "save" && (type === "حفظ" || type === "حصيلة")) ||
+                (typeBy === "revise" && type === "مراجعة")
+              ) {
+                parseEntry(detail).forEach((item) => allAyatlist.push(item));
+              }
+            }
+          });
+      });
+
+    indices = [...new Set(allAyatlist)];
+
+    buildGrid();
+    updateStatus();
+  }
+
+  // ── COLORS ───────────────────────────────────────────────────────────────────
+  function applyColors() {
+    const sqs = gridEl.querySelectorAll(".verse-sq");
+    if (!indices.length) {
+      sqs.forEach((sq) => {
+        sq.style.background = "";
+        sq.classList.remove("dimmed");
+      });
+      return;
+    }
+    const cmap = new Map();
+    indices.forEach((i) => cmap.set(i, "#c9a84c"));
+    sqs.forEach((sq) => {
+      const i = +sq.dataset.idx;
+      if (cmap.has(i)) {
+        sq.style.background = cmap.get(i);
+        sq.classList.remove("dimmed");
+      } else {
+        sq.style.background = "";
+        sq.classList.add("dimmed");
+      }
+    });
+  }
+
+  // ── STATUS ───────────────────────────────────────────────────────────────────
+  function updateStatus() {
+    const sr = document.getElementById("status-right");
+    if (!indices.length) {
+      sr.innerHTML = "لم يتم تحديد آيات";
+      return;
+    }
+    const all = new Set();
+    indices.forEach((i) => all.add(i));
+    sr.innerHTML = `<span class="status-hi">${all.size}</span> آية مميزة`;
+  }
+
+  // ── GROUP-BY ─────────────────────────────────────────────────────────────────
+  document.querySelectorAll(".gb-group .btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document
+        .querySelectorAll(".gb-group .btn")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      groupBy = btn.dataset.by;
+      if (gridBuilt) buildGrid();
+    });
+  });
+  document.querySelectorAll(".tb-group .btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document
+        .querySelectorAll(".tb-group .btn")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      typeBy = btn.dataset.tby;
+      applyHighlight();
+    });
+  });
+
+  // ── INIT ─────────────────────────────────────────────────────────────────────
+  applyHighlight();
+}
+
 async function setStatisticsTable(query, tableColumns, buttons = []) {
   const result = project_db.exec(query);
 
@@ -5988,7 +6317,7 @@ async function setStatisticsTable(query, tableColumns, buttons = []) {
 
 const initializeAyatdata = async (db) => {
   db.exec("SELECT * FROM quran_index")[0].values.forEach((row) => {
-    surahsData.push({
+    quranData.surahs.push({
       number: row[0],
       name: row[1],
       numberOfAyahs: row[2],
@@ -5999,7 +6328,7 @@ const initializeAyatdata = async (db) => {
 };
 
 const populateSurahDropdown = async (selectElement) => {
-  surahsData.forEach((surah) => {
+  quranData.surahs.forEach((surah) => {
     selectElement.appendChild(
       createOption(surah.number, `${surah.name}`, {
         surahNum: surah.number,
@@ -6093,7 +6422,7 @@ firstSurahSelect.onchange = async function () {
 
     secondSurahSelect.disabled = false;
     secondSurahSelect.value = firstSurahNumber;
-    surahsData.forEach((surah) => {
+    quranData.surahs.forEach((surah) => {
       if (surah.number < firstSurahNumber) {
         secondSurahSelect.querySelector(
           'option[value="' + surah.number + '"]',
@@ -6160,8 +6489,8 @@ secondAyahSelect.onchange = async function () {
 
 // // Function to get the difference in ayahs between two surahs
 const getAyahDifference = (surahNum1, ayahNum1, surahNum2, ayahNum2) => {
-  const surah1 = surahsData.find((s) => s.number === Number(surahNum1));
-  const surah2 = surahsData.find((s) => s.number === Number(surahNum2));
+  const surah1 = quranData.surahs.find((s) => s.number === Number(surahNum1));
+  const surah2 = quranData.surahs.find((s) => s.number === Number(surahNum2));
 
   if (!surah1 || !surah2) {
     throw new Error("One or both surahs not found");
@@ -6204,7 +6533,7 @@ const getAyahDifference = (surahNum1, ayahNum1, surahNum2, ayahNum2) => {
   const end = Math.max(surah1.number, surah2.number);
 
   for (let i = start + 1; i < end; i++) {
-    const betweenSurah = surahsData.find((s) => s.number === i);
+    const betweenSurah = quranData.surahs.find((s) => s.number === i);
     if (betweenSurah) {
       result.slice(result.length - 1, 0, {
         number: betweenSurah.number,
