@@ -410,7 +410,7 @@ th.header-rotated>div>span {
 .top-panel {
   background: var(--panel);
   border-bottom: 1px solid var(--border);
-  padding: 8px 8px;
+  padding: 8px 4px;
   flex-shrink: 0;
 }
 
@@ -517,8 +517,6 @@ th.header-rotated>div>span {
 
 /* ── VERSE SQUARES ── */
 .verse-sq {
-  /* background: #6e798d;
-  opacity: 0.28; */
   width: 8px;
   height: 8px;
   background: var(--sq);

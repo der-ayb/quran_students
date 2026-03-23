@@ -1173,6 +1173,7 @@ async function loadStudentsList() {
             row[result.columns.indexOf("fname")] +
             " " +
             row[result.columns.indexOf("lname")],
+          history:`<i onclick="showRequirementsHistory(${row[0]})" class="fa-solid fa-clock-rotate-left"></i>`,
           age: Math.abs(
             moment().diff(
               moment(new Date(row[result.columns.indexOf("birthyear")])),
@@ -1191,9 +1192,10 @@ async function loadStudentsList() {
       [
         { data: "select" },
         { data: "id" },
-        { data: "num" },
+        { data: "num" ,className:"text-center"},
         { data: "name" },
-        { data: "age", className: "text-center" },
+        { data: "history" ,className:"text-right px-0"},
+        { data: "age", className: "text-center px-0" },
         { data: "parentPhone", className: "py-1" },
         { data: "actions", className: "py-1" },
       ],
@@ -1210,10 +1212,14 @@ async function loadStudentsList() {
             targets: 0,
             render: DataTable.render.select(),
           },
-          { visible: false, targets: [1, 6] },
+          { visible: false, targets: [1, 7] },
           {
-            targets: [0, 5, 6],
+            targets: [0, 4,6,7],
             orderable: false,
+          },
+          {
+            targets: [ 4],
+            width:"5px",
           },
         ],
         searching: false,
@@ -1476,7 +1482,7 @@ function calcRequirementMoyenne(quantity, evaluation, type, repit, alerts) {
   if (type === "حفظ") {
     value = evaluation * (quantity / 2);
   } else {
-    value = evaluation * (quantity / 3);
+    value = evaluation * (quantity / 4);
   }
   return (
     value
