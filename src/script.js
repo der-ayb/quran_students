@@ -1474,11 +1474,9 @@ function calcEvaluationMoyenne(
 function calcRequirementMoyenne(quantity, evaluation, type, repit, alerts) {
   let value = 0;
   if (type === "حفظ") {
-    value = evaluation * quantity;
-  } else if (type === "حصيلة") {
-    value = evaluation * (quantity / 2.5);
-  } else if (type === "مراجعة") {
     value = evaluation * (quantity / 2);
+  } else {
+    value = evaluation * (quantity / 3);
   }
   return (
     value
@@ -5954,27 +5952,31 @@ async function showAvanceChart() {
     return;
   }
 
-  if (quranData.pages.length === 0)
-    quran_db.exec("SELECT * FROM quran_pages")[0].values.forEach((row) => {
-      quranData.pages.push({
-        n: row[0],
-        ss: row[1],
-        sa: row[2],
-        es: row[3],
-        ea: row[4],
+  try {
+    if (quranData.pages.length === 0)
+      quran_db.exec("SELECT * FROM quran_pages")[0].values.forEach((row) => {
+        quranData.pages.push({
+          n: row[0],
+          ss: row[1],
+          sa: row[2],
+          es: row[3],
+          ea: row[4],
+        });
       });
-    });
 
-  if (quranData.ahzab.length === 0)
-    quran_db.exec("SELECT * FROM quran_ahzab")[0].values.forEach((row) => {
-      quranData.ahzab.push({
-        n: row[0],
-        ss: row[1],
-        sa: row[2],
-        es: row[3],
-        ea: row[4],
+    if (quranData.ahzab.length === 0)
+      quran_db.exec("SELECT * FROM quran_ahzab")[0].values.forEach((row) => {
+        quranData.ahzab.push({
+          n: row[0],
+          ss: row[1],
+          sa: row[2],
+          es: row[3],
+          ea: row[4],
+        });
       });
-    });
+  } catch (e) {
+    if (e.message.includes("no such table:")) await downloadQuranDB();
+  }
 
   if (!quranData.SURAH_NAME_MAP.size)
     quranData.surahs.forEach((s) =>
@@ -6045,8 +6047,8 @@ async function showAvanceChart() {
   }
 
   // ── STATE ────────────────────────────────────────────────────────────────────
-  const indices = []
-  let  groupBy = "none",
+  const indices = [];
+  let groupBy = "none",
     typeBy = "all",
     gridBuilt = false;
 
@@ -6073,7 +6075,7 @@ async function showAvanceChart() {
         const groupVerses = [];
         for (let i = 0; i < TOTAL; i++)
           if (getGroupIndex(i, groupBy) === gi) groupVerses.push(i);
-        for (let k = groupVerses.length - 1; k >= 0; k--)
+        for (let k = 0; k <= groupVerses.length -1; k++)
           frag.appendChild(makeSq(groupVerses[k]));
       }
     }
@@ -6091,7 +6093,7 @@ async function showAvanceChart() {
   }
 
   // ── TOOLTIP ───────────────────────────────────────────────────────────────────
-  function showTooltip(sq, clientX, clientY) {
+  function showAvanceChartTooltip(sq, clientX, clientY) {
     const i = +sq.dataset.idx;
     const vi = quranData.verseInfo[i];
 
@@ -6119,7 +6121,7 @@ async function showAvanceChart() {
       hideTooltip();
       return;
     }
-    showTooltip(sq, e.clientX, e.clientY);
+    showAvanceChartTooltip(sq, e.clientX, e.clientY);
   });
   gridEl.addEventListener("pointerleave", hideTooltip);
   gridEl.addEventListener("touchend", hideTooltip);
@@ -6226,6 +6228,7 @@ async function showAvanceChart() {
 
   // ── GROUP-BY ─────────────────────────────────────────────────────────────────
   document.querySelectorAll(".gb-group .btn").forEach((btn) => {
+     if(btn.classList.contains("active")) groupBy = btn.dataset.by;
     btn.addEventListener("click", () => {
       document
         .querySelectorAll(".gb-group .btn")
