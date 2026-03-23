@@ -14,7 +14,13 @@ const devMode =
   window.location.hostname == "localhost" ||
   window.location.hostname.includes("ngrok-free");
 let project_db, quran_db, SQL;
-const quranData = { surahs: [], pages: [], ahzab: [], athman: [] };
+const quranData = {
+  surahs: [],
+  pages: [],
+  ahzab: [],
+  athman: [],
+  SURAH_NAME_MAP: new Map(),
+};
 let specialDates = [];
 const DB_STORE_NAME = "my_sqlite-db";
 const PROJECT_DB_KEY = "quranstudentsDB";
@@ -5948,7 +5954,7 @@ async function showAvanceChart() {
     return;
   }
 
-  if (quranData.pages.length === 0) {
+  if (quranData.pages.length === 0)
     quran_db.exec("SELECT * FROM quran_pages")[0].values.forEach((row) => {
       quranData.pages.push({
         n: row[0],
@@ -5958,6 +5964,8 @@ async function showAvanceChart() {
         ea: row[4],
       });
     });
+
+  if (quranData.ahzab.length === 0)
     quran_db.exec("SELECT * FROM quran_ahzab")[0].values.forEach((row) => {
       quranData.ahzab.push({
         n: row[0],
@@ -5967,29 +5975,31 @@ async function showAvanceChart() {
         ea: row[4],
       });
     });
+
+  if (!quranData.SURAH_NAME_MAP.size)
+    quranData.surahs.forEach((s) =>
+      quranData.SURAH_NAME_MAP.set(s.name, s.number),
+    );
+
+  if (!Object(quranData).hasOwnProperty("surahOffsets")) {
+    quranData.surahOffsets = [0];
+    for (const s of quranData.surahs)
+      quranData.surahOffsets.push(
+        quranData.surahOffsets.at(-1) + s.numberOfAyahs,
+      );
   }
 
-  const SURAHS = quranData.surahs;
-  const PAGES = quranData.pages;
-  const AHZAB = quranData.ahzab;
+  if (!Object(quranData).hasOwnProperty("verseInfo")) {
+    quranData.verseInfo = [];
+    for (const s of quranData.surahs)
+      for (let a = 1; a <= s.numberOfAyahs; a++)
+        quranData.verseInfo.push({ surah: s.number, ayah: a, name: s.name });
+  }
 
-  // ── PRECOMPUTE ───────────────────────────────────────────────────────────────
-  const surahOffsets = [0];
-  for (const s of SURAHS)
-    surahOffsets.push(surahOffsets.at(-1) + s.numberOfAyahs);
-  const TOTAL = surahOffsets[114];
-
-  const verseInfo = [];
-  for (const s of SURAHS)
-    for (let a = 1; a <= s.numberOfAyahs; a++)
-      verseInfo.push({ surah: s.number, ayah: a, name: s.name });
-
-  const SURAH_NAME_MAP = new Map();
-  SURAHS.forEach((s) => SURAH_NAME_MAP.set(s.name, s.number));
-
+  const TOTAL = quranData.surahOffsets[114];
   // Helper: convert surah+ayah (1-based) to 0-based global verse index
   function toGlobal(surah, ayah) {
-    return surahOffsets[surah - 1] + ayah - 1;
+    return quranData.surahOffsets[surah - 1] + ayah - 1;
   }
 
   // Build per-verse lookup arrays for fast O(1) access
@@ -5998,15 +6008,15 @@ async function showAvanceChart() {
 
   (function buildLookups() {
     // Pages
-    for (let pi = 0; pi < PAGES.length; pi++) {
-      const p = PAGES[pi];
+    for (let pi = 0; pi < quranData.pages.length; pi++) {
+      const p = quranData.pages[pi];
       const startG = toGlobal(p.ss, p.sa);
       const endG = toGlobal(p.es, p.ea);
       for (let g = startG; g <= endG && g < TOTAL; g++) versePageIdx[g] = pi;
     }
     // Ahzab
-    for (let hi = 0; hi < AHZAB.length; hi++) {
-      const h = AHZAB[hi];
+    for (let hi = 0; hi < quranData.ahzab.length; hi++) {
+      const h = quranData.ahzab[hi];
       const startG = toGlobal(h.ss, h.sa);
       const endG = toGlobal(h.es, h.ea);
       for (let g = startG; g <= endG && g < TOTAL; g++) verseHizbIdx[g] = hi;
@@ -6015,27 +6025,28 @@ async function showAvanceChart() {
 
   // ── GROUPING ─────────────────────────────────────────────────────────────────
   function getGroupIndex(i, by) {
-    if (by === "surah") return verseInfo[i].surah - 1;
+    if (by === "surah") return quranData.verseInfo[i].surah - 1;
     if (by === "hizb") return verseHizbIdx[i];
     if (by === "page") return versePageIdx[i];
     return 0;
   }
   function getGroupCount(by) {
     if (by === "surah") return 114;
-    if (by === "hizb") return AHZAB.length;
-    if (by === "page") return PAGES.length;
+    if (by === "hizb") return quranData.ahzab.length;
+    if (by === "page") return quranData.pages.length;
     return 1;
   }
   function getGroupLabel(gi, by) {
-    if (by === "surah") return `${SURAHS[gi].number}. ${SURAHS[gi].name}`;
-    if (by === "hizb") return `الحزب ${AHZAB[gi].n}`;
-    if (by === "page") return `صفحة ${PAGES[gi].n}`;
+    if (by === "surah")
+      return `${quranData.surahs[gi].number}. ${quranData.surahs[gi].name}`;
+    if (by === "hizb") return `الحزب ${quranData.ahzab[gi].n}`;
+    if (by === "page") return `صفحة ${quranData.pages[gi].n}`;
     return "";
   }
 
   // ── STATE ────────────────────────────────────────────────────────────────────
-  let indices = [],
-    groupBy = "none",
+  const indices = []
+  let  groupBy = "none",
     typeBy = "all",
     gridBuilt = false;
 
@@ -6082,7 +6093,7 @@ async function showAvanceChart() {
   // ── TOOLTIP ───────────────────────────────────────────────────────────────────
   function showTooltip(sq, clientX, clientY) {
     const i = +sq.dataset.idx;
-    const vi = verseInfo[i];
+    const vi = quranData.verseInfo[i];
 
     tooltip.querySelector(".t-surah").textContent = `${vi.name} - ${vi.ayah}`;
     tooltip.querySelector(".t-verse").textContent = `......`;
@@ -6120,7 +6131,7 @@ async function showAvanceChart() {
   function resolveSurah(token) {
     const n = +token;
     if (!isNaN(n) && n >= 1 && n <= 114) return n;
-    return SURAH_NAME_MAP.get(token) ?? null;
+    return quranData.SURAH_NAME_MAP.get(token) ?? null;
   }
 
   function parseEntry(entry) {
@@ -6144,14 +6155,12 @@ async function showAvanceChart() {
       return;
     }
 
-    const dateList = dates.map((date) => `'${date}'`).join(", ");
-
     const allAyatlist = [];
     const lsR = project_db.exec(`
             SELECT dr.detail
             FROM day_requirements dr
             INNER JOIN education_day ed ON dr.day_id = ed.id
-            WHERE dr.student_id = ${studentID} AND ed.date IN (${dateList})
+            WHERE dr.student_id = ${studentID} AND ed.date IN (${dates.map((date) => `'${date}'`).join(", ")})
             ORDER BY ed.date DESC`);
     if (lsR.length)
       detail = lsR[0].values.forEach((item) => {
@@ -6173,7 +6182,7 @@ async function showAvanceChart() {
           });
       });
 
-    indices = [...new Set(allAyatlist)];
+    indices.push(...new Set(allAyatlist));
 
     buildGrid();
     updateStatus();
