@@ -1238,7 +1238,7 @@ async function loadStudentsList() {
               {
                 text: '<i class="fa-solid fa-table-cells">',
                 action: async function (e, dt) {
-                  const columns = dt.columns([6]);
+                  const columns = dt.columns([7]);
                   const isVisible = dt.column(columns[0][0]).visible();
 
                   columns.visible(!isVisible);
