@@ -105,7 +105,7 @@ const newStudentDayModalBody = document.getElementById(
 let statisAllCheckbox = document.getElementById("statisAllCheckbox");
 const statisticType = document.getElementById("statisticType");
 
-let start_time = null;
+const studentDayInfos = { start_time: null, isObligatory: false, dayNote: "" };
 const themeSelector = document.getElementById("themeSelector");
 const themeTag = document.getElementById("themeStylesheet");
 const fontSelector = document.getElementById("fontSelect");
@@ -168,18 +168,19 @@ async function initPlusMinusButtons(numberField) {
     }
   });
 }
+
 // back button event listenner
 function isAnyOverlayOpen() {
   return (
     document.querySelector(
-      '.modal.show, .offcanvas.show, [role="dialog"]:not([aria-hidden="true"])',
+      '.modal.show:not(#loadingModal), .offcanvas.show, [role="dialog"]:not([aria-hidden="true"])',
     ) !== null
   );
 }
 
 function closeAnyOverlay() {
   // Bootstrap modal
-  const modal = document.querySelector(".modal.show");
+  const modal = document.querySelector(".modal.show:not(#loadingModal)");
   if (modal && window.bootstrap) {
     bootstrap.Modal.getInstance(modal)?.hide();
     return true;
@@ -206,7 +207,6 @@ function closeAnyOverlay() {
 
 let allowExit = false;
 history.pushState({ pwa: true }, "");
-
 window.addEventListener("popstate", () => {
   // 1️⃣ Close any open overlay
   if (isAnyOverlayOpen()) {
@@ -217,14 +217,12 @@ window.addEventListener("popstate", () => {
 
   // 2️⃣ Ask exit confirmation
   if (!allowExit) {
-    const exit = confirm("هل تريد إغلاق التطبيق ؟");
-    if (exit) {
+    window.showToast("info", "اضغط مرة أخرى للخروج من التطبيق.", 1000, false);
       allowExit = true;
       history.back();
     } else {
       history.pushState({ pwa: true }, "");
     }
-  }
 });
 
 themeSelector.onchange = async function () {
@@ -1173,7 +1171,7 @@ async function loadStudentsList() {
             row[result.columns.indexOf("fname")] +
             " " +
             row[result.columns.indexOf("lname")],
-          history:`<i onclick="showRequirementsHistory(${row[0]})" class="fa-solid fa-clock-rotate-left"></i>`,
+          history: `<i onclick="showRequirementsHistory(${row[0]})" class="fa-solid fa-clock-rotate-left"></i>`,
           age: Math.abs(
             moment().diff(
               moment(new Date(row[result.columns.indexOf("birthyear")])),
@@ -1192,9 +1190,9 @@ async function loadStudentsList() {
       [
         { data: "select" },
         { data: "id" },
-        { data: "num" ,className:"text-center"},
+        { data: "num", className: "text-center" },
         { data: "name" },
-        { data: "history" ,className:"text-right px-0"},
+        { data: "history", className: "text-right px-0" },
         { data: "age", className: "text-center px-0" },
         { data: "parentPhone", className: "py-1" },
         { data: "actions", className: "py-1" },
@@ -1214,12 +1212,12 @@ async function loadStudentsList() {
           },
           { visible: false, targets: [1, 7] },
           {
-            targets: [0, 4,6,7],
+            targets: [0, 4, 6, 7],
             orderable: false,
           },
           {
-            targets: [ 4],
-            width:"5px",
+            targets: [4],
+            width: "5px",
           },
         ],
         searching: false,
@@ -1665,7 +1663,7 @@ function update_student_day_notes(studentId, working_day_id) {
 
 function calcRetardTime() {
   let retardTime = 0;
-  return moment().diff(moment(start_time, "HH:mm"), "minutes");
+  return moment().diff(moment(studentDayInfos.start_time, "HH:mm"), "minutes");
 }
 
 function checkAuthorizedOut(time, requirsMoyenne, minutesToAdd) {
@@ -1805,7 +1803,7 @@ async function addNewStudyDay() {
       );
     }
   }
-  start_time = appointment_time;
+  studentDayInfos.start_time = appointment_time;
   saveToIndexedDB(project_db.export());
   getStudyDays();
   await loadDayStudentsList();
@@ -1916,7 +1914,7 @@ function showRequirementsHistory(student_id, page = 1) {
   );
 }
 
-function chageObligatory(switchElement) {
+function changeObligatory(switchElement) {
   if (!project_db) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
@@ -1980,17 +1978,16 @@ async function loadDayStudentsList() {
   }
 
   workingDayID = dayResult[0].values[0][dayResult[0].columns.indexOf("id")];
-  start_time =
+  studentDayInfos.start_time =
     dayResult[0].values[0][dayResult[0].columns.indexOf("time")] || null;
 
-  let dayNote =
+  studentDayInfos.dayNote =
     dayResult[0].values[0][dayResult[0].columns.indexOf("notes")] || "";
-  dayNoteContainer.style.display = dayNote ? "block" : "none";
-  dayNoteContainer.innerHTML = `<em>${dayNote}</em>`;
+  dayNoteContainer.style.display = studentDayInfos.dayNote ? "block" : "none";
+  dayNoteContainer.innerHTML = `<em>${studentDayInfos.dayNote}</em>`;
 
-  const isObligatory =
+  studentDayInfos.isObligatory =
     dayResult[0].values[0][dayResult[0].columns.indexOf("isObligatory")];
-
   document.getElementById("dayListTable").style.display = "block";
   document.getElementById("addNewDayBtn").style.display = "none";
 
@@ -2193,7 +2190,7 @@ async function loadDayStudentsList() {
                     : `بعد ${retardValue} د `) +
                 (thisDay == workingDay &&
                 checkAuthorizedOut(
-                  start_time,
+                  studentDayInfos.start_time,
                   row[result.columns.indexOf("requirsMoyenne")],
                   retardValue,
                 )
@@ -2451,7 +2448,7 @@ async function loadDayStudentsList() {
                         content: {
                           element: "input",
                           attributes: {
-                            placeholder: dayNote,
+                            placeholder: studentDayInfos.dayNote,
                           },
                         },
                         buttons: [
@@ -2483,7 +2480,7 @@ async function loadDayStudentsList() {
                               ? "block"
                               : "none";
                             dayNoteContainer.innerHTML = `<em>${value}</em>`;
-                            dayNote = value;
+                            studentDayInfos.dayNote = value;
                           } catch (e) {
                             window.showToast("error", "Error: " + e.message);
                           }
@@ -2493,23 +2490,23 @@ async function loadDayStudentsList() {
                   },
                   {
                     text: '<i class="fa-solid fa-circle-info"></i> معلومات الحصة',
-                    action: async function (e, dt) {
+                    action: async function () {
                       showOffCanvas(
                         "معلومات الحصة",
                         `<div class="mx-3">
                           <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" onchange="chageObligatory(this)" ${isObligatory ? "checked" : ""}>
+                            <input class="form-check-input" type="checkbox" role="switch" onchange="changeObligatory(this)" ${studentDayInfos.isObligatory ? "checked" : ""}>
                             <label class="form-check-label" >حصة إلزامية</label>
                           </div>
                           <p>وقت بدء الحصة: <strong>${
-                            start_time || "غير محدد"
+                            studentDayInfos.start_time || "غير محدد"
                           }</strong><br>
                           عدد التلاميذ الحاضرين: <strong>${
                             project_db.exec(
                               `SELECT COUNT(*) FROM day_evaluations WHERE day_id = ${workingDayID} AND attendance = 1;`,
                             )[0].values[0][0]
                           }</strong><br>
-                          ملاحظة اليوم: <em>${dayNote || "لا توجد ملاحظة"}</em><br>
+                          ملاحظة اليوم: <em>${studentDayInfos.dayNote || "لا توجد ملاحظة"}</em><br>
                           </p>
                         </div>
                       `,
@@ -2733,15 +2730,15 @@ async function InitDatePickers() {
 }
 
 function initializeToast() {
-  window.showToast = function (type, message, delay = 4000) {
+  window.showToast = function (type, message, delay = 4000, closeBtn = true) {
     if (!window._toastReady) {
-      window._toastQueue.push({ message, type, delay });
+      window._toastQueue.push({ message, type, delay, closeBtn });
       return;
     }
-    window._realShowToast(message, type, delay);
+    window._realShowToast(message, type, delay, closeBtn);
   };
 
-  function createToastElement(message, type) {
+  function createToastElement(message, type, closeBtn) {
     const el = document.createElement("div");
     const bg =
       type === "error"
@@ -2758,17 +2755,22 @@ function initializeToast() {
     el.innerHTML = `
           <div class="d-flex">
             <div class="toast-body text-center">${message}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            ${closeBtn ? `<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>` : ""}
           </div>
         `;
     return el;
   }
-  window._realShowToast = function (message, type, delay = 4000) {
+  window._realShowToast = function (
+    message,
+    type,
+    delay = 4000,
+    closeBtn = true,
+  ) {
     if (!toastWrapper) {
       alert(message);
       return;
     }
-    const el = createToastElement(message, type);
+    const el = createToastElement(message, type, closeBtn);
     toastWrapper.appendChild(el);
 
     if (window.bootstrap && typeof window.bootstrap.Toast === "function") {
@@ -6081,7 +6083,7 @@ async function showAvanceChart() {
         const groupVerses = [];
         for (let i = 0; i < TOTAL; i++)
           if (getGroupIndex(i, groupBy) === gi) groupVerses.push(i);
-        for (let k = 0; k <= groupVerses.length -1; k++)
+        for (let k = 0; k <= groupVerses.length - 1; k++)
           frag.appendChild(makeSq(groupVerses[k]));
       }
     }
@@ -6190,6 +6192,7 @@ async function showAvanceChart() {
           });
       });
 
+    indices.length = 0
     indices.push(...new Set(allAyatlist));
 
     buildGrid();
@@ -6234,7 +6237,7 @@ async function showAvanceChart() {
 
   // ── GROUP-BY ─────────────────────────────────────────────────────────────────
   document.querySelectorAll(".gb-group .btn").forEach((btn) => {
-     if(btn.classList.contains("active")) groupBy = btn.dataset.by;
+    if (btn.classList.contains("active")) groupBy = btn.dataset.by;
     btn.addEventListener("click", () => {
       document
         .querySelectorAll(".gb-group .btn")
@@ -6245,6 +6248,7 @@ async function showAvanceChart() {
     });
   });
   document.querySelectorAll(".tb-group .btn").forEach((btn) => {
+    if (btn.classList.contains("active")) typeBy = btn.dataset.tby;
     btn.addEventListener("click", () => {
       document
         .querySelectorAll(".tb-group .btn")
