@@ -521,7 +521,7 @@ th.header-rotated>div>span {
   height: 8px;
   background: var(--sq);
   border-radius: 1px;
-  transition: background 0.2s, transform 0.12s;
+  /* transition: background 0.2s, transform 0.12s; */
   cursor: pointer;
   flex-shrink: 0;
 }

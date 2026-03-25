@@ -6069,8 +6069,13 @@ async function showAvanceChart() {
     const frag = document.createDocumentFragment();
 
     if (groupBy === "none") {
-      // reversed: last verse on top
-      for (let i = TOTAL - 1; i >= 0; i--) frag.appendChild(makeSq(i));
+      for (let gi = getGroupCount("surah") - 1; gi >= 0; gi--) {
+        const groupVerses = [];
+        for (let i = 0; i < TOTAL; i++)
+          if (getGroupIndex(i, "surah") === gi) groupVerses.push(i);
+        for (let k = 0; k <= groupVerses.length - 1; k++)
+          frag.appendChild(makeSq(groupVerses[k]));
+      }
     } else {
       const count = getGroupCount(groupBy);
       // reversed: last group on top
@@ -6192,7 +6197,7 @@ async function showAvanceChart() {
           });
       });
 
-    indices.length = 0
+    indices.length = 0;
     indices.push(...new Set(allAyatlist));
 
     buildGrid();
