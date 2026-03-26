@@ -142,6 +142,9 @@ async function minimizeModal() {
   studentDayModalElement.style.display = "none";
   document.querySelector(".modal-backdrop")?.classList.add("no-backdrop");
   maximizeModalBtn.style.removeProperty("display");
+  document
+    .querySelector(".container-fluid.modal-open")
+    .style.removeProperty("overflow");
 }
 
 async function initPlusMinusButtons(numberField) {
@@ -218,11 +221,11 @@ window.addEventListener("popstate", () => {
   // 2️⃣ Ask exit confirmation
   if (!allowExit) {
     window.showToast("info", "اضغط مرة أخرى للخروج من التطبيق.", 1000, false);
-      allowExit = true;
-      history.back();
-    } else {
-      history.pushState({ pwa: true }, "");
-    }
+    allowExit = true;
+    history.back();
+  } else {
+    history.pushState({ pwa: true }, "");
+  }
 });
 
 themeSelector.onchange = async function () {
@@ -6055,7 +6058,8 @@ async function showAvanceChart() {
   }
 
   // ── STATE ────────────────────────────────────────────────────────────────────
-  const indices = [];
+  const indices = [],
+    allAyatlist = { saveList: [], reviselist: [] };
   let groupBy = "none",
     typeBy = "all",
     gridBuilt = false;
@@ -6111,7 +6115,7 @@ async function showAvanceChart() {
     const vi = quranData.verseInfo[i];
 
     tooltip.querySelector(".t-surah").textContent = `${vi.name} - ${vi.ayah}`;
-    tooltip.querySelector(".t-verse").textContent = `......`;
+    tooltip.querySelector(".t-verse").textContent = quran_db.exec(`SELECT text FROM quran_ayat WHERE id=${parseInt(i)+1}`)[0].values[0][0];
 
     let x = clientX + 14,
       y = clientY - 80;
@@ -6163,14 +6167,13 @@ async function showAvanceChart() {
     for (let g = startG; g <= endG; g++) set.add(g);
     return set;
   }
-  // ── HIGHLIGHT ────────────────────────────────────────────────────────────────
-  function applyHighlight() {
+
+  function fillAyatList() {
     if (!project_db) {
       window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
       return;
     }
 
-    const allAyatlist = [];
     const lsR = project_db.exec(`
             SELECT dr.detail
             FROM day_requirements dr
@@ -6186,19 +6189,35 @@ async function showAvanceChart() {
               const type = item["النوع"];
               const detail = item["التفاصيل"];
 
-              if (
-                typeBy === "all" ||
-                (typeBy === "save" && (type === "حفظ" || type === "حصيلة")) ||
-                (typeBy === "revise" && type === "مراجعة")
-              ) {
-                parseEntry(detail).forEach((item) => allAyatlist.push(item));
-              }
+              if (type === "مراجعة")
+                parseEntry(detail).forEach((item) =>
+                  allAyatlist.reviselist.push(item),
+                );
+              else
+                parseEntry(detail).forEach((item) =>
+                  allAyatlist.saveList.push(item),
+                );
             }
           });
       });
-
+  }
+  // ── HIGHLIGHT ────────────────────────────────────────────────────────────────
+  function applyHighlight(init = false) {
+    if (init) fillAyatList();
     indices.length = 0;
-    indices.push(...new Set(allAyatlist));
+    switch (typeBy) {
+      case "all":
+        indices.push(...new Set(Object.values(allAyatlist).flat()));
+        break;
+      case "save":
+        indices.push(...new Set(allAyatlist.saveList));
+        break;
+      case "revise":
+        indices.push(...new Set(allAyatlist.reviselist));
+        break;
+      default:
+        indices.length = 0;
+    }
 
     buildGrid();
     updateStatus();
@@ -6214,17 +6233,43 @@ async function showAvanceChart() {
       });
       return;
     }
-    const cmap = new Map();
-    indices.forEach((i) => cmap.set(i, "#c9a84c"));
-    sqs.forEach((sq) => {
+    const cmap = new Set();
+    indices.forEach((i) => cmap.add(i));
+    let open = true;
+    const vides = [[]];
+    sqs.forEach((sq, index) => {
       const i = +sq.dataset.idx;
       if (cmap.has(i)) {
-        sq.style.background = cmap.get(i);
+        if (vides.at(-1).length == 0) {
+          open = false;
+        } else {
+          vides.push([]);
+        }
+
+        sq.style.background = "#c9a84c";
         sq.classList.remove("dimmed");
       } else {
+        if (
+          !open
+           &&
+          (vides.at(-1).length == 0 ||
+            (vides.at(-1).length > 0 &&
+              quranData.verseInfo[i].name ===
+                quranData.verseInfo[sqs[vides.at(-1).at(-1)]?.dataset.idx].name))
+        ) 
+          vides.at(-1).push(index);
+        
         sq.style.background = "";
         sq.classList.add("dimmed");
       }
+    });
+    vides.splice(-1, 1);
+    vides.forEach((vide) => {
+      // if (vide.length > 50) vide.length = 0;
+      vide.forEach((sq) => {
+        sqs[sq].classList.remove("dimmed");
+        sqs[sq].style.background = "#f53e3e";
+      });
     });
   }
 
@@ -6265,7 +6310,7 @@ async function showAvanceChart() {
   });
 
   // ── INIT ─────────────────────────────────────────────────────────────────────
-  applyHighlight();
+  applyHighlight(true);
 }
 
 async function setStatisticsTable(query, tableColumns, buttons = []) {
