@@ -6110,12 +6110,14 @@ async function showAvanceChart() {
   }
 
   // ── TOOLTIP ───────────────────────────────────────────────────────────────────
-  function showAvanceChartTooltip(sq, clientX, clientY) {
+  async function showAvanceChartTooltip(sq, clientX, clientY) {
     const i = +sq.dataset.idx;
     const vi = quranData.verseInfo[i];
 
     tooltip.querySelector(".t-surah").textContent = `${vi.name} - ${vi.ayah}`;
-    tooltip.querySelector(".t-verse").textContent = quran_db.exec(`SELECT text FROM quran_ayat WHERE id=${parseInt(i)+1}`)[0].values[0][0];
+    tooltip.querySelector(".t-verse").textContent = await quran_db.exec(
+      `SELECT substr(text,1,40) FROM quran_ayat WHERE id=${parseInt(i) + 1}`,
+    )[0].values[0][0];
 
     let x = clientX + 14,
       y = clientY - 80;
@@ -6249,18 +6251,12 @@ async function showAvanceChart() {
         sq.style.background = "#c9a84c";
         sq.classList.remove("dimmed");
       } else {
-        if (
-          !open
-           &&
-          (vides.at(-1).length == 0 ||
-            (vides.at(-1).length > 0 &&
-              quranData.verseInfo[i].name ===
-                quranData.verseInfo[sqs[vides.at(-1).at(-1)]?.dataset.idx].name))
-        ) 
-          vides.at(-1).push(index);
-        
         sq.style.background = "";
         sq.classList.add("dimmed");
+        if (
+          !open 
+        ){
+          vides.at(-1).push(index);}
       }
     });
     vides.splice(-1, 1);
