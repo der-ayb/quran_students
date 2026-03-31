@@ -19,7 +19,7 @@ workbox.precaching.precacheAndRoute(
 
     { url: "./src/style.css", revision: "14" },
     { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "75" },
+    { url: "./src/script.js", revision: "76" },
     { url: "./src/auth.js", revision: "2" },
     { url: "./src/flatpickr-hijri-calendar.js", revision: "3" },
     { url: "./src/pdfmake.js", revision: "1" },

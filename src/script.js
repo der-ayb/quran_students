@@ -1485,6 +1485,8 @@ function calcRequirementMoyenne(quantity, evaluation, type, repit, alerts) {
   } else {
     value = evaluation * (quantity / 4);
   }
+  value +=
+    (type === "حفظ" ? quantity : quantity / 2) / (requirementsTable.querySelectorAll("tbody tr").length + 1);
   return (
     value
       ? value -
@@ -1501,29 +1503,17 @@ function calcRequirementsMoyenne() {
     requirementsTable.querySelectorAll("thead th"),
   ).map((header) => header.textContent.trim());
   const moyenneIndex = headers.indexOf("المعدل");
-  const quantityIndex = headers.indexOf("المقدار");
 
   let moyenne = 0;
-  let totalQuantity = 0;
 
   requirementsTable.querySelectorAll("tbody tr").forEach((row) => {
     const cells = row.querySelectorAll("td");
     if (moyenneIndex !== -1) {
       moyenne += parseFloat(cells[moyenneIndex]?.textContent.trim() || "0");
     }
-    if (quantityIndex !== -1) {
-      totalQuantity += parseFloat(
-        cells[quantityIndex]?.textContent.trim() || "0",
-      );
-    }
   });
 
-  return (
-    moyenne
-      ? moyenne +
-        totalQuantity / requirementsTable.querySelectorAll("tbody tr").length
-      : 0
-  ).toFixed(2);
+  return (moyenne ? moyenne : 0).toFixed(2);
 }
 
 function calcRequirementEvaluation(
@@ -1532,9 +1522,7 @@ function calcRequirementEvaluation(
   saveStateErrors,
 ) {
   const errorValue = parseFloat(
-    10 /
-      (requirQuantity *
-        (requirType === "حفظ" ? 2 : 1)),
+    10 / (requirQuantity * (requirType === "حفظ" ? 2 : 1)),
   );
   const result = parseFloat(10 - errorValue * parseFloat(saveStateErrors));
   return result > 0 ? result.toFixed(2) : 0;
@@ -5644,7 +5632,7 @@ async function showResultsStatistics() {
       COUNT(*) as absent_count
     FROM day_evaluations
     WHERE attendance = 0
-    AND day_id IN (SELECT id FROM education_day WHERE date IN (${dates.map(d => `'${d}'`).join(", ")}))
+    AND day_id IN (SELECT id FROM education_day WHERE date IN (${dates.map((d) => `'${d}'`).join(", ")}))
     GROUP BY student_id
   )`;
 
