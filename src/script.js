@@ -1534,7 +1534,7 @@ function calcRequirementEvaluation(
   const errorValue = parseFloat(
     10 /
       (requirQuantity *
-        (requirType === "حفظ" ? 2 : requirType === "مراجعة" ? 1 : 0.8)),
+        (requirType === "حفظ" ? 2 : 1)),
   );
   const result = parseFloat(10 - errorValue * parseFloat(saveStateErrors));
   return result > 0 ? result.toFixed(2) : 0;
@@ -2690,7 +2690,7 @@ async function InitDatePickers() {
             "أمس",
             "الأسبوع الحالي",
             "الأسبوع الماضي",
-            "هذا الشهر",
+            "الشهر الحالي",
             "الشهر الماضي",
           ].includes(instance.altInput.value)
         )
@@ -2719,7 +2719,7 @@ async function InitDatePickers() {
         اليوم: [endDate, endDate],
         "الأسبوع الحالي": [lastSaturday, endDate],
         "الأسبوع الماضي": [prevWeekSaturday, fp_incr(prevWeekSaturday, 6)],
-        "هذا الشهر": [currentMonthStart, endDate],
+        "الشهر الحالي": [currentMonthStart, endDate],
         "الشهر الماضي": [previousMonthStart, previousMonthEnd],
         "الموسم الحالي": [firstDayOfLastOctober, endDate],
       },
@@ -5424,7 +5424,19 @@ async function showAttendanceStatistics() {
     )
     .join(",\n");
 
-  const attendanceSum = `SUM(CASE WHEN de.attendance = 1 THEN 1 ELSE 0 END)`;
+  const attendanceSum = dates
+    .map(
+      (date) =>
+        `SUM(CASE WHEN d.date = '${date}' AND de.attendance = 1 THEN 1 ELSE 0 END)`,
+    )
+    .join(" +\n        ");
+
+  const attendanceObligatorySum = dates
+    .map(
+      (date) =>
+        `SUM(CASE WHEN d.date = '${date}' AND d.isObligatory = 1 AND de.attendance = 1 THEN 1 ELSE 0 END)`,
+    )
+    .join(" +\n        ");
 
   const query = `
     SELECT
@@ -5436,7 +5448,11 @@ async function showAttendanceStatistics() {
     ${attendanceSum} as "المجموع (/${dates.length})",
 
     ROUND(
-        (${attendanceSum} * 100.0 / ${dates.length}), 1
+        ((${attendanceObligatorySum}) * 100.0 / (SELECT count(*) FROM education_day WHERE class_room_id = ${workingClassroomId} AND isObligatory = 1 AND date IN (${dates.map((date) => `'${date}'`).join(", ")}))), 1
+    ) as "إلزامي (%)",
+
+    ROUND(
+        ((${attendanceSum}) * 100.0 / ${dates.length}), 1
     ) as "النسبة (%)"
     FROM students s
     LEFT JOIN day_evaluations de ON s.id = de.student_id
@@ -5561,6 +5577,7 @@ async function showAttendanceStatistics() {
           .replace("،", ""),
       ),
     `المجموع (/${dates.length})`,
+    "إلزامي (%)",
     "النسبة (%)",
   ];
   setStatisticsTable(query, tableColumns, buttons);
@@ -5611,7 +5628,7 @@ async function showResultsStatistics() {
   // Generate sum expressions for المجموع
   const sumExpressions = dates
     .map(
-      (date, index) =>
+      (_, index) =>
         `(SELECT COALESCE(SUM(de.moyenne), 0) FROM day_evaluations de 
           WHERE de.student_id = s.id AND de.day_id IN (SELECT id FROM day_id${index}))
           + 
@@ -5621,46 +5638,38 @@ async function showResultsStatistics() {
     )
     .join(" +\n        ");
 
+  const absenceCTE = `absence_counts AS (
+    SELECT 
+      student_id,
+      COUNT(*) as absent_count
+    FROM day_evaluations
+    WHERE attendance = 0
+    AND day_id IN (SELECT id FROM education_day WHERE date IN (${dates.map(d => `'${d}'`).join(", ")}))
+    GROUP BY student_id
+  )`;
+
   const query = `
-    WITH ${dateCtes}
+    WITH ${dateCtes},
+    ${absenceCTE}
     SELECT 
         ROW_NUMBER() OVER (ORDER BY s.id) as "#", 
         s.fname || ' ' || s.lname as "اسم الطالب",
         ${dateColumns},
-        -- المجموع (Total)
-        COALESCE( ROUND(
-            ${sumExpressions}
-        , 2), 0 ) as "المجموع",
-        -- المعدل (Average)
-        COALESCE( ROUND(
-            (${sumExpressions}) / (${dates.length}-(
-                                    SELECT count(attendance)
-                                    FROM day_evaluations
-                                    WHERE student_id = s.id
-                                    AND attendance = 0
-                                    AND day_id in (SELECT id FROM education_day WHERE date in (${
-                                      '"' + dates.join('","') + '"'
-                                    }))
-                                    ))
-        , 2), 0 ) as "المعدل",
-        -- الترتيب (order)
-        ROW_NUMBER() OVER (ORDER BY 
-        COALESCE( ROUND(
-            (${sumExpressions}) / (${dates.length}-(
-                                    SELECT count(attendance)
-                                    FROM day_evaluations
-                                    WHERE student_id = s.id
-                                    AND attendance = 0
-                                    AND day_id in (SELECT id FROM education_day WHERE date in (${
-                                      '"' + dates.join('","') + '"'
-                                    }))
-                                    ))
-        , 2), 0 ) DESC ) as "الترتيب"
+        COALESCE(ROUND(${sumExpressions}, 2), 0) as "المجموع",
+        COALESCE(ROUND(
+            (${sumExpressions}) / (${dates.length} - COALESCE(ac.absent_count, 0))
+        , 2), 0) as "المعدل",
+        ROW_NUMBER() OVER (
+          ORDER BY COALESCE(ROUND(
+              (${sumExpressions}) / (${dates.length} - COALESCE(ac.absent_count, 0))
+          , 2), 0) DESC
+        ) as "الترتيب"
     FROM students s 
     LEFT JOIN day_evaluations de ON s.id = de.student_id 
     LEFT JOIN day_requirements dr ON dr.student_id = s.id 
-    WHERE s.id in (${studentsList})
-    GROUP BY s.id, "اسم الطالب" 
+    LEFT JOIN absence_counts ac ON s.id = ac.student_id
+    WHERE s.id IN (${studentsList})
+    GROUP BY s.id, "اسم الطالب", ac.absent_count
     ORDER BY s.id;
 `;
   const buttons = [
@@ -6253,15 +6262,14 @@ async function showAvanceChart() {
       } else {
         sq.style.background = "";
         sq.classList.add("dimmed");
-        if (
-          !open 
-        ){
-          vides.at(-1).push(index);}
+        if (!open) {
+          vides.at(-1).push(index);
+        }
       }
     });
     vides.splice(-1, 1);
     vides.forEach((vide) => {
-      // if (vide.length > 50) vide.length = 0;
+      if (vide.length > 200) vide.length = 0;
       vide.forEach((sq) => {
         sqs[sq].classList.remove("dimmed");
         sqs[sq].style.background = "#f53e3e";
