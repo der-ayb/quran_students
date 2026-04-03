@@ -1478,22 +1478,24 @@ function calcEvaluationMoyenne(
   return moyenne.toFixed(2);
 }
 
-function calcRequirementMoyenne(quantity, evaluation, type, repit, alerts) {
+function calcRequirementMoyenne(quantity, evaluation, type, repit) {
   let value = 0;
   if (type === "حفظ") {
     value = evaluation * (quantity / 2);
   } else {
     value = evaluation * (quantity / 4);
   }
+
   value +=
-    (type === "حفظ" ? quantity : quantity / 2) / (requirementsTable.querySelectorAll("tbody tr").length + 1);
+    (type === "حفظ" ? quantity : quantity / 2) /
+    (requirementsTable.querySelectorAll("tbody tr").length +
+      (addQuranSelectionBtn.innerText !== "تحديث" ? 1 : 0));
+
   return (
-    value
+    value > 0
       ? value -
         repit *
-          (evaluationLaddersValues.requirments?.requirReducePerRepit || 10) -
-        alerts *
-          (evaluationLaddersValues.requirments?.requirReducePerAlert || 2)
+          (evaluationLaddersValues.requirments?.requirReducePerRepit || 10)
       : 0
   ).toFixed(2);
 }
@@ -1520,11 +1522,19 @@ function calcRequirementEvaluation(
   requirQuantity,
   requirType,
   saveStateErrors,
+  saveStateAlerts,
 ) {
   const errorValue = parseFloat(
     10 / (requirQuantity * (requirType === "حفظ" ? 2 : 1)),
   );
-  const result = parseFloat(10 - errorValue * parseFloat(saveStateErrors));
+  const alertsValue = parseFloat(
+    10 / (requirQuantity * (requirType === "حفظ" ? 8 : 4)),
+  );
+  const result = parseFloat(
+    10 -
+      errorValue * parseFloat(saveStateErrors) -
+      alertsValue * parseFloat(saveStateAlerts),
+  );
   return result > 0 ? result.toFixed(2) : 0;
 }
 
@@ -1561,13 +1571,13 @@ function setRequirEvalInput() {
     requirQuantityInput.value,
     requirTypeInput.value,
     saveStateErrorsInput.value,
+    saveStateAlertsInput.value,
   );
   requirMoyenneInput.value = calcRequirementMoyenne(
     requirQuantityInput.value,
     requirEvaluationInput.value,
     requirTypeInput.value,
     requirRepitInput.value,
-    saveStateAlertsInput.value,
   );
 }
 
@@ -1583,6 +1593,7 @@ function update_student_day_notes(studentId, working_day_id) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
+  console.log(getAttendanceValue())
   if ([0, 1].includes(getAttendanceValue())) {
     const headers = Array.from(
       requirementsTable.querySelectorAll("thead th"),
@@ -2830,10 +2841,11 @@ function initRequirementFields(detail = null) {
 
 function editRequirement(button) {
   const row = button.closest("tr");
+  addQuranSelectionBtn.innerText = "تحديث";
   requireBookInput.value = row.firstElementChild.textContent;
-  requireBookInput.dispatchEvent(new Event("change"));
+  // requireBookInput.dispatchEvent(new Event("change"));
   requirTypeInput.value = row.firstElementChild.nextElementSibling.textContent;
-  requirTypeInput.dispatchEvent(new Event("change"));
+  // requirTypeInput.dispatchEvent(new Event("change"));
   const detail =
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
 
@@ -2861,11 +2873,13 @@ function editRequirement(button) {
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim() ||
     "0";
 
-  const teacherName =
-    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
   requirRepitInput.value =
     row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim() ||
     "0";
+
+  const teacherName =
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+
   setOrGetOptionValueByText(requirTeacherInput, teacherName);
   setRequirEvalInput();
   requireBookInput.scrollIntoView();
@@ -2876,10 +2890,8 @@ function editRequirement(button) {
       Math.floor(parseFloat(requirQuantityInput.value));
   }
 
-  addQuranSelectionBtn.innerText = "تحديث";
   addQuranSelectionBtn.onclick = () => {
     addRequirToTable(row);
-
     addQuranSelectionBtn.innerText = "إضافة";
     addQuranSelectionBtn.onclick = () => addRequirToTable();
   };
@@ -2898,7 +2910,8 @@ function removeRequirItem(button, student_id = null) {
   const quantity =
     row.firstElementChild.nextElementSibling.nextElementSibling.textContent;
   const teacherName =
-    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+    row.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent.trim();
+
   if (teacherName !== "المعلم") {
     teachersPoints[
       setOrGetOptionValueByText(requirTeacherInput, teacherName, true)
@@ -3176,6 +3189,17 @@ function removeEvalLadder(type, key) {
   }
 }
 
+async function initBullentinConfigs() {
+  const resumePagesCheck = localStorage.getItem("bulletinResumPage");
+  const signatureCheck = localStorage.getItem("bulletinSignature");
+  if (resumePagesCheck)
+    document.getElementById("resumePagesCheck").checked =
+      resumePagesCheck === "true";
+  if (signatureCheck)
+    document.getElementById("signatureCheck").checked =
+      signatureCheck === "true";
+}
+
 async function showTab(tabId) {
   document
     .querySelectorAll(".tab-pane:not(#statisticsTabContent .tab-pane)")
@@ -3187,7 +3211,6 @@ async function showTab(tabId) {
   } else if (tabId === "pills-home") {
     await loadClassRoomsList();
   } else if (tabId === "pills-preferences") {
-    document.getElementById("list-retard-list").click();
     if (!document.getElementById("behavior-marksList").innerHTML) {
       displayEvalLadder(
         JSON.parse(
@@ -5662,6 +5685,87 @@ async function showResultsStatistics() {
 `;
   const buttons = [
     {
+      text: '<i class="fa-solid fa-puzzle-piece"></i>',
+      action: async function () {
+        const bulletinAppendsModal = new bootstrap.Modal(
+          "#bulletinAppendsModal",
+        );
+        const bulletinAppendsModalBody = document.querySelector(
+          "#bulletinAppendsModal .modal-body",
+        );
+        const preStudentAppends = localStorage.getItem("studentsAppends")
+          ? JSON.parse(localStorage.getItem("studentsAppends"))
+          : {};
+        bulletinAppendsModalBody.innerHTML = "";
+        const statisticsSelectedStudentsList = Array.from(
+          document.querySelectorAll(".statisStudentItem:checked"),
+        ).map((item) => ({
+          name: item.nextElementSibling.textContent,
+          id: item.value,
+        }));
+
+        statisticsSelectedStudentsList.forEach((student) => {
+          bulletinAppendsModalBody.innerHTML += `
+                <div class="card">
+                  <div class="card-body">
+                    <h5 class="card-title" id="name-${student.id}">${student.name}</h5>
+                    <div class="input-group mb-3">
+                      <span class="input-group-text">نقاط إضافية</span>
+                      <input id="points-${student.id}" type="number" class="form-control text-center px-0" value="${preStudentAppends[student.name]?.points || 0}" step="1">
+                      <span class="input-group-text">نقطة</span>
+                    </div>
+                    <div class="input-group">
+                      <span class="input-group-text">الملاحظة</span>
+                      <textarea id="note-${student.id}" class="form-control" aria-label="With textarea">${preStudentAppends[student.name]?.note || ""}</textarea>
+                    </div>
+                  </div>
+                </div>
+                <hr class="my-1">`;
+        });
+
+        bulletinAppendsModal.show();
+        document.getElementById("resetBulletinConfig").onclick =
+          async function () {
+            const exit = confirm("هل أنت متأكد من إعادة تيين جميع الخانات ؟");
+            if (!exit) return;
+            const obj = {};
+            statisticsSelectedStudentsList.forEach((student) => {
+              document.getElementById(`points-${student.id}`).value = 0;
+              const points = 0;
+              document.getElementById(`note-${student.id}`).value = "";
+              const note = "";
+              obj[student.name] = { points, note };
+            });
+            const existingAppends = preStudentAppends || {};
+            Object.assign(existingAppends, obj);
+            localStorage.setItem(
+              "studentsAppends",
+              JSON.stringify(existingAppends),
+            );
+          };
+        document.getElementById("saveBullentinAppends").onclick =
+          async function () {
+            bulletinAppendsModal.hide();
+            const obj = {};
+            statisticsSelectedStudentsList.forEach((student) => {
+              const points =
+                parseInt(
+                  document.getElementById(`points-${student.id}`).value,
+                ) || 0;
+              const note =
+                document.getElementById(`note-${student.id}`).value || "";
+              obj[student.name] = { points, note };
+            });
+            const existingAppends = preStudentAppends || {};
+            Object.assign(existingAppends, obj);
+            localStorage.setItem(
+              "studentsAppends",
+              JSON.stringify(existingAppends),
+            );
+          };
+      },
+    },
+    {
       text: '<i class="fa-solid fa-dice-six"></i>',
       action: async function () {
         const studentIDs = getStatisticsSelectedStudentsId().split(",");
@@ -5836,88 +5940,10 @@ async function showResultsStatistics() {
       : [
           {
             text: "كشوف النقاط",
-            action: async function (e, dt) {
-              const bulletinAppendsModal = new bootstrap.Modal(
-                "#bulletinAppendsModal",
-              );
-              const bulletinAppendsModalBody = document.querySelector(
-                "#bulletinAppendsModal .modal-body",
-              );
-              const preStudentAppends = localStorage.getItem("studentsAppends")
-                ? JSON.parse(localStorage.getItem("studentsAppends"))
-                : {};
-              bulletinAppendsModalBody.innerHTML = "";
-              const statisticsSelectedStudentsList = Array.from(
-                document.querySelectorAll(".statisStudentItem:checked"),
-              ).map((item) => ({
-                name: item.nextElementSibling.textContent,
-                id: item.value,
-              }));
-
-              statisticsSelectedStudentsList.forEach((student) => {
-                bulletinAppendsModalBody.innerHTML += `
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title" id="name-${student.id}">${student.name}</h5>
-                    <div class="input-group mb-3">
-                      <span class="input-group-text">نقاط إضافية</span>
-                      <input id="points-${student.id}" type="number" class="form-control text-center px-0" value="${preStudentAppends[student.name]?.points || 0}" step="1">
-                      <span class="input-group-text">نقطة</span>
-                    </div>
-                    <div class="input-group">
-                      <span class="input-group-text">الملاحظة</span>
-                      <textarea id="note-${student.id}" class="form-control" aria-label="With textarea">${preStudentAppends[student.name]?.note || ""}</textarea>
-                    </div>
-                  </div>
-                </div>
-                <hr class="my-1">`;
-              });
-
-              bulletinAppendsModal.show();
-              document.getElementById("resetBulletinConfig").onclick =
-                async function () {
-                  const exit = confirm(
-                    "هل أنت متأكد من إعادة تيين جميع الخانات ؟",
-                  );
-                  if (!exit) return;
-                  const obj = {};
-                  statisticsSelectedStudentsList.forEach((student) => {
-                    document.getElementById(`points-${student.id}`).value = 0;
-                    const points = 0;
-                    document.getElementById(`note-${student.id}`).value = "";
-                    const note = "";
-                    obj[student.name] = { points, note };
-                  });
-                  const existingAppends = preStudentAppends || {};
-                  Object.assign(existingAppends, obj);
-                  localStorage.setItem(
-                    "studentsAppends",
-                    JSON.stringify(existingAppends),
-                  );
-                };
-              document.getElementById("createBulletinBtn").onclick =
-                async function () {
-                  bulletinAppendsModal.hide();
-                  await showLoadingModal("جاري تحميل الإحصائيات");
-                  const obj = {};
-                  statisticsSelectedStudentsList.forEach((student) => {
-                    const points =
-                      parseInt(
-                        document.getElementById(`points-${student.id}`).value,
-                      ) || 0;
-                    const note =
-                      document.getElementById(`note-${student.id}`).value || "";
-                    obj[student.name] = { points, note };
-                  });
-                  const existingAppends = preStudentAppends || {};
-                  Object.assign(existingAppends, obj);
-                  localStorage.setItem(
-                    "studentsAppends",
-                    JSON.stringify(existingAppends),
-                  );
-                  showStudentsBulletins(dates);
-                  hideLoadingModal();
-                };
+            action: async function () {
+              await showLoadingModal("جاري إنشاء كشوف النقاط");
+              showStudentsBulletins(dates);
+              hideLoadingModal();
             },
           },
         ]),
