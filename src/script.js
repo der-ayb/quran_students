@@ -1445,14 +1445,15 @@ function onChangeAttendanceState(radio = null) {
   if (selectedRadio.id !== "present") {
     newStudentDayModalBody.style.display = "none";
   } else {
-    // evalMoyenne.value = calcEvaluationMoyenne(
-    //   retardInput.value,
-    //   clothingInput.value,
-    //   haircutInput.value,
-    //   behaviorInput.value,
-    //   prayerInput.value,
-    //   addedPointsInput.value,
-    // );
+    try{
+    evalMoyenne.value = calcEvaluationMoyenne(
+      retardInput.value,
+      clothingInput.value,
+      haircutInput.value,
+      behaviorInput.value,
+      prayerInput.value,
+      addedPointsInput.value,
+    );}catch(e) {console.log(e)}
     newStudentDayModalBody.style.display = "block";
   }
 }
@@ -1579,6 +1580,8 @@ function setRequirEvalInput() {
     requirTypeInput.value,
     requirRepitInput.value,
   );
+  document.getElementById("audioFileBtn").href =
+    `https://der-ayb.github.io/audio-subsection-aistudio/app.html?ss=${firstSurahSelect.value}&sa=${firstAyahSelect.value}`;
 }
 
 $([
@@ -1593,8 +1596,8 @@ function update_student_day_notes(studentId, working_day_id) {
     window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
     return;
   }
-  console.log(getAttendanceValue())
-  if ([0, 1].includes(getAttendanceValue())) {
+
+  if (getAttendanceValue() == 1) {
     const headers = Array.from(
       requirementsTable.querySelectorAll("thead th"),
     ).map((header) => header.textContent.trim());
@@ -1643,9 +1646,13 @@ function update_student_day_notes(studentId, working_day_id) {
     );
   } else {
     project_db.run(
-      `DELETE FROM day_evaluations WHERE student_id = ? AND day_id = ?;`,
-      [studentId, working_day_id],
+      `DELETE FROM day_evaluations WHERE student_id = ${studentId} AND day_id = ${working_day_id};
+      DELETE FROM day_requirements WHERE student_id = ${studentId} AND day_id = ${working_day_id};`,
     );
+    // project_db.run(
+    //     `DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;`,
+    //     [studentId, working_day_id],
+    //   );
   }
 
   Object.keys(teachersPoints).forEach((key) => {
@@ -5482,7 +5489,7 @@ async function showAttendanceStatistics() {
           {
             extend: "pdfHtml5",
             download: "open",
-            text: "انشاء PDF",
+            text: "PDF",
             className: "btn btn-primary",
             customize: async function (doc) {
               const daysCount = dates.length;
@@ -5844,7 +5851,7 @@ async function showResultsStatistics() {
           {
             extend: "pdfHtml5",
             download: "open",
-            text: "انشاء PDF",
+            text: "PDF",
             className: "btn btn-primary",
             customize: async function (doc) {
               const daysCount = dates.length;
