@@ -245,26 +245,26 @@ workbox.routing.registerRoute(
 );
 
 // Serve HTML pages with Network First and offline fallback
-// workbox.routing.registerRoute(
-//   ({ request }) => request.mode === "navigate",
-//   async ({ event }) => {
-//     try {
-//       const response = await workbox.strategies
-//         .networkFirst({
-//           cacheName: "pages-cache",
-//           plugins: [
-//             new workbox.expiration.ExpirationPlugin({
-//               maxEntries: 50,
-//             }),
-//           ],
-//         })
-//         .handle({ event });
-//       return response || (await caches.match("./index.html"));
-//     } catch (error) {
-//       return await caches.match("./index.html");
-//     }
-//   }
-// );
+workbox.routing.registerRoute(
+  ({ request }) => request.mode === "navigate",
+  async ({ event }) => {
+    try {
+      const response = await workbox.strategies
+        .networkFirst({
+          cacheName: "pages-cache",
+          plugins: [
+            new workbox.expiration.ExpirationPlugin({
+              maxEntries: 50,
+            }),
+          ],
+        })
+        .handle({ event });
+      return response || (await caches.match("./index.html"));
+    } catch (error) {
+      return await caches.match("./index.html");
+    }
+  }
+);
 
 // Clean up old/unused caches during activation
 self.addEventListener("activate", (event) => {
@@ -272,7 +272,7 @@ self.addEventListener("activate", (event) => {
     workbox.core.cacheNames.precache,
     "core-cache",
     // "image-cache",
-    // "pages-cache",
+    "pages-cache",
     "static-cache",
   ];
 
