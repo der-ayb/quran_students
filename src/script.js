@@ -1445,15 +1445,18 @@ function onChangeAttendanceState(radio = null) {
   if (selectedRadio.id !== "present") {
     newStudentDayModalBody.style.display = "none";
   } else {
-    try{
-    evalMoyenne.value = calcEvaluationMoyenne(
-      retardInput.value,
-      clothingInput.value,
-      haircutInput.value,
-      behaviorInput.value,
-      prayerInput.value,
-      addedPointsInput.value,
-    );}catch(e) {console.log(e)}
+    try {
+      evalMoyenne.value = calcEvaluationMoyenne(
+        retardInput.value,
+        clothingInput.value,
+        haircutInput.value,
+        behaviorInput.value,
+        prayerInput.value,
+        addedPointsInput.value,
+      );
+    } catch (e) {
+      console.log(e);
+    }
     newStudentDayModalBody.style.display = "block";
   }
 }
@@ -1597,12 +1600,15 @@ function update_student_day_notes(studentId, working_day_id) {
     return;
   }
 
-  if (getAttendanceValue() == 1) {
+  const attendanceValue = getAttendanceValue();
+
+  // Helper function to build requirements list
+  const buildRequirList = () => {
+    const requirList = [];
     const headers = Array.from(
-      requirementsTable.querySelectorAll("thead th"),
+      requirementsTable.querySelectorAll("thead th")
     ).map((header) => header.textContent.trim());
     const rows = requirementsTable.querySelectorAll("tbody tr");
-    const requirList = [];
     rows.forEach((row) => {
       const cells = row.querySelectorAll("td");
       const rowData = {};
@@ -1612,7 +1618,12 @@ function update_student_day_notes(studentId, working_day_id) {
       });
       requirList.push(rowData);
     });
+    return requirList;
+  };
 
+  // Handle requirements insertion for present students
+  if (attendanceValue === 1) {
+    const requirList = buildRequirList();
     if (requirList.length) {
       project_db.run(
         "INSERT OR REPLACE INTO day_requirements (student_id, day_id, detail, moyenne) VALUES (?, ?, ?, ?);",
@@ -1621,38 +1632,44 @@ function update_student_day_notes(studentId, working_day_id) {
           working_day_id,
           JSON.stringify(requirList),
           requirsMoyenneInput.value || "0",
-        ],
-      );
-    } else {
-      project_db.run(
-        `DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;`,
-        [studentId, working_day_id],
+        ]
       );
     }
+  }
+
+  // Insert or update evaluations for present or justified absence
+  if (attendanceValue === 0 || attendanceValue === 1) {
     project_db.run(
-      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance,retard,clothing,haircut,behavior,prayer,added_points,moyenne) VALUES (?, ?, ?, ?,?,?,?,?,?,?);",
+      "INSERT OR REPLACE INTO day_evaluations (student_id, day_id, attendance, retard, clothing, haircut, behavior, prayer, added_points, moyenne) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
       [
         studentId,
         working_day_id,
-        getAttendanceValue(),
-        getAttendanceValue() == 1 ? retardInput.value : null,
+        attendanceValue,
+        attendanceValue === 1 ? retardInput.value : null,
         parseInt(clothingInput.value) || null,
         parseInt(haircutInput.value) || null,
         parseInt(behaviorInput.value) || null,
         parseInt(prayerInput.value) || null,
         parseInt(addedPointsInput.value) || null,
-        getAttendanceValue() == 1 ? evalMoyenne.value : 0,
-      ],
+        attendanceValue === 1 ? evalMoyenne.value : 0,
+      ]
     );
-  } else {
+  }
+
+  // Delete evaluations for unjustified absence
+  if (attendanceValue === 2) {
     project_db.run(
-      `DELETE FROM day_evaluations WHERE student_id = ${studentId} AND day_id = ${working_day_id};
-      DELETE FROM day_requirements WHERE student_id = ${studentId} AND day_id = ${working_day_id};`,
+      "DELETE FROM day_evaluations WHERE student_id = ? AND day_id = ?;",
+      [studentId, working_day_id]
     );
-    // project_db.run(
-    //     `DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;`,
-    //     [studentId, working_day_id],
-    //   );
+  }
+
+  // Delete requirements for any absence
+  if (attendanceValue === 0 || attendanceValue === 2) {
+    project_db.run(
+      "DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;",
+      [studentId, working_day_id]
+    );
   }
 
   Object.keys(teachersPoints).forEach((key) => {

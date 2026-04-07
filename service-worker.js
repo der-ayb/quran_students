@@ -19,7 +19,7 @@ workbox.precaching.precacheAndRoute(
 
     { url: "./src/style.css", revision: "14" },
     { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "78" },
+    { url: "./src/script.js", revision: "79" },
     { url: "./src/auth.js", revision: "2" },
     { url: "./src/flatpickr-hijri-calendar.js", revision: "3" },
     { url: "./src/pdfmake.js", revision: "1" },
@@ -223,14 +223,6 @@ workbox.routing.registerRoute(
   })
 );
 
-// Cache images
-// workbox.routing.registerRoute(
-//   ({ request }) => request.destination === "image",
-//   new workbox.strategies.StaleWhileRevalidate({
-//     cacheName: "image-cache",
-//   })
-// );
-
 // Serve Cached Resources
 workbox.routing.registerRoute(
   ({ url }) => url.origin === self.location.origin,
@@ -271,7 +263,6 @@ self.addEventListener("activate", (event) => {
   const currentCaches = [
     workbox.core.cacheNames.precache,
     "core-cache",
-    // "image-cache",
     "pages-cache",
     "static-cache",
   ];
