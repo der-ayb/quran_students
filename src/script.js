@@ -3319,6 +3319,7 @@ statisticType.onchange = async function () {
   document
     .querySelectorAll("#statisticsTabContent .tab-pane")
     .forEach((el) => el.classList.remove("show", "active"));
+  document.getElementById("verse-grid").innerHTML = "";
   switch (this.value) {
     case "attendance":
       if (!statisAllCheckbox) fillStatistiscStudentsList();
@@ -5469,7 +5470,7 @@ async function showAttendanceStatistics() {
   const attendanceObligatorySum = dates
     .map(
       (date) =>
-        `SUM(CASE WHEN d.date = '${date}' AND d.isObligatory = 1 AND de.attendance = 1 THEN 1 ELSE 0 END)`,
+        `SUM(CASE WHEN d.date = '${date}' AND d.isObligatory = 1 AND de.attendance IN (1,0) THEN 1 ELSE 0 END)`,
     )
     .join(" +\n        ");
 
