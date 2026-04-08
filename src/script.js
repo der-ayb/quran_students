@@ -3303,7 +3303,7 @@ async function showTab(tabId=null) {
       newStudentInfosForm.reset();
       studentIdInput.value = "";
     } else if (tabId === "pills-new_day") {
-      tabTitleLabel.innerText = "التقييم اليويم";
+      tabTitleLabel.innerText = "التقييم";
       dayDateInput._flatpickr.setDate(workingDay, true);
       if (maximizeModalBtn.style.display === "none") studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
