@@ -97,6 +97,12 @@
       <div class="progress-bar"></div>
     </div>
   </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="text-center flex-grow-1" id="tabTitleLabel">الرئيسية</h2>
+    
+  </div>
+
   <div class="tab-content" id="pills-tabContent">
 
     <div class="tab-pane fade" id="pills-splash" role="tabpanel" aria-labelledby="pills-splash-tab">
@@ -132,8 +138,6 @@
     </div>
 
     <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
-      <h2 class="text-center mb-4">الرئيسية</h2>
-
       <div class="date-input-container">
         <div class="date-input-group">
           <select id="workingClassroom" class="form-select"></select>
@@ -155,8 +159,6 @@
     </div>
 
     <div class="tab-pane fade" id="pills-students" role="tabpanel" aria-labelledby="pills-students-tab">
-      <h2 class="text-center mb-4">قائمة التلاميذ</h2>
-
       <table id="studentsListTable" class="table table-striped display responsive nowrap" width="100%">
         <thead>
           <tr>
@@ -175,7 +177,6 @@
     </div>
 
     <div class="tab-pane fade" id="pills-new_day" role="tabpanel" aria-labelledby="pills-new_day-tab">
-      <h2 class="text-center mb-4">التقييم اليومي</h2>
       <div class="date-input-container">
         <div class="date-input-group">
           <span class="date-input-label">التاريخ:</span>
@@ -207,8 +208,6 @@
     </div>
 
     <div class="tab-pane fade" id="pills-statistics" role="tabpanel" aria-labelledby="pills-statistics-tab">
-      <h2 class="text-center mb-4">الإحصائيات</h2>
-
       <div class="date-input-container">
         <div class="date-input-group">
           <span class="date-input-label">الفترة:</span>
@@ -259,7 +258,7 @@
                   <button class="btn btn-sm active" data-tby="all">الكل</button>
                   <button class="btn btn-sm" data-tby="save">حفظ</button>
                   <button class="btn btn-sm" data-tby="revise">مراجعة</button>
-                  </div>
+                </div>
               </div>
 
               <div class="v-divider"></div>
@@ -294,7 +293,6 @@
     </div>
 
     <div class="tab-pane fade" id="pills-preferences" role="tabpanel" aria-labelledby="pills-preferences-tab">
-      <h2 class="text-center mb-4">التفضيلات</h2>
       <div class="accordion">
 
         <div class="card">
@@ -436,25 +434,27 @@
           <div class="card-header" id="headingSix">
             <h2 class="mb-0">
               <button class="btn btn-link btn-block text-start collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix" 
+                data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix"
                 onclick="initBullentinConfigs()">
                 كشوف النقاط
               </button>
             </h2>
           </div>
-          <div id="collapseSix" class="accordion-collapse collapse text-center my-3" aria-labelledby="headingSix"
+          <div id="collapseSix" class="accordion-collapse collapse text-center" aria-labelledby="headingSix"
             data-bs-parent="#pills-preferences">
 
-            <div class="card card-body text-start">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" role="switch" id="resumePagesCheck" checked onchange="localStorage.setItem('bulletinResumPage',this.checked)">
-              <label class="form-check-label" for="resumePagesCheck">تقليص الصفحات إذا أمكن</label>
+            <div class="card-body text-start">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="resumePagesCheck" checked
+                  onchange="localStorage.setItem('bulletinResumPage',this.checked)">
+                <label class="form-check-label" for="resumePagesCheck">تقليص الصفحات إذا أمكن</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="signatureCheck" checked
+                  onchange="localStorage.setItem('bulletinSignature',this.checked)">
+                <label class="form-check-label" for="signatureCheck">تضمين إمضاء الولي</label>
+              </div>
             </div>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" role="switch" id="signatureCheck" checked onchange="localStorage.setItem('bulletinSignature',this.checked)">
-              <label class="form-check-label" for="signatureCheck">تضمين إمضاء الولي</label>
-            </div>
-          </div>
 
           </div>
         </div>
@@ -875,7 +875,8 @@
                         <div class="w-100"></div>
                         <div class="row"><label class="col-4">التفاصيل:</label>
                           <i id="historyRequirBtn" class="col-2 fa-solid fa-clock-rotate-left"></i>
-                          <a id="audioFileBtn" class="col-2 fa-solid fa-file-audio" target="_blank" rel="noopener noreferrer"></a>
+                          <a id="audioFileBtn" class="col-2 fa-solid fa-file-audio" target="_blank"
+                            rel="noopener noreferrer"></a>
                         </div>
                         <div>
                           <textarea type="text" id="requirQuantityDetail" class="form-control mb-3"></textarea>

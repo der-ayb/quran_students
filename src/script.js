@@ -38,11 +38,13 @@ let studentsDayTableDetailIsShow = false;
 let classroomsTableDetailIsShow = false;
 let workingDay = new Date().toISOString().slice(0, 10);
 let workingDayID = null;
+let currentTabId = "pills-home"
 let loadingModalShowNumber = [];
 let isGirls = null;
 const currentTime = { hours: 0, minutes: 0 };
 let teachersPoints = {};
 
+const tabTitleLabel = document.getElementById("tabTitleLabel");
 const workingClassroomSelect = document.getElementById("workingClassroom");
 const dayDateInput = document.getElementById("dayDate");
 const dayNoteContainer = document.getElementById("dayNoteContainer");
@@ -853,6 +855,8 @@ workingClassroomSelect.onchange = async function () {
   haircutInput.disabled = isGirls;
   reinitStatisticTable();
   getStudyDays();
+  const radioBtn = document.getElementById(`classRadio-${workingClassroomId}`);
+  if (radioBtn) radioBtn.checked = true;
 };
 
 async function getStudyDays() {
@@ -1022,6 +1026,11 @@ async function loadClassRoomsList() {
         { data: "actions", className: "py-1" },
       ],
       {
+        select: {
+          style: "multi",
+          selector: "td:first-child",
+          headerCheckbox: "select-page",
+        },
         destroy: true,
         columnDefs: [
           { visible: false, targets: [0, 4, 5] },
@@ -1055,6 +1064,38 @@ async function loadClassRoomsList() {
                     isVisible
                       ? '<i class="fa-solid fa-table-cells">'
                       : '<i class="fa-solid fa-table"></i>',
+                  );
+                },
+              },
+              {
+                text: '<i class="fa-solid fa-thumbtack"></i>',
+                action: async function (e, dt) {
+                  const selectedRows = dt
+                    .rows({ selected: true })
+                    .data()
+                    .toArray();
+                  if (selectedRows.length === 0) {
+                    window.showToast("info", "الرجاء اختيار أقسام أولاً.");
+                    return;
+                  }
+
+                  if (tabTitleLabel.nextElementSibling)
+                    tabTitleLabel.nextElementSibling.remove();
+
+                  let element = `
+                      <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                      `;
+                  selectedRows.forEach((row) => {
+                    element += `
+                        <input type="radio" class="btn-check" name="btnradio" id="classRadio-${row.id}" autocomplete="off" onchange="workingClassroomSelect.value = '${row.id}';workingClassroomSelect.dispatchEvent(new Event('change'));showTab();" ${workingClassroomId == row.id ? "checked" : ""}>
+                        <label class="btn btn-outline-primary" for="classRadio-${row.id}">${row.sex}</label>
+                    `;
+                  });
+                  element += `
+                      </div>`;
+                  tabTitleLabel.parentElement.insertAdjacentHTML(
+                    "beforeend",
+                    element,
                   );
                 },
               },
@@ -1606,7 +1647,7 @@ function update_student_day_notes(studentId, working_day_id) {
   const buildRequirList = () => {
     const requirList = [];
     const headers = Array.from(
-      requirementsTable.querySelectorAll("thead th")
+      requirementsTable.querySelectorAll("thead th"),
     ).map((header) => header.textContent.trim());
     const rows = requirementsTable.querySelectorAll("tbody tr");
     rows.forEach((row) => {
@@ -1632,7 +1673,7 @@ function update_student_day_notes(studentId, working_day_id) {
           working_day_id,
           JSON.stringify(requirList),
           requirsMoyenneInput.value || "0",
-        ]
+        ],
       );
     }
   }
@@ -1652,7 +1693,7 @@ function update_student_day_notes(studentId, working_day_id) {
         parseInt(prayerInput.value) || null,
         parseInt(addedPointsInput.value) || null,
         attendanceValue === 1 ? evalMoyenne.value : 0,
-      ]
+      ],
     );
   }
 
@@ -1660,7 +1701,7 @@ function update_student_day_notes(studentId, working_day_id) {
   if (attendanceValue === 2) {
     project_db.run(
       "DELETE FROM day_evaluations WHERE student_id = ? AND day_id = ?;",
-      [studentId, working_day_id]
+      [studentId, working_day_id],
     );
   }
 
@@ -1668,7 +1709,7 @@ function update_student_day_notes(studentId, working_day_id) {
   if (attendanceValue === 0 || attendanceValue === 2) {
     project_db.run(
       "DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;",
-      [studentId, working_day_id]
+      [studentId, working_day_id],
     );
   }
 
@@ -3224,7 +3265,9 @@ async function initBullentinConfigs() {
       signatureCheck === "true";
 }
 
-async function showTab(tabId) {
+async function showTab(tabId=null) {
+  if(!tabId) tabId = currentTabId || "pills-home";
+  currentTabId = tabId;
   document
     .querySelectorAll(".tab-pane:not(#statisticsTabContent .tab-pane)")
     .forEach((el) => el.classList.remove("show", "active"));
@@ -3233,8 +3276,10 @@ async function showTab(tabId) {
   if (tabId === "pills-splash") {
     nav_bar.style.display = "none";
   } else if (tabId === "pills-home") {
+    tabTitleLabel.innerText = "الرئيسية";
     await loadClassRoomsList();
   } else if (tabId === "pills-preferences") {
+    tabTitleLabel.innerText = "التفضيلات";
     if (!document.getElementById("behavior-marksList").innerHTML) {
       displayEvalLadder(
         JSON.parse(
@@ -3253,13 +3298,16 @@ async function showTab(tabId) {
     }
   } else if (workingClassroomId) {
     if (tabId === "pills-students") {
+      tabTitleLabel.innerText = "الطلبة";
       await loadStudentsList();
       newStudentInfosForm.reset();
       studentIdInput.value = "";
     } else if (tabId === "pills-new_day") {
+      tabTitleLabel.innerText = "التقييم اليويم";
       dayDateInput._flatpickr.setDate(workingDay, true);
       if (maximizeModalBtn.style.display === "none") studentDayModal.hide();
     } else if (tabId === "pills-statistics") {
+      tabTitleLabel.innerText = "الإحصائيات";
       fillStatistiscStudentsList();
       if (devMode && 4 == 5)
         showStudentsBulletins(
@@ -5721,7 +5769,26 @@ async function showResultsStatistics() {
         const preStudentAppends = localStorage.getItem("studentsAppends")
           ? JSON.parse(localStorage.getItem("studentsAppends"))
           : {};
-        bulletinAppendsModalBody.innerHTML = "";
+
+        bulletinAppendsModalBody.innerHTML = `
+          <div class="card">
+            <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h5 class="card-title">الجميع</h5>
+              <button class="btn btn-sm btn-outline-secondary" id="setAllAppendsBtn">تطبيق</button>
+            </div>
+              <div class="input-group mb-3">
+                <span class="input-group-text">نقاط إضافية</span>
+                <input id="points-all" type="number" class="form-control text-center px-0" value="0" step="1">
+                <span class="input-group-text">نقطة</span>
+              </div>
+              <div class="input-group">
+                <span class="input-group-text">الملاحظة</span>
+                <textarea id="note-all" class="form-control" aria-label="With textarea"></textarea>
+              </div>
+            </div>
+          </div>
+          <hr class="my-2"></hr>`;
         const statisticsSelectedStudentsList = Array.from(
           document.querySelectorAll(".statisStudentItem:checked"),
         ).map((item) => ({
@@ -5731,22 +5798,30 @@ async function showResultsStatistics() {
 
         statisticsSelectedStudentsList.forEach((student) => {
           bulletinAppendsModalBody.innerHTML += `
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title" id="name-${student.id}">${student.name}</h5>
-                    <div class="input-group mb-3">
-                      <span class="input-group-text">نقاط إضافية</span>
-                      <input id="points-${student.id}" type="number" class="form-control text-center px-0" value="${preStudentAppends[student.name]?.points || 0}" step="1">
-                      <span class="input-group-text">نقطة</span>
-                    </div>
-                    <div class="input-group">
-                      <span class="input-group-text">الملاحظة</span>
-                      <textarea id="note-${student.id}" class="form-control" aria-label="With textarea">${preStudentAppends[student.name]?.note || ""}</textarea>
-                    </div>
-                  </div>
-                </div>
-                <hr class="my-1">`;
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title" id="name-${student.id}">${student.name}</h5>
+              <div class="input-group mb-3">
+                <span class="input-group-text">نقاط إضافية</span>
+                <input id="points-${student.id}" type="number" class="form-control text-center px-0" value="${preStudentAppends[student.name]?.points || 0}" step="1">
+                <span class="input-group-text">نقطة</span>
+              </div>
+              <div class="input-group">
+                <span class="input-group-text">الملاحظة</span>
+                <textarea id="note-${student.id}" class="form-control" aria-label="With textarea">${preStudentAppends[student.name]?.note || ""}</textarea>
+              </div>
+            </div>
+          </div>`;
         });
+        document.getElementById("setAllAppendsBtn").onclick = function () {
+          const points =
+            parseInt(document.getElementById("points-all").value) || 0;
+          const note = document.getElementById("note-all").value || "";
+          statisticsSelectedStudentsList.forEach((student) => {
+            document.getElementById(`points-${student.id}`).value = points;
+            document.getElementById(`note-${student.id}`).value = note;
+          });
+        };
 
         bulletinAppendsModal.show();
         document.getElementById("resetBulletinConfig").onclick =
@@ -5754,6 +5829,8 @@ async function showResultsStatistics() {
             const exit = confirm("هل أنت متأكد من إعادة تيين جميع الخانات ؟");
             if (!exit) return;
             const obj = {};
+            document.getElementById(`points-all`).value = 0;
+            document.getElementById(`note-all`).value = "";
             statisticsSelectedStudentsList.forEach((student) => {
               document.getElementById(`points-${student.id}`).value = 0;
               const points = 0;
