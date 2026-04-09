@@ -18,7 +18,6 @@ const quranData = {
   surahs: [],
   pages: [],
   ahzab: [],
-  athman: [],
   SURAH_NAME_MAP: new Map(),
 };
 let specialDates = [];
@@ -38,7 +37,7 @@ let studentsDayTableDetailIsShow = false;
 let classroomsTableDetailIsShow = false;
 let workingDay = new Date().toISOString().slice(0, 10);
 let workingDayID = null;
-let currentTabId = "pills-home"
+let currentTabId = "pills-home";
 let loadingModalShowNumber = [];
 let isGirls = null;
 const currentTime = { hours: 0, minutes: 0 };
@@ -3265,8 +3264,8 @@ async function initBullentinConfigs() {
       signatureCheck === "true";
 }
 
-async function showTab(tabId=null) {
-  if(!tabId) tabId = currentTabId || "pills-home";
+async function showTab(tabId = null) {
+  if (!tabId) tabId = currentTabId || "pills-home";
   currentTabId = tabId;
   document
     .querySelectorAll(".tab-pane:not(#statisticsTabContent .tab-pane)")
@@ -5867,79 +5866,6 @@ async function showResultsStatistics() {
           };
       },
     },
-    {
-      text: '<i class="fa-solid fa-dice-six"></i>',
-      action: async function () {
-        const studentIDs = getStatisticsSelectedStudentsId().split(",");
-        studentIDs.forEach((selectedStudentID) => {
-          if (!project_db) {
-            window.showToast("info", "لا يوجد قاعدة بيانات مفتوحة.");
-            return;
-          }
-
-          const dateList = dates.map((date) => `'${date}'`).join(", ");
-
-          let name = "";
-          let allAyatlist = [];
-          let allRequirlist = [];
-          let savelist = [];
-          let reviselist = [];
-          let hasilalist = [];
-          const lsR = project_db.exec(`
-            SELECT dr.detail,(SELECT fname || ' ' || lname FROM students WHERE id = dr.student_id) as student_name
-            FROM day_requirements dr
-            INNER JOIN education_day ed ON dr.day_id = ed.id
-            WHERE dr.student_id = ${selectedStudentID} AND ed.date IN (${dateList})
-            ORDER BY ed.date DESC`);
-          if (lsR.length)
-            detail = lsR[0].values.forEach((item) => {
-              name = item[1];
-              allRequirlist.push(...JSON.parse(item[0]).reverse());
-            });
-          allRequirlist.forEach((item) => {
-            switch (item["النوع"]) {
-              case "حفظ":
-                savelist.push(item["التفاصيل"]);
-                break;
-              case "مراجعة":
-                reviselist.push(item["التفاصيل"]);
-                break;
-              case "حصيلة":
-                hasilalist.push(item["التفاصيل"]);
-                break;
-            }
-          });
-
-          allRequirlist.forEach((item) => {
-            if (item["الكتاب"] !== "القرآن الكريم") return;
-            const requirDetail = item["التفاصيل"].split(" ");
-            const lsRr = quran_db.exec(`
-              SELECT quran_ayat.id,quran_index.sura FROM quran_ayat
-              INNER JOIN quran_index ON quran_index.id_sura = quran_ayat.sura
-              WHERE quran_ayat.id BETWEEN
-              (SELECT id FROM quran_ayat  WHERE ayah = ${requirDetail[2]}
-              AND sura = (SELECT id_sura FROM quran_index WHERE sura = "${requirDetail[0]}"))
-              AND
-              (SELECT id FROM quran_ayat  WHERE ayah = ${requirDetail[6]}
-              AND sura = (SELECT id_sura FROM quran_index WHERE sura = "${requirDetail[4]}"));
-            `);
-            lsRr[0].values.forEach((item) => {
-              allAyatlist.push(item[0]);
-            });
-          });
-          allAyatlist = [...new Set(allAyatlist)];
-          const randomAyatID =
-            allAyatlist[Math.floor(Math.random() * allAyatlist.length)];
-
-          const rs = quran_db.exec(
-            "SELECT * FROM quran_ayat WHERE id = " + randomAyatID,
-          )[0];
-          rs.values.forEach((row) => {
-            alert(`${name} : ${row[3]}`);
-          });
-        });
-      },
-    },
     ...(dates.length > 13
       ? []
       : [
@@ -6308,7 +6234,7 @@ async function showAvanceChart() {
             WHERE dr.student_id = ${studentID} AND ed.date IN (${dates.map((date) => `'${date}'`).join(", ")})
             ORDER BY ed.date DESC`);
     if (lsR.length)
-      detail = lsR[0].values.forEach((item) => {
+      lsR[0].values.forEach((item) => {
         JSON.parse(item[0])
           .reverse()
           .forEach((item) => {
@@ -6345,6 +6271,60 @@ async function showAvanceChart() {
       default:
         indices.length = 0;
     }
+    indices.sort((a, b) => a - b);
+
+    document.getElementById("randomSelectBtn").onclick = (e) => {
+      let randomAyatID = indices[Math.floor(Math.random() * indices.length)];
+      while (!indices.includes(randomAyatID + 1) || !indices.includes(randomAyatID + 2)){
+        randomAyatID = indices[Math.floor(Math.random() * indices.length)];
+      }
+
+      const rs = quran_db.exec(
+        `SELECT qi.sura,qa.text
+          FROM quran_index qi
+          LEFT JOIN quran_ayat qa ON qa.sura = qi.id_sura
+          WHERE qa.id IN (${randomAyatID},${randomAyatID + 1},${randomAyatID + 2})`,
+      )[0];
+      const row = rs.values;
+      swal(
+        `${row[0][1]} [${row[0][0]} - ${quranData.verseInfo[randomAyatID].ayah}]`,
+        {
+          buttons: {
+            cancel: "إنهاء",
+            next: "سؤال آخر",
+            solution: {
+              text: "الإجابة",
+              value: "solution",
+            },
+          },
+        },
+      ).then((value) => {
+        switch (value) {
+          case "next":
+            e.target.dispatchEvent(new Event('click'));
+            break;
+
+          case "solution":
+            swal(
+              "الإجابة",
+              `${row[1][1]} [${quranData.verseInfo[randomAyatID + 1].ayah}] ${row[2][1]} [${quranData.verseInfo[randomAyatID + 2].ayah}]`,
+              {
+                buttons: {
+                  cancel: "إنهاء",
+                  next: "سؤال آخر",
+                },
+              },
+            ).then((value) => {
+              switch (value) {
+                case "next":
+                  e.target.dispatchEvent(new Event('click'));
+                  break;
+              }
+            });
+            break;
+        }
+      });
+    };
 
     buildGrid();
     updateStatus();

@@ -15,6 +15,10 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
+.swal-text {
+  text-align: center!important;
+}
+
 .UndoCountdown::after {
   content: ' ' attr(data-count);
 }
@@ -573,7 +577,7 @@ th.header-rotated>div>span {
   border-top: 1px solid var(--border);
   padding: 5px 16px;
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 15px;
   color: var(--text-dim);
 }
 
