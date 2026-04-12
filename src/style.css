@@ -15,6 +15,11 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
+.quran-text .swal-text {
+    font-family: 'Uthmanic Warsh'!important;
+    font-size: 22px;
+}
+
 .swal-text {
   text-align: center!important;
 }

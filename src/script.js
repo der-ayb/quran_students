@@ -1674,6 +1674,11 @@ function update_student_day_notes(studentId, working_day_id) {
           requirsMoyenneInput.value || "0",
         ],
       );
+    } else {
+      project_db.run(
+        `DELETE FROM day_requirements WHERE student_id = ? AND day_id = ?;`,
+        [studentId, working_day_id],
+      );
     }
   }
 
@@ -6272,10 +6277,22 @@ async function showAvanceChart() {
         indices.length = 0;
     }
     indices.sort((a, b) => a - b);
+    if (indices.length < 4) {
+      swal(
+        "تنبيه",
+        "عدد الآيات المميزة قليل جدا، لا يمكن عرض السؤال العشوائي.",
+        "warning",
+      );
+      return;
+    }
 
     document.getElementById("randomSelectBtn").onclick = (e) => {
       let randomAyatID = indices[Math.floor(Math.random() * indices.length)];
-      while (!indices.includes(randomAyatID + 1) || !indices.includes(randomAyatID + 2)){
+      while (
+        !indices.includes(randomAyatID + 1) ||
+        quranData.verseInfo[randomAyatID].surah !==
+          quranData.verseInfo[randomAyatID + 1].surah
+      ) {
         randomAyatID = indices[Math.floor(Math.random() * indices.length)];
       }
 
@@ -6286,9 +6303,11 @@ async function showAvanceChart() {
           WHERE qa.id IN (${randomAyatID},${randomAyatID + 1},${randomAyatID + 2})`,
       )[0];
       const row = rs.values;
+
       swal(
         `${row[0][1]} [${row[0][0]} - ${quranData.verseInfo[randomAyatID].ayah}]`,
         {
+          className: "quran-text",
           buttons: {
             cancel: "إنهاء",
             next: "سؤال آخر",
@@ -6301,7 +6320,7 @@ async function showAvanceChart() {
       ).then((value) => {
         switch (value) {
           case "next":
-            e.target.dispatchEvent(new Event('click'));
+            e.target.dispatchEvent(new Event("click"));
             break;
 
           case "solution":
@@ -6309,6 +6328,7 @@ async function showAvanceChart() {
               "الإجابة",
               `${row[1][1]} [${quranData.verseInfo[randomAyatID + 1].ayah}] ${row[2][1]} [${quranData.verseInfo[randomAyatID + 2].ayah}]`,
               {
+                className: "quran-text",
                 buttons: {
                   cancel: "إنهاء",
                   next: "سؤال آخر",
@@ -6317,7 +6337,7 @@ async function showAvanceChart() {
             ).then((value) => {
               switch (value) {
                 case "next":
-                  e.target.dispatchEvent(new Event('click'));
+                  e.target.dispatchEvent(new Event("click"));
                   break;
               }
             });

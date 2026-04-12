@@ -17,9 +17,9 @@ workbox.precaching.precacheAndRoute(
     { url: "./manifest.json", revision: "2" },
     { url: "./install.js", revision: "2" },
 
-    { url: "./src/style.css", revision: "15" },
-    { url: "./src/fonts.css", revision: "1" },
-    { url: "./src/script.js", revision: "83" },
+    { url: "./src/style.css", revision: "16" },
+    { url: "./src/fonts.css", revision: "2" },
+    { url: "./src/script.js", revision: "84" },
     { url: "./src/auth.js", revision: "2" },
     { url: "./src/flatpickr-hijri-calendar.js", revision: "3" },
     { url: "./src/pdfmake.js", revision: "1" },
@@ -50,7 +50,11 @@ workbox.precaching.precacheAndRoute(
       url: "./assets/fonts/rubik/iJWKBXyIfDnIV7nErXyi0A.woff2",
       revision: "1",
     },
-    
+    {
+      url: "./assets/fonts/UthmanicWarshV21East.ttf",
+      revision: "1",
+    },
+
     {
       url: "./assets/images/manifest-icon-192.maskable.png",
       revision: "1",
