@@ -1624,7 +1624,7 @@ function setRequirEvalInput() {
     requirRepitInput.value,
   );
   document.getElementById("audioFileBtn").href =
-    `https://der-ayb.github.io/audio-subsection-aistudio/app.html?ss=${firstSurahSelect.value}&sa=${firstAyahSelect.value}`;
+    `https://audio-subsection-aistudio.derrafa6.workers.dev/app?ss=${firstSurahSelect.value}&sa=${firstAyahSelect.value}`;
 }
 
 $([
