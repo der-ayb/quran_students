@@ -6281,16 +6281,18 @@ async function showAvanceChart() {
         indices.length = 0;
     }
     indices.sort((a, b) => a - b);
-    if (indices.length < 4) {
-      swal(
-        "تنبيه",
-        "عدد الآيات المميزة قليل جدا، لا يمكن عرض السؤال العشوائي.",
-        "warning",
-      );
-      return;
-    }
 
+    let questionNumber = 1;
     document.getElementById("randomSelectBtn").onclick = (e) => {
+      if (indices.length < 4) {
+        swal(
+          "تنبيه",
+          "عدد الآيات المميزة قليل جدا، لا يمكن عرض السؤال العشوائي.",
+          "warning",
+        );
+        return;
+      }
+
       let randomAyatID = indices[Math.floor(Math.random() * indices.length)];
       while (
         !indices.includes(randomAyatID + 1) ||
@@ -6300,30 +6302,41 @@ async function showAvanceChart() {
         randomAyatID = indices[Math.floor(Math.random() * indices.length)];
       }
 
-      const rs = quran_db.exec(
+      const row = quran_db.exec(
         `SELECT qi.sura,qa.text
           FROM quran_index qi
           LEFT JOIN quran_ayat qa ON qa.sura = qi.id_sura
           WHERE qa.id IN (${randomAyatID},${randomAyatID + 1},${randomAyatID + 2})`,
-      )[0];
-      const row = rs.values;
+      )[0].values;
+
+      const lign_count = quran_db.exec(`SELECT 
+      ROUND(SUM(lign_count), 1) AS rounded_total
+      FROM quran_ayat
+      WHERE id in(${indices})`)[0].values[0][0];
+      if (questionNumber > Math.floor(lign_count / 30)) questionNumber = 1;
 
       swal(
         `${row[0][1]} [${row[0][0]} - ${quranData.verseInfo[randomAyatID].ayah}]`,
         {
+          title: `السؤال رقم ${questionNumber} / ${Math.floor(lign_count / 30)}`,
           className: "quran-text",
           buttons: {
             cancel: "إنهاء",
-            next: "سؤال آخر",
+            skip: "تخطي",
             solution: {
               text: "الإجابة",
               value: "solution",
             },
+            next: "السؤال التالي",
           },
         },
       ).then((value) => {
         switch (value) {
           case "next":
+            questionNumber++;
+            e.target.dispatchEvent(new Event("click"));
+            break;
+          case "skip":
             e.target.dispatchEvent(new Event("click"));
             break;
 
@@ -6335,12 +6348,17 @@ async function showAvanceChart() {
                 className: "quran-text",
                 buttons: {
                   cancel: "إنهاء",
-                  next: "سؤال آخر",
+                  skip: "تخطي",
+                  next: "السؤال التالي",
                 },
               },
             ).then((value) => {
               switch (value) {
                 case "next":
+                  questionNumber++;
+                  e.target.dispatchEvent(new Event("click"));
+                  break;
+                case "skip":
                   e.target.dispatchEvent(new Event("click"));
                   break;
               }
