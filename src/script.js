@@ -5978,6 +5978,7 @@ async function showResultsStatistics() {
             text: "كشوف النقاط",
             action: async function () {
               await showLoadingModal("جاري إنشاء كشوف النقاط");
+              initBullentinConfigs();
               showStudentsBulletins(dates);
               hideLoadingModal();
             },
