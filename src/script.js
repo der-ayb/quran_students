@@ -3494,6 +3494,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
     return;
   }
 
+  const usedevaluationLaddersValues = {};
   const studentsAppends = localStorage.getItem("studentsAppends")
     ? JSON.parse(localStorage.getItem("studentsAppends"))
     : {};
@@ -3626,6 +3627,18 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
       window.showToast("warning", "لا توجد بيانات للطلاب في هذه الفترة.");
       return;
     }
+
+    project_db
+      .exec(
+        `
+      SELECT ed.date, el.detail FROM evaluation_ladder el
+      LEFT JOIN education_day ed ON el.id = ed.evaluation_ladder_id
+      WHERE class_room_id=${workingClassroomId} AND date in (${dates.map((date) => `'${date}'`).join(", ")}) ;
+      `,
+      )[0]
+      .values.forEach((row) => {
+        usedevaluationLaddersValues[row[0]] = JSON.parse(row[1]);
+      });
 
     // Create single PDF with all students
     createMultiStudentPDF(allStudentData, dates);
@@ -4097,12 +4110,20 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
 
         record.detail = JSON.parse(record.detail || "[]");
         const recordDetailLength = record.detail.length;
-        const clothingOption = document.querySelector(
-          `#clothing option[value='${record.clothing}']`,
-        );
-        const behaviorOption = document.querySelector(
-          `#behavior option[value='${record.behavior}']`,
-        );
+        const clothingValue =
+          Object.keys(usedevaluationLaddersValues[record.day].clothing).find(
+            (k) =>
+              usedevaluationLaddersValues[record.day].clothing[k] ===
+              record.clothing,
+          ) || "-";
+
+        const behaviorValue =
+          Object.keys(usedevaluationLaddersValues[record.day].behavior).find(
+            (k) =>
+              usedevaluationLaddersValues[record.day].behavior[k] ===
+              record.behavior,
+          ) || "-";
+
         const retardOption =
           parseInt(record.retard) > 0
             ? `${parseInt(record.retard)}  د`
@@ -4164,7 +4185,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           // Behavior
           const behaviorIndex = baseIndex - 6;
           row[behaviorIndex] = {
-            text: behaviorOption ? behaviorOption.textContent : "-",
+            text: behaviorValue,
             style: "tableCell",
             alignment: "center",
             margin: [-2, marginTop, -2, -2],
@@ -4173,7 +4194,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           // Clothing
           const clothingIndex = baseIndex - 7;
           row[clothingIndex] = {
-            text: clothingOption ? clothingOption.textContent : "-",
+            text: clothingValue,
             style: "tableCell",
             alignment: "center",
             margin: [-2, marginTop, -2, -2],
@@ -4272,7 +4293,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             row[behaviorIndex] =
               detailIndex === 0
                 ? {
-                    text: behaviorOption ? behaviorOption.textContent : "-",
+                    text: behaviorValue,
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: recordDetailLength,
@@ -4285,7 +4306,7 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
             row[clothingIndex] =
               detailIndex === 0
                 ? {
-                    text: clothingOption ? clothingOption.textContent : "-",
+                    text: clothingValue,
                     style: "tableCell",
                     alignment: "center",
                     rowSpan: recordDetailLength,
