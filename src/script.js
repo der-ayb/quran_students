@@ -4579,8 +4579,8 @@ async function showStudentsBulletins(dates, studentsIDS = null) {
           widths: [
             70,
             100,
-            totalSaveQuantity > 0 && totalReviseQuantity > 0 ? 175 : 140,
-            100,
+            totalSaveQuantity > 0 && totalReviseQuantity > 0 ? 180 : 140,
+            90,
             "*",
           ],
           body: [
@@ -5044,7 +5044,7 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
         })
         .reduce((accumulator, current) => accumulator + current, 0) + 3;
     const tableCellHeight = isStacked
-      ? 30 - recordCounts
+      ? 38 - recordCounts
       : 33 - recordCounts / 2;
     const tableBody = createTableBody(data, tableCellHeight / 3, isStacked);
 
@@ -5112,7 +5112,7 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
         absolutePosition: {
           y:
             (isStacked
-              ? 841.89 / 4 + (isSecond ? 841.89 / 2 : 0) - 50
+              ? 841.89 / 4 + (isSecond ? 841.89 / 2 : 0)
               : 841.89 / 2 -
                 (recordCounts <= 25 ? -1.5 * recordCounts : recordCounts / 2)) -
             (recordCounts / (isStacked ? 2 : recordCounts)) *
@@ -5411,7 +5411,7 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
     return [
       {
         table: {
-          widths: [50, 100, 330],
+          widths: [50, 90, 330],
           body: [
             [
               {
@@ -5424,7 +5424,7 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
                 marginTop: 3,
               },
               {
-                text: `المجموع العام: ${total.toFixed(2)}`,
+                text: `المجموع : ${total.toFixed(2)}`,
                 style: "tableCell",
                 alignment: "center",
                 bold: true,
@@ -5435,8 +5435,8 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
               ...[
                 fullNote
                   ? {
-                      // text: "الملاحظة:  تلميذة خلوقة نسأل الله أن يحفظكِ بما يحفظ به عباده الصالحين",
-                      text: reverseArabicWords(`الملاحظة:  ${fullNote}`),
+                      // text: "الملاحظة:  تقدم ملحوظ و نسأل الله المزيد",
+                      text: fullNote,
                       style: "tableCell",
                       alignment: "right",
                       bold: true,
@@ -5444,7 +5444,10 @@ async function showStudentsBulletins2(dates, studentsIDS = null) {
                       fontSize: 10,
                       marginTop: 3,
                     }
-                  : {},
+                  : {
+                      text: "",
+                      border: [false, false, false, false],
+                    },
               ],
             ],
           ],
@@ -5849,27 +5852,6 @@ async function showResultsStatistics() {
         };
 
         bulletinAppendsModal.show();
-        document.getElementById("resetBulletinConfig").onclick =
-          async function () {
-            const exit = confirm("هل أنت متأكد من إعادة تيين جميع الخانات ؟");
-            if (!exit) return;
-            const obj = {};
-            document.getElementById(`points-all`).value = 0;
-            document.getElementById(`note-all`).value = "";
-            statisticsSelectedStudentsList.forEach((student) => {
-              document.getElementById(`points-${student.id}`).value = 0;
-              const points = 0;
-              document.getElementById(`note-${student.id}`).value = "";
-              const note = "";
-              obj[student.name] = { points, note };
-            });
-            const existingAppends = preStudentAppends || {};
-            Object.assign(existingAppends, obj);
-            localStorage.setItem(
-              "studentsAppends",
-              JSON.stringify(existingAppends),
-            );
-          };
         document.getElementById("saveBullentinAppends").onclick =
           async function () {
             bulletinAppendsModal.hide();
